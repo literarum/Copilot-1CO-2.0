@@ -17,6 +17,9 @@ jobs:
       cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
+      - name: Configure git for reliability
+        run: |
+          git config --global http.version HTTP/1.1
       - uses: actions/checkout@v4
       - name: Remove old previews
         run: rm -rf pr-preview
