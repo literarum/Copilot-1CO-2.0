@@ -145,6 +145,12 @@ export function setDependencies(deps) {
         handleSaveFolderSubmit: deps.handleSaveFolderSubmit,
         getAllFromIndex: deps.getAllFromIndex,
         State: deps.State,
+        showEditBookmarkModal: deps.showEditBookmarkModal,
+        deleteBookmark: deps.deleteBookmark,
+        showBookmarkDetailModal: deps.showBookmarkDetailModal,
+        handleViewBookmarkScreenshots: deps.handleViewBookmarkScreenshots,
+        NotificationService: deps.NotificationService,
+        showScreenshotViewerModal: deps.showScreenshotViewerModal,
     });
 
     // Установка loadingOverlayManager для ExportService
