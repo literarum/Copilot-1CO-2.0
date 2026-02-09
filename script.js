@@ -540,7 +540,10 @@ import {
 
 import { setEscapeHandlerDependencies, addEscapeHandler as addEscapeHandlerModule, removeEscapeHandler as removeEscapeHandlerModule } from './js/ui/escape-handler.js';
 import { setOverlayUtilsDependencies, showOverlayForFixedDuration as showOverlayForFixedDurationModule } from './js/ui/overlay-utils.js';
-import { initUICustomization as initUICustomizationModule } from './js/ui/ui-customization.js';
+import {
+    initUICustomization as initUICustomizationModule,
+    setUICustomizationDependencies,
+} from './js/ui/ui-customization.js';
 import { showNotification as showNotificationModule, ensureNotificationIconlessStyles as ensureNotificationIconlessStylesModule } from './js/features/notification-inline.js';
 import { showBookmarkDetailModal as showBookmarkDetailModalModule, setBookmarkDetailDependencies } from './js/features/bookmark-detail.js';
 import { initBackgroundStatusHUD } from './js/ui/background-status-hud.js';
@@ -2360,6 +2363,14 @@ setBackgroundImageDependencies({
     processImageFile,
 });
 console.log('[script.js] Зависимости модуля Background Image установлены');
+
+setUICustomizationDependencies({
+    getFromIndexedDB,
+    applyCustomBackgroundImage,
+    setupBackgroundImageControls,
+    showNotification,
+});
+console.log('[script.js] Зависимости модуля UI Customization установлены');
 
 // Main Algorithm Dependencies
 setMainAlgorithmDependencies({
