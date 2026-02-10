@@ -180,6 +180,51 @@ export function sanitizeQuery(query) {
     return sanitized;
 }
 
+function normalizeSearchTerm(term) {
+    return sanitizeQuery(term).replace(/\s+/g, ' ').trim();
+}
+
+function parseSearchQuery(rawQuery) {
+    if (typeof rawQuery !== 'string') {
+        return {
+            normalizedQuery: '',
+            includeTokens: [],
+            excludeTokens: [],
+            phrases: [],
+        };
+    }
+
+    const phraseMatches = Array.from(rawQuery.matchAll(/"([^"]+)"/g))
+        .map((match) => normalizeSearchTerm(match[1]))
+        .filter(Boolean);
+
+    const withoutPhrases = rawQuery.replace(/"([^"]+)"/g, ' ');
+    const parts = withoutPhrases
+        .split(/\s+/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+    const includeTokens = [];
+    const excludeTokens = [];
+
+    parts.forEach((part) => {
+        if (part.startsWith('-') && part.length > 1) {
+            const token = normalizeSearchTerm(part.slice(1));
+            if (token) excludeTokens.push(token);
+        } else {
+            const token = normalizeSearchTerm(part);
+            if (token) includeTokens.push(token);
+        }
+    });
+
+    return {
+        normalizedQuery: normalizeSearchTerm(rawQuery),
+        includeTokens,
+        excludeTokens,
+        phrases: phraseMatches,
+    };
+}
+
 /**
  * Определяет контекст поиска
  */
@@ -871,6 +916,17 @@ export async function removeFromSearchIndex(itemId, itemType) {
     } catch (error) {
         console.error(`[removeFromSearchIndex V6] Error for ${itemType}-${stringItemId}:`, error);
     }
+}
+
+function buildSearchableText(storeName, itemData) {
+    const textsByField = getTextForItem(storeName, itemData);
+    return Object.values(textsByField)
+        .filter((value) => typeof value === 'string' && value.trim())
+        .join(' ')
+        .toLowerCase()
+        .replace(/ё/g, 'е')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 /**
@@ -1821,8 +1877,14 @@ export async function performSearch(query) {
     console.log(`[performSearch] Начало поиска по запросу: "${query}"`);
 
     try {
-        const searchContext = determineSearchContext(query);
-        const queryTokens = tokenize(query).filter((word) => word.length >= 2);
+        const parsedQuery = parseSearchQuery(query);
+        const searchContext = determineSearchContext(parsedQuery.normalizedQuery || query);
+        const baseTokenSource = parsedQuery.includeTokens.length
+            ? parsedQuery.includeTokens.join(' ')
+            : parsedQuery.phrases.join(' ');
+        const queryTokens = tokenize(baseTokenSource).filter(
+            (word) => word.length >= 2 || isExceptionShortToken(word),
+        );
         const sectionMatches = findSectionMatches(query);
 
         if (queryTokens.length === 0) {
@@ -1833,7 +1895,11 @@ export async function performSearch(query) {
             return;
         }
 
-        let candidateDocs = await searchCandidates(queryTokens, searchContext, query);
+        let candidateDocs = await searchCandidates(
+            queryTokens,
+            searchContext,
+            parsedQuery.normalizedQuery || query,
+        );
 
         const filteredCandidateDocs = new Map();
         for (const [key, value] of candidateDocs.entries()) {
@@ -1843,7 +1909,7 @@ export async function performSearch(query) {
         }
         candidateDocs = filteredCandidateDocs;
 
-        const finalResults = await processSearchResults(candidateDocs, query, query);
+        const finalResults = await processSearchResults(candidateDocs, query, query, parsedQuery);
 
         const combinedResults = [...sectionMatches, ...finalResults];
         const sortedResults = sortSearchResults(combinedResults);
@@ -2232,7 +2298,12 @@ async function loadFullDataForResults(docEntries) {
 /**
  * Обрабатывает результаты поиска
  */
-async function processSearchResults(candidateDocs, normalizedQuery, originalQuery) {
+async function processSearchResults(
+    candidateDocs,
+    normalizedQuery,
+    originalQuery,
+    parsedQuery = null,
+) {
     const startTime = performance.now();
     console.log(
         `[processSearchResults V4] Начало обработки ${candidateDocs.size} кандидатов для запроса "${originalQuery}"`,
@@ -2245,9 +2316,28 @@ async function processSearchResults(candidateDocs, normalizedQuery, originalQuer
     const filteredEntries = applyFieldFilters(finalDocEntries);
 
     const fullResults = await loadFullDataForResults(filteredEntries);
+    const queryMeta =
+        parsedQuery ||
+        parseSearchQuery(originalQuery || normalizedQuery || '');
+
+    const phraseTerms = queryMeta.phrases || [];
+    const excludeTerms = queryMeta.excludeTokens || [];
+
+    const prunedResults = fullResults.filter((entry) => {
+        if (!entry || !entry.ref || !entry.itemData) return false;
+        const text = buildSearchableText(entry.ref.store, entry.itemData);
+        if (!text) return false;
+        if (phraseTerms.length && !phraseTerms.every((term) => text.includes(term))) {
+            return false;
+        }
+        if (excludeTerms.length && excludeTerms.some((term) => text.includes(term))) {
+            return false;
+        }
+        return true;
+    });
 
     const groupedByActualItem = new Map();
-    fullResults.forEach((entry) => {
+    prunedResults.forEach((entry) => {
         if (!entry || !entry.ref || !entry.itemData || entry.ref.id === undefined) {
             return;
         }

@@ -11,6 +11,7 @@ export const tabsConfig = [
     { id: 'links', name: 'Ссылки 1С', icon: 'fa-link' },
     { id: 'extLinks', name: 'Внешние ресурсы', icon: 'fa-globe' },
     { id: 'skzi', name: 'СКЗИ', icon: 'fa-key' },
+    { id: 'fnsCert', name: 'Проверка сертификата ФНС', icon: 'fa-certificate' },
     { id: 'lk1c', name: '1СО ЛК', icon: 'fa-user-circle' },
     { id: 'webReg', name: 'Веб-Регистратор', icon: 'fa-plug' },
     { id: 'reglaments', name: 'Регламенты', icon: 'fa-clipboard-list' },
