@@ -18,13 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Configure git for reliability
-        run: |
-          git config --global http.version HTTP/1.1
+        run: git config --global http.version HTTP/1.1
       - uses: actions/checkout@v4
       - name: Remove old previews
         run: rm -rf pr-preview
       - uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: ./
-          preview-branch: main
+          preview-branch: gh-pages
           wait-for-pages-deployment: true
