@@ -12,10 +12,13 @@ export const loadingOverlayManager = {
     spawnProgress: 0,
     spawnDuration: 1500,
     spawnStartTime: 0,
-    fadeOutDuration: 500,
+    fadeOutDuration: 900,
     currentProgressValue: 0,
+    minDisplayDuration: 1200,
+    shownAt: 0,
 
     createAndShow() {
+        this.shownAt = performance.now();
         // Пытаемся использовать существующий оверлей из HTML
         const existingOverlay = document.getElementById('custom-loading-overlay');
         const existingStyles = document.getElementById('custom-loading-overlay-styles');
@@ -133,6 +136,8 @@ export const loadingOverlayManager = {
             height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             position: relative;
+            background: radial-gradient(120% 120% at 50% 40%, rgba(40, 32, 80, 0.6) 0%, rgba(10, 10, 26, 0.9) 55%, rgba(5, 5, 16, 1) 100%);
+            transition: opacity 800ms ease-in-out;
         }
 
         #loadingCanvas {
@@ -165,6 +170,7 @@ export const loadingOverlayManager = {
             text-fill-color: transparent;
             animation: gradient-text-flow-smooth 4s linear infinite;
             text-align: center;
+            text-shadow: 0 0 12px rgba(147, 51, 234, 0.35), 0 0 24px rgba(124, 58, 237, 0.25);
         }
 
         #animated-dots {
@@ -197,7 +203,17 @@ export const loadingOverlayManager = {
             border-radius: 3px;
             margin-bottom: 8px;
             overflow: hidden;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2), 0 0 18px rgba(124, 58, 237, 0.25);
+            position: relative;
+        }
+
+        .progress-bar-line-track::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255,255,255,0.25), rgba(255,255,255,0) 55%);
+            opacity: 0.45;
+            pointer-events: none;
         }
 
         .progress-bar-line {
@@ -208,6 +224,7 @@ export const loadingOverlayManager = {
             border-radius: 3px;
             transition: width 0.15s linear;
             animation: progress-gradient-flow 2s linear infinite;
+            box-shadow: 0 0 12px rgba(167, 139, 250, 0.55), 0 0 24px rgba(124, 58, 237, 0.35);
         }
 
         @keyframes progress-gradient-flow {
@@ -226,6 +243,7 @@ export const loadingOverlayManager = {
             -webkit-text-fill-color: transparent;
             text-fill-color: transparent;
             animation: gradient-text-flow-smooth 3s linear infinite;
+            text-shadow: 0 0 10px rgba(192, 132, 252, 0.4);
         }
 
         @keyframes gradient-text-flow-smooth {
@@ -255,6 +273,7 @@ export const loadingOverlayManager = {
             this.overlayElement.style.display = 'flex';
             this.overlayElement.style.justifyContent = 'center';
             this.overlayElement.style.alignItems = 'center';
+            this.overlayElement.style.opacity = '0';
 
             this.styleElement = document.createElement('style');
             this.styleElement.id = 'custom-loading-overlay-styles';
@@ -263,6 +282,7 @@ export const loadingOverlayManager = {
             document.body.appendChild(this.overlayElement);
         }
 
+        this.shownAt = performance.now();
         // Сфера должна быть видна сразу, без spawn анимации
         this.isSpawning = false;
         this.spawnStartTime = performance.now();
@@ -285,6 +305,10 @@ export const loadingOverlayManager = {
             console.error('Canvas элемент #loadingCanvas не найден в созданном оверлее!');
         }
 
+        requestAnimationFrame(() => {
+            if (this.overlayElement) this.overlayElement.style.opacity = '1';
+        });
+
         // Устанавливаем небольшой начальный прогресс, чтобы показать, что процесс начался
         this.updateProgress(1, 'Загрузка');
         console.log(
@@ -296,6 +320,12 @@ export const loadingOverlayManager = {
         console.log(
             '[loadingOverlayManager.hideAndDestroy ASYNC V4] Начало плавного скрытия и уничтожения.',
         );
+
+        const elapsed = performance.now() - (this.shownAt || 0);
+        const remaining = this.minDisplayDuration - elapsed;
+        if (remaining > 0) {
+            await new Promise((resolve) => setTimeout(resolve, remaining));
+        }
         
         // Останавливаем анимацию СРАЗУ, чтобы избежать предупреждений о производительности
         if (this.animationRunner) {
@@ -444,32 +474,32 @@ export const loadingOverlayManager = {
         const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
         const config_anim = {
-            // Уменьшено количество частиц для лучшей производительности
-            particleCount: 1200,
+            particleCount: 1700,
             sphereBaseRadius: 4,
-            focalLength: 250,
-            rotationSpeedX: 0.0003,
-            rotationSpeedY: 0.002,
-            breathAmplitude: 0.09,
-            breathSpeed: 0.01,
+            focalLength: 280,
+            rotationSpeedX: 0.00025,
+            rotationSpeedY: 0.0016,
+            breathAmplitude: 0.12,
+            breathSpeed: 0.008,
             petalCount: 15,
-            petalStrength: 0.2,
-            baseParticleMinSize: 0.5,
-            baseParticleMaxSize: 1,
+            petalStrength: 0.28,
+            baseParticleMinSize: 0.7,
+            baseParticleMaxSize: 1.6,
             colorPalette: [
-                [140, 70, 200, 1],
-                [170, 90, 220, 0.9],
-                [110, 50, 180, 0.9],
-                [190, 100, 230, 0.95],
-                [100, 100, 230, 1],
-                [70, 70, 190, 0.95],
-                [220, 150, 240, 0.85],
+                [164, 96, 255, 1],
+                [112, 72, 255, 0.95],
+                [89, 47, 230, 0.9],
+                [197, 126, 255, 0.9],
+                [120, 180, 255, 0.85],
+                [96, 124, 255, 0.9],
+                [232, 188, 255, 0.85],
+                [255, 255, 255, 0.4],
             ],
             backgroundColor: 'rgba(0, 0, 0, 0)',
             spawnIndigoColor: [75, 0, 130],
-            spawnGlowBaseIntensity: 0.8,
-            spawnGlowRadiusFactorBase: 2.0,
-            spawnGlowRadiusFactorExtra: 3.0,
+            spawnGlowBaseIntensity: 1.1,
+            spawnGlowRadiusFactorBase: 2.4,
+            spawnGlowRadiusFactorExtra: 3.6,
         };
 
         class Particle_anim {
@@ -561,8 +591,8 @@ export const loadingOverlayManager = {
                 const mainSize = this.currentDisplaySize;
 
                 const haloLayers = [
-                    { sizeFactor: 3.5, alphaFactor: 0.15, innerStop: 0.1, outerStop: 0.75 },
-                    { sizeFactor: 2.2, alphaFactor: 0.25, innerStop: 0.15, outerStop: 0.85 },
+                    { sizeFactor: 4.2, alphaFactor: 0.18, innerStop: 0.08, outerStop: 0.7 },
+                    { sizeFactor: 2.8, alphaFactor: 0.28, innerStop: 0.12, outerStop: 0.84 },
                 ];
                 for (const layer of haloLayers) {
                     const haloSize = mainSize * layer.sizeFactor;
@@ -617,6 +647,15 @@ export const loadingOverlayManager = {
                 ctx.beginPath();
                 ctx.arc(this.screenX, this.screenY, mainSize, 0, Math.PI * 2);
                 ctx.fill();
+
+                if (this.depth > 0.35) {
+                    const sparkleAlpha = Math.min(0.9, (this.depth - 0.35) * 1.8) * mainAlpha;
+                    const sparkleSize = Math.max(0.6, mainSize * 0.35);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${sparkleAlpha})`;
+                    ctx.beginPath();
+                    ctx.arc(this.screenX, this.screenY, sparkleSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
         }
 
@@ -643,8 +682,8 @@ export const loadingOverlayManager = {
 
         function animate_anim(timestamp) {
             globalTime_anim++;
-            rotationX_anim += 0.0003;
-            rotationY_anim += 0.002;
+            rotationX_anim += config_anim.rotationSpeedX;
+            rotationY_anim += config_anim.rotationSpeedY;
 
             ctx.fillStyle = config_anim.backgroundColor;
             ctx.clearRect(0, 0, width_anim, height_anim);
@@ -658,6 +697,24 @@ export const loadingOverlayManager = {
             const currentEffectiveSpawnProgress = manager.isSpawning ? manager.spawnProgress : 1.0;
 
             const breathPulse = Math.sin(globalTime_anim * config_anim.breathSpeed);
+
+            ctx.globalCompositeOperation = 'lighter';
+            const glowRadius = config_anim.sphereBaseRadius * 1.6;
+            const glowGradient = ctx.createRadialGradient(
+                centerX_anim,
+                centerY_anim,
+                0,
+                centerX_anim,
+                centerY_anim,
+                glowRadius,
+            );
+            glowGradient.addColorStop(0, 'rgba(140, 92, 255, 0.25)');
+            glowGradient.addColorStop(0.5, 'rgba(96, 64, 220, 0.18)');
+            glowGradient.addColorStop(1, 'rgba(20, 10, 40, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(centerX_anim, centerY_anim, glowRadius, 0, Math.PI * 2);
+            ctx.fill();
             particles_anim.forEach((particle) => {
                 particle.projectAndTransform(
                     config_anim.sphereBaseRadius,
@@ -669,6 +726,7 @@ export const loadingOverlayManager = {
             particles_anim.forEach((particle) => {
                 particle.draw(currentEffectiveSpawnProgress);
             });
+            ctx.globalCompositeOperation = 'source-over';
             localAnimationFrameId = requestAnimationFrame(animate_anim);
         }
 

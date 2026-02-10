@@ -535,16 +535,95 @@ export async function exportBlacklistToExcel() {
             'Примечание',
         ];
         const wb = XLSX.utils.book_new();
+
+        const levelStyles = {
+            'Низкий (1)': { fgColor: { rgb: 'DCFCE7' }, fontColor: '166534' },
+            'Средний (2)': { fgColor: { rgb: 'FEF3C7' }, fontColor: '92400E' },
+            'Высокий (3)': { fgColor: { rgb: 'FEE2E2' }, fontColor: '991B1B' },
+        };
+
+        const getColLetter = (idx) => {
+            let col = '';
+            let n = idx + 1;
+            while (n > 0) {
+                const rem = (n - 1) % 26;
+                col = String.fromCharCode(65 + rem) + col;
+                n = Math.floor((n - 1) / 26);
+            }
+            return col;
+        };
+
         const addSheet = (rows, name) => {
-            const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
-            const colWidths = headers.map((h) => {
+            const now = new Date();
+            const displayDate = now.toLocaleString('ru-RU');
+            const sheetRows = [
+                [`Черный список жаб — ${name}`],
+                [`Сформировано: ${displayDate}`],
+                [''],
+                headers,
+                ...rows.map((row) => headers.map((h) => row[h] || '')),
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+
+            const headerRowIndex = 3;
+            const dataStartRow = headerRowIndex + 1;
+            const lastCol = getColLetter(headers.length - 1);
+
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+            ];
+            ws['!autofilter'] = {
+                ref: `A${headerRowIndex + 1}:${lastCol}${headerRowIndex + 1}`,
+            };
+
+            ws['A1'].s = {
+                font: { sz: 16, bold: true, color: { rgb: '111827' } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+            };
+            ws['A2'].s = {
+                font: { sz: 11, color: { rgb: '6B7280' } },
+                alignment: { horizontal: 'left' },
+            };
+
+            headers.forEach((header, colIndex) => {
+                const cellAddress = `${getColLetter(colIndex)}${headerRowIndex + 1}`;
+                if (!ws[cellAddress]) return;
+                ws[cellAddress].s = {
+                    font: { bold: true, color: { rgb: '111827' } },
+                    fill: { fgColor: { rgb: 'E5E7EB' } },
+                    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+                    border: {
+                        top: { style: 'thin', color: { rgb: 'D1D5DB' } },
+                        bottom: { style: 'thin', color: { rgb: 'D1D5DB' } },
+                        left: { style: 'thin', color: { rgb: 'D1D5DB' } },
+                        right: { style: 'thin', color: { rgb: 'D1D5DB' } },
+                    },
+                };
+            });
+
+            rows.forEach((row, rowIndex) => {
+                const levelText = row['Уровень'];
+                const styleInfo = levelStyles[levelText];
+                if (!styleInfo) return;
+                const levelCell = `${getColLetter(3)}${dataStartRow + rowIndex}`;
+                if (!ws[levelCell]) return;
+                ws[levelCell].s = {
+                    font: { bold: true, color: { rgb: styleInfo.fontColor } },
+                    fill: { fgColor: styleInfo.fgColor },
+                    alignment: { horizontal: 'center', vertical: 'center' },
+                };
+            });
+
+            const colWidths = headers.map((h, idx) => {
                 const maxLen = Math.max(
                     h.length,
-                    ...rows.map((r) => (r[h] ? String(r[h]).length : 0))
+                    ...rows.map((r) => (r[h] ? String(r[h]).length : 0)),
                 );
-                return { wch: Math.min(Math.max(maxLen + 2, 10), 60) };
+                const base = idx === 0 ? 24 : idx === 5 ? 40 : 18;
+                return { wch: Math.min(Math.max(maxLen + 4, base), 60) };
             });
             ws['!cols'] = colWidths;
+
             XLSX.utils.book_append_sheet(wb, ws, name);
         };
 

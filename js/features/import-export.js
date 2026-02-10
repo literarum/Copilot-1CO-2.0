@@ -2039,3 +2039,37 @@ export async function exportAllData(options = {}) {
 
     return functionResult;
 }
+
+// ============================================================================
+// ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ КНОПОК ИМПОРТА/ЭКСПОРТА
+// ============================================================================
+
+export function initImportExportControls() {
+    const importDataBtn = document.getElementById('importDataBtn');
+    const importFileInput = deps.importFileInput || document.getElementById('importFileInput');
+    const exportDataBtn = document.getElementById('exportDataBtn');
+
+    if (importDataBtn && importFileInput) {
+        if (importDataBtn._clickHandlerInstance) {
+            importDataBtn.removeEventListener('click', importDataBtn._clickHandlerInstance);
+            console.log('[Import Init] Предыдущий обработчик click для importDataBtn удален.');
+        }
+        importDataBtn.addEventListener('click', handleImportButtonClick);
+        importDataBtn._clickHandlerInstance = handleImportButtonClick;
+        console.log('[Import Init] Обработчик click для importDataBtn установлен.');
+
+        if (importFileInput._changeHandlerInstance) {
+            importFileInput.removeEventListener('change', importFileInput._changeHandlerInstance);
+            console.log('[Import Init] Предыдущий обработчик change для importFileInput удален.');
+        }
+        importFileInput.addEventListener('change', handleImportFileChange);
+        importFileInput._changeHandlerInstance = handleImportFileChange;
+        console.log('[Import Init] Обработчик change для importFileInput установлен.');
+    } else {
+        console.error(
+            '[Import Init] Не найдены элементы importDataBtn или importFileInput. Флоу импорта не будет работать.',
+        );
+    }
+
+    exportDataBtn?.addEventListener('click', exportAllData);
+}

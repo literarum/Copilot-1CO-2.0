@@ -306,14 +306,20 @@ export function mountPdfSection(hostEl, parentType, parentId) {
       <summary class="cursor-pointer select-none font-semibold text-sm text-gray-600 dark:text-gray-300 mb-2">
         <i class="far fa-file-pdf mr-1"></i>PDF-файлы
       </summary>
-      <div class="pdf-row flex items-start justify-between gap-3">
-        <ul class="pdf-list flex-1 space-y-1 text-sm"></ul>
-        <div class="shrink-0">
-          <input type="file" accept="application/pdf" multiple class="hidden pdf-input">
-          <button type="button" class="px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-secondary add-pdf-btn">
-            <i class="far fa-file-pdf mr-1"></i>Загрузить PDF
-          </button>
+      <div class="pdf-row space-y-3">
+        <div class="pdf-dropzone rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+          <div class="text-gray-600 dark:text-gray-300">
+            <div class="font-medium">Перетащите PDF сюда</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">или выберите файлы вручную</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="file" accept="application/pdf" multiple class="hidden pdf-input">
+            <button type="button" class="px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-secondary add-pdf-btn">
+              <i class="far fa-file-pdf mr-1"></i>Выбрать PDF
+            </button>
+          </div>
         </div>
+        <ul class="pdf-list space-y-1 text-sm"></ul>
       </div>
     </details>`;
 
@@ -356,7 +362,10 @@ async function refreshPdfList(section, parentType, parentId) {
     const pdfs = await getPdfsForParent(parentType, parentId);
 
     if (!pdfs.length) {
-        list.innerHTML = '<li class="text-gray-500">Нет PDF-файлов</li>';
+        list.innerHTML = `
+          <li class="pdf-empty text-gray-500 text-sm">
+            Пока нет PDF. Используйте кнопку «Выбрать PDF» или перетащите файлы в область выше.
+          </li>`;
         return;
     }
 
@@ -520,14 +529,20 @@ export function attachBookmarkPdfHandlers(form) {
         <summary class="cursor-pointer select-none font-semibold text-sm text-gray-600 dark:text-gray-300 mb-2">
           <i class="far fa-file-pdf mr-1"></i>PDF-файлы
         </summary>
-        <div class="pdf-row flex items-start justify-between gap-3">
-          <ul class="pdf-draft-list flex-1 space-y-1 text-sm"></ul>
-          <div class="shrink-0">
-            <input type="file" accept="application/pdf" multiple class="hidden pdf-draft-input">
-            <button type="button" class="px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-secondary add-pdf-draft-btn">
-              <i class="far fa-file-pdf mr-1"></i>Загрузить PDF
-            </button>
+        <div class="pdf-row space-y-3">
+          <div class="pdf-dropzone rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+            <div class="text-gray-600 dark:text-gray-300">
+              <div class="font-medium">Перетащите PDF сюда</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">или выберите файлы вручную</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="file" accept="application/pdf" multiple class="hidden pdf-draft-input">
+              <button type="button" class="px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-secondary add-pdf-draft-btn">
+                <i class="far fa-file-pdf mr-1"></i>Выбрать PDF
+              </button>
+            </div>
           </div>
+          <ul class="pdf-draft-list space-y-1 text-sm"></ul>
         </div>
       </details>`;
 
@@ -571,7 +586,8 @@ export function attachBookmarkPdfHandlers(form) {
         form._tempPdfFiles = files;
 
         if (!files.length) {
-            list.innerHTML = '<li class="text-gray-500">Нет файлов</li>';
+            list.innerHTML =
+                '<li class="pdf-empty text-gray-500 text-sm">Пока нет PDF. Перетащите файлы или нажмите «Выбрать PDF».</li>';
             if (!block.dataset.userToggled) detailsEl.open = true;
             return;
         }
