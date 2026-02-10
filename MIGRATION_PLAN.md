@@ -201,6 +201,20 @@
 
 ---
 
+## ✅ Дополнительно завершено (перенос в site/)
+
+- **Миграция логики `window.onload`** в модуль `site/js/app/onload-handler.js`. В `site/script.js` вызываются `setOnloadHandlerDependencies()` и `registerOnloadHandler()`; инициализация PDF-экспорта и ФНС вынесена в `afterInitCallbacks`.
+- Обработчики модального окна настроек UI — в `site/js/ui/ui-settings-modal-init.js`.
+- Глобальный обработчик клика по оверлею модалок — в `site/js/ui/modal-overlay-handler.js`.
+- Управление модальным окном алгоритмов — в `site/js/ui/algorithm-modal-controls.js`.
+- Переключение темы и кнопка «Избранное» — в `site/js/ui/theme-toggle.js` и `site/js/ui/header-buttons.js`.
+- Инициализация импорта/экспорта — в `site/js/features/import-export.js`.
+- Делегированный обработчик кликов по вкладкам — в `site/js/components/tabs.js`.
+- HUD фоновой инициализации — в `site/js/ui/background-status-hud.js`.
+- Стили `.pdf-dropzone` и `.pdf-empty` из PR11 добавлены в `site/css/styles.css`.
+
+---
+
 ### Этап 4: Миграция функций категорий (Приоритет: Средний)
 **Цель:** Мигрировать `loadCategoryInfo` и `saveCategoryInfo` в `js/components/reglaments.js`
 

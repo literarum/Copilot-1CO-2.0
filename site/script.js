@@ -113,6 +113,11 @@ import {
 } from './js/app/app-init.js';
 
 import {
+    setOnloadHandlerDependencies,
+    registerOnloadHandler,
+} from './js/app/onload-handler.js';
+
+import {
     setDataLoaderDependencies,
     loadFromIndexedDB as loadFromIndexedDBModule,
     saveDataToIndexedDB as saveDataToIndexedDBModule,
@@ -1198,161 +1203,27 @@ if (typeof initBackgroundStatusHUD === 'function' && !window.BackgroundStatusHUD
     }
 }
 
-window.onload = async () => {
-    console.log('window.onload: Страница полностью загружена.');
-    const appContent = document.getElementById('appContent');
-
-    const tempHideStyle = document.getElementById('temp-hide-appcontent-style');
-    if (tempHideStyle) {
-        tempHideStyle.remove();
-        console.log('[window.onload] Removed temporary appContent hiding style.');
-    }
-
-    if (typeof NotificationService !== 'undefined' && NotificationService.init) {
-        NotificationService.init();
-    } else {
-        console.error('NotificationService не определен в window.onload!');
-    }
-
-    if (typeof loadingOverlayManager !== 'undefined' && loadingOverlayManager.createAndShow) {
-        if (!loadingOverlayManager.overlayElement) {
-            console.log('[window.onload] Overlay not shown by earlyAppSetup, creating it now.');
-            loadingOverlayManager.createAndShow();
-        } else {
-            console.log('[window.onload] Overlay already exists (presumably shown by earlyAppSetup).');
-        }
-    }
-
-    const minDisplayTime = 3000;
-    const minDisplayTimePromise = new Promise((resolve) => setTimeout(resolve, minDisplayTime));
-    let appInitSuccessfully = false;
-
-    const appLoadPromise = appInit()
-        .then((dbReady) => {
-            appInitSuccessfully = dbReady;
-            console.log(`[window.onload] appInit завершен. Статус готовности БД: ${dbReady}`);
-        })
-        .catch((err) => {
-            console.error('appInit rejected in window.onload wrapper:', err);
-            appInitSuccessfully = false;
-        });
-
-    Promise.all([minDisplayTimePromise, appLoadPromise])
-        .then(async () => {
-            console.log('[window.onload Promise.all.then] appInit и минимальное время отображения оверлея завершены.');
-
-            if (
-                loadingOverlayManager &&
-                typeof loadingOverlayManager.updateProgress === 'function' &&
-                loadingOverlayManager.overlayElement
-            ) {
-                if (loadingOverlayManager.currentProgressValue < 100) {
-                    loadingOverlayManager.updateProgress(100);
-                }
-            }
-            // Небольшая задержка перед началом затемнения
-            await new Promise((r) => setTimeout(r, 100));
-
-            if (
-                loadingOverlayManager &&
-                typeof loadingOverlayManager.hideAndDestroy === 'function'
-            ) {
-                await loadingOverlayManager.hideAndDestroy();
-                console.log('[window.onload Promise.all.then] Оверлей плавно скрыт.');
-            }
-
-            // Убираем inline background style с body
-            document.body.style.backgroundColor = '';
-
-            if (appContent) {
-                appContent.classList.remove('hidden');
-                appContent.classList.add('content-fading-in');
-                console.log(
-                    '[window.onload Promise.all.then] appContent показан с fade-in эффектом.',
-                );
-
-                await new Promise((resolve) => requestAnimationFrame(resolve));
-
-                if (appInitSuccessfully) {
-                    if (typeof initGoogleDocSections === 'function') {
-                        initGoogleDocSections();
-                    } else {
-                        console.error('Функция initGoogleDocSections не найдена в window.onload!');
-                    }
-                    // PR11: инициализация экспорта алгоритмов в PDF
-                    setAlgorithmsPdfExportDependencies({ algorithms, ExportService, showNotification });
-                    if (typeof initAlgorithmsPdfExportSystem === 'function') {
-                        initAlgorithmsPdfExportSystem();
-                    }
-                    // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
-                    // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
-                    if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.finishTask === 'function') {
-                        window.BackgroundStatusHUD.finishTask('app-init', true);
-                    }
-                }
-
-                requestAnimationFrame(() => {
-                    if (typeof setupTabsOverflow === 'function') {
-                        console.log(
-                            'window.onload (FIXED): Вызов setupTabsOverflow для инициализации обработчиков.',
-                        );
-                        setupTabsOverflow();
-                    } else {
-                        console.warn(
-                            'window.onload (FIXED): Функция setupTabsOverflow не найдена.',
-                        );
-                    }
-
-                    if (typeof updateVisibleTabs === 'function') {
-                        console.log(
-                            'window.onload (FIXED): Вызов updateVisibleTabs для первоначального расчета.',
-                        );
-                        updateVisibleTabs();
-                    } else {
-                        console.warn(
-                            'window.onload (FIXED): Функция updateVisibleTabs не найдена.',
-                        );
-                    }
-
-                    // Модальное окно настроек UI (PR11 — модуль ui-settings-modal-init.js)
-                    if (typeof initUISettingsModalHandlersModule === 'function') {
-                        initUISettingsModalHandlersModule();
-                    }
-
-                    // FNS Certificate Revocation (PR11) — при наличии DOM-элементов формы
-                    if (typeof initFNSCertificateRevocationSystem === 'function') {
-                        initFNSCertificateRevocationSystem();
-                    }
-                });
-            } else {
-                console.warn(
-                    '[window.onload Promise.all.then] appContent не найден после appInit. UI может быть сломан.',
-                );
-            }
-        })
-        .catch(async (error) => {
-            console.error('Критическая ошибка в Promise.all (window.onload):', error);
-            if (
-                loadingOverlayManager &&
-                typeof loadingOverlayManager.hideAndDestroy === 'function'
-            ) {
-                await loadingOverlayManager.hideAndDestroy();
-            }
-            // Убираем inline background style с body
-            document.body.style.backgroundColor = '';
-            if (appContent) {
-                appContent.classList.remove('hidden');
-            }
-            const errorMessageText = error instanceof Error ? error.message : String(error);
-            if (typeof NotificationService !== 'undefined' && NotificationService.add) {
-                NotificationService.add(
-                    `Произошла ошибка при загрузке приложения: ${errorMessageText}.`,
-                    'error',
-                    { important: true, duration: 10000 },
-                );
-            }
-        });
-};
+// PR11: window.onload вынесен в js/app/onload-handler.js
+setOnloadHandlerDependencies({
+    NotificationService,
+    loadingOverlayManager,
+    appInit,
+    initGoogleDocSections,
+    setupTabsOverflow,
+    updateVisibleTabs,
+    initUISettingsModalHandlers: typeof initUISettingsModalHandlersModule === 'function' ? initUISettingsModalHandlersModule : null,
+    backgroundStatusHUD: window.BackgroundStatusHUD || null,
+    afterInitCallbacks: [
+        () => {
+            setAlgorithmsPdfExportDependencies({ algorithms, ExportService, showNotification });
+            if (typeof initAlgorithmsPdfExportSystem === 'function') initAlgorithmsPdfExportSystem();
+        },
+        () => {
+            if (typeof initFNSCertificateRevocationSystem === 'function') initFNSCertificateRevocationSystem();
+        },
+    ],
+});
+registerOnloadHandler();
 
 // loadUserPreferences и saveUserPreferences теперь импортируются из js/app/user-preferences.js
 async function loadUserPreferences() {
@@ -4645,7 +4516,7 @@ setAlgorithmModalControlDependencies({
 });
 
 // Algorithms PDF Export Dependencies (PR11) — algorithms, ExportService, showNotification задаются после загрузки данных
-// setAlgorithmsPdfExportDependencies вызывается в window.onload после appInit
+// setAlgorithmsPdfExportDependencies вызывается в onload-handler (afterInitCallbacks) после appInit
 
 // UI Customization Dependencies (PR11)
 setUICustomizationDependencies({
