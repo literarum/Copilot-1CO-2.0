@@ -2,28 +2,31 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
-    paths-ignore:
-      - 'pr-preview/**'
+    types: [opened, reopened, synchronize, closed]
 
 permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   preview:
-    concurrency:
-      group: preview-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
-      - name: Configure git for reliability
-        run: git config --global http.version HTTP/1.1
-      - uses: actions/checkout@v4
-      - name: Remove old previews
-        run: rm -rf pr-preview
-      - uses: rossjrw/pr-preview-action@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Safety: do not let any pr-preview content from PR
+      # leak into source-dir and create recursion
+      - name: Safety cleanup
+        run: rm -rf pr-preview || true
+
+      - name: Deploy PR preview
+        uses: rossjrw/pr-preview-action@v1
         with:
-          source-dir: ./
+          source-dir: site
           preview-branch: gh-pages
           wait-for-pages-deployment: true

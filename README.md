@@ -1,4 +1,5 @@
 # Copilot 1CO - Система поддержки 1С
+<!-- trigger deploy -->
 
 ## 🚀 Быстрый старт
 
@@ -135,3 +136,4 @@ http://localhost:8000/test-modules.html
 ---
 
 **Copilot 1CO** by @guthleifur
+
