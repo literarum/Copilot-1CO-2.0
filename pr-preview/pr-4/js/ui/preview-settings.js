@@ -43,7 +43,7 @@ export async function applyPreviewSettings(settings) {
 
     let primary = settings?.primaryColor || (DEFAULT_UI_SETTINGS && DEFAULT_UI_SETTINGS.primaryColor);
     if (typeof primary !== 'string' || !/^#[a-fA-F0-9]{3}([a-fA-F0-9]{3})?$/.test(primary.trim())) {
-        primary = (DEFAULT_UI_SETTINGS && DEFAULT_UI_SETTINGS.primaryColor) || '#9933FF';
+        primary = (DEFAULT_UI_SETTINGS && DEFAULT_UI_SETTINGS.primaryColor) || '#7E22CE';
     }
     primary = primary.trim();
     style.setProperty('--color-primary', primary);

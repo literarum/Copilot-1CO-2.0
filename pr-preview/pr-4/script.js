@@ -1147,8 +1147,6 @@ const initReglamentsSystem = initReglamentsSystemModule;
 const initBookmarkSystem = initBookmarkSystemModule;
 const initExternalLinksSystem = initExternalLinksSystemModule;
 const initBlacklistSystem = initBlacklistSystemModule;
-const initReloadButton = initReloadButtonModule;
-
 // setActiveTab уже определена выше (после импорта tabs.js)
 const initFullscreenToggles = initFullscreenTogglesModule;
 const setupHotkeys = setupHotkeysModule;

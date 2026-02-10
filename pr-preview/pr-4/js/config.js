@@ -263,7 +263,7 @@ export const SECTION_GRID_COLS = {
 // ============================================================================
 export function getDefaultUISettings(allPanelIdsForDefault) {
     return {
-        primaryColor: '#9933FF',
+        primaryColor: '#7E22CE',
         fontSize: 80,
         borderRadius: 2,
         contentDensity: 3,
