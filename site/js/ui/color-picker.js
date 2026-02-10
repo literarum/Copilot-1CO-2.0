@@ -12,7 +12,7 @@ let hexToHsl = null;
 let hslToHex = null;
 let DEFAULT_UI_SETTINGS = null;
 
-const DEFAULT_HEX = '#9933FF';
+const DEFAULT_HEX = '#7E22CE';
 
 export function setColorPickerDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
