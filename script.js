@@ -494,6 +494,7 @@ import {
     clearClientData as clearClientDataModule,
     applyClientNotesFontSize as applyClientNotesFontSizeModule,
     createClientNotesInnPreview as createClientNotesInnPreviewModule,
+    initClientDataSystem as initClientDataSystemModule,
 } from './js/features/client-data.js';
 
 // Step Management System
@@ -610,6 +611,141 @@ import {
     setAlgorithmsRendererDependencies,
     showAlgorithmDetail as showAlgorithmDetailModule,
 } from './js/components/algorithms-renderer.js';
+
+// ============================================================================
+// АЛИАСЫ МОДУЛЕЙ (миграция подсистем)
+// ============================================================================
+const handleImportButtonClick = handleImportButtonClickModule;
+const handleImportFileChange = handleImportFileChangeModule;
+const exportAllData = exportAllDataModule;
+const clearTemporaryThumbnailsFromContainer = clearTemporaryThumbnailsFromContainerModule;
+const _processActualImport = _processActualImportModule;
+const performForcedBackup = performForcedBackupModule;
+
+const setTheme = setThemeModule;
+const migrateLegacyThemeVars = migrateLegacyThemeVarsModule;
+const applyThemeOverrides = applyThemeOverridesModule;
+
+const loadFromIndexedDB = loadFromIndexedDBModule;
+const saveDataToIndexedDB = saveDataToIndexedDBModule;
+
+const updateVisibleTabs = updateVisibleTabsModule;
+const setupTabsOverflow = setupTabsOverflowModule;
+const handleMoreTabsBtnClick = handleMoreTabsBtnClickModule;
+const clickOutsideTabsHandler = clickOutsideTabsHandlerModule;
+const handleTabsResize = handleTabsResizeModule;
+
+const showScreenshotViewerModal = showScreenshotViewerModalModule;
+const renderScreenshotThumbnails = renderScreenshotThumbnailsModule;
+const renderScreenshotList = renderScreenshotListModule;
+const attachScreenshotHandlers = attachScreenshotHandlersModule;
+const renderTemporaryThumbnail = renderTemporaryThumbnailModule;
+const handleImageFileForStepProcessing = handleImageFileForStepProcessingModule;
+const renderScreenshotIcon = renderScreenshotIconModule;
+const handleViewScreenshotClick = handleViewScreenshotClickModule;
+
+const showImageAtIndex = showImageAtIndexModule;
+const openLightbox = openLightboxModule;
+
+const saveClientData = saveClientDataModule;
+const getClientData = getClientDataModule;
+const exportClientDataToTxt = exportClientDataToTxtModule;
+const loadClientData = loadClientDataModule;
+const clearClientData = clearClientDataModule;
+const applyClientNotesFontSize = applyClientNotesFontSizeModule;
+const createClientNotesInnPreview = createClientNotesInnPreviewModule;
+const initClientDataSystem = initClientDataSystemModule;
+
+const toggleStepCollapse = toggleStepCollapseModule;
+const updateStepNumbers = updateStepNumbersModule;
+const attachStepDeleteHandler = attachStepDeleteHandlerModule;
+
+const initStepSorting = initStepSortingModule;
+const addEditStep = addEditStepModule;
+const extractStepsDataFromEditForm = extractStepsDataFromEditFormModule;
+const addNewStep = addNewStepModule;
+const saveAlgorithm = saveAlgorithmModule;
+
+const forceReloadApp = forceReloadAppModule;
+const initReloadButton = initReloadButtonModule;
+
+const loadEmployeeExtension = loadEmployeeExtensionModule;
+const saveEmployeeExtension = saveEmployeeExtensionModule;
+const updateExtensionDisplay = updateExtensionDisplayModule;
+const setupExtensionFieldListeners = setupExtensionFieldListenersModule;
+
+const createTabButtonElement = createTabButtonElementModule;
+const ensureTabPresent = ensureTabPresentModule;
+const applyPanelOrderAndVisibility = applyPanelOrderAndVisibilityModule;
+
+const toggleFavorite = toggleFavoriteModule;
+const updateFavoriteStatusUI = updateFavoriteStatusUIModule;
+const renderFavoritesPage = renderFavoritesPageModule;
+const getFavoriteButtonHTML = getFavoriteButtonHTMLModule;
+const isFavorite = isFavoriteModule;
+const refreshAllFavoritableSectionsUI = refreshAllFavoritableSectionsUIModule;
+
+const exportBlacklistToExcel = exportBlacklistToExcelModule;
+const loadBlacklistedClients = loadBlacklistedClientsModule;
+const handleBlacklistSearchInput = handleBlacklistSearchInputModule;
+const renderBlacklistTable = renderBlacklistTableModule;
+const getBlacklistEntriesByInn = getBlacklistEntriesByInnModule;
+const handleBlacklistActionClick = handleBlacklistActionClickModule;
+const showBlacklistDetailModal = showBlacklistDetailModalModule;
+const showBlacklistEntryModal = showBlacklistEntryModalModule;
+const handleSaveBlacklistEntry = handleSaveBlacklistEntryModule;
+const deleteBlacklistEntry = deleteBlacklistEntryModule;
+const addBlacklistEntryDB = addBlacklistEntryDBModule;
+const getBlacklistEntryDB = getBlacklistEntryDBModule;
+const updateBlacklistEntryDB = updateBlacklistEntryDBModule;
+const deleteBlacklistEntryDB = deleteBlacklistEntryDBModule;
+const getAllBlacklistEntriesDB = getAllBlacklistEntriesDBModule;
+const showBlacklistWarning = showBlacklistWarningModule;
+const isInnBlacklisted = isInnBlacklistedModule;
+const checkForBlacklistedInn = checkForBlacklistedInnModule;
+const sortAndRenderBlacklist = sortAndRenderBlacklistModule;
+
+const createBookmarkElement = createBookmarkElementModule;
+const attachBookmarkScreenshotHandlers = attachBookmarkScreenshotHandlersModule;
+const renderExistingThumbnail = renderExistingThumbnailModule;
+const processImageFile = processImageFileModule;
+const loadBookmarks = loadBookmarksModule;
+const getAllBookmarks = getAllBookmarksModule;
+
+const loadExtLinks = loadExtLinksModule;
+const createExtLinkElement = createExtLinkElementModule;
+const renderExtLinks = renderExtLinksModule;
+
+const populateModalControls = populateModalControlsModule;
+const applyUISettings = applyUISettingsModule;
+const calculateSecondaryColor = calculateSecondaryColorModule;
+const resetUISettingsInModal = resetUISettingsInModalModule;
+const clearAllApplicationData = clearAllApplicationDataModule;
+const createPanelItemElement = createPanelItemElementModule;
+const applyPreviewSettings = applyPreviewSettingsModule;
+const hexToHsl = hexToHslModule;
+const hslToHex = hslToHexModule;
+const getLuminance = getLuminanceModule;
+const adjustHsl = adjustHslModule;
+const handleModalVisibilityToggle = handleModalVisibilityToggleModule;
+const getSettingsFromModal = getSettingsFromModalModule;
+const updatePreviewSettingsFromModal = updatePreviewSettingsFromModalModule;
+
+const deleteAlgorithm = deleteAlgorithmModule;
+const linkify = linkifyModule;
+const deepEqual = deepEqualModule;
+const openAnimatedModal = openAnimatedModalModule;
+const closeAnimatedModal = closeAnimatedModalModule;
+
+const getCurrentEditState = getCurrentEditStateModule;
+const getCurrentAddState = getCurrentAddStateModule;
+const hasChanges = hasChangesModule;
+const captureInitialEditState = captureInitialEditStateModule;
+const captureInitialAddState = captureInitialAddStateModule;
+
+const applyCustomBackgroundImage = applyCustomBackgroundImageModule;
+const removeCustomBackgroundImage = removeCustomBackgroundImageModule;
+const setupBackgroundImageControls = setupBackgroundImageControlsModule;
 
 // ============================================================================
 // ЭКСПОРТ СЕРВИСОВ В WINDOW (для совместимости со старым кодом)
@@ -1024,7 +1160,7 @@ const applyInitialUISettings = applyInitialUISettingsModule;
 // initViewToggles теперь импортируется из js/ui/view-manager.js
 const initViewToggles = initViewTogglesModule;
 
-// initClientDataSystem определяется ниже на строке 3123 как function declaration (hoisting работает)
+// initClientDataSystem импортируется из js/features/client-data.js
 // initUICustomization не найдена - возможно, была удалена или переименована
 // Определяем как пустую функцию для совместимости
 function initUICustomization() {
@@ -1499,10 +1635,7 @@ const populateReglamentCategoryDropdowns = populateReglamentCategoryDropdownsMod
 // Все функции БД и favorites теперь импортируются из модулей db/
 // Обёртки удалены - используем импортированные функции напрямую
 
-// Wrapper для модуля theme.js
-function setTheme(mode) {
-    return setThemeModule(mode);
-}
+// Функции theme используются напрямую из модуля.
 
 // renderAllAlgorithms теперь импортируется из js/components/algorithms.js
 const renderAllAlgorithms = renderAllAlgorithmsModule;
@@ -1517,14 +1650,7 @@ const renderMainAlgorithm = renderMainAlgorithmModule;
 const loadMainAlgoCollapseState = loadMainAlgoCollapseStateModule;
 const saveMainAlgoCollapseState = saveMainAlgoCollapseStateModule;
 
-// loadFromIndexedDB и saveDataToIndexedDB теперь импортируются из js/app/data-loader.js
-async function loadFromIndexedDB() {
-    return loadFromIndexedDBModule();
-}
-
-async function saveDataToIndexedDB() {
-    return saveDataToIndexedDBModule();
-}
+// loadFromIndexedDB и saveDataToIndexedDB используются напрямую из модуля.
 
 // tabsConfig, allPanelIdsForDefault, defaultPanelOrder теперь импортируются из config.js
 
@@ -1629,25 +1755,7 @@ async function saveUISettings() {
 
 // DIALOG_WATCHDOG_TIMEOUT_NEW теперь импортируется из constants.js (строка 28)
 
-// Wrapper для модуля Import/Export
-async function handleImportButtonClick() {
-    return handleImportButtonClickModule();
-}
-
-// Wrapper для модуля Import/Export
-async function handleImportFileChange(e) {
-    return handleImportFileChangeModule(e);
-}
-
-// Wrapper для модуля Import/Export
-async function exportAllData(options = {}) {
-    return exportAllDataModule(options);
-}
-
-// Wrapper для модуля Import/Export
-function clearTemporaryThumbnailsFromContainer(container) {
-    return clearTemporaryThumbnailsFromContainerModule(container);
-}
+// Функции импорта/экспорта используются напрямую из модуля.
 
 // base64ToBlob теперь импортируется из utils/helpers.js
 
@@ -1676,15 +1784,7 @@ if (importDataBtn && importFileInput) {
     );
 }
 
-// Wrapper для модуля Import/Export
-async function _processActualImport(jsonString) {
-    return _processActualImportModule(jsonString);
-}
-
-// Wrapper для модуля Import/Export
-async function performForcedBackup() {
-    return performForcedBackupModule();
-}
+// Функции импорта/экспорта используются напрямую из модуля.
 
 function showNotification(message, type = 'success', duration = 5000) {
     ensureNotificationIconlessStyles();
@@ -1919,30 +2019,7 @@ setDataLoaderDependencies({
 });
 console.log('[script.js] Зависимости модуля Data Loader установлены');
 
-// Wrapper для модуля Tabs Overflow
-function updateVisibleTabs() {
-    return updateVisibleTabsModule();
-}
-
-// Wrapper для модуля Tabs Overflow
-function setupTabsOverflow() {
-    return setupTabsOverflowModule();
-}
-
-// Wrapper для модуля Tabs Overflow
-function handleMoreTabsBtnClick(e) {
-    return handleMoreTabsBtnClickModule(e);
-}
-
-// Wrapper для модуля Tabs Overflow
-function clickOutsideTabsHandler(e) {
-    return clickOutsideTabsHandlerModule(e);
-}
-
-// Wrapper для модуля Tabs Overflow
-function handleTabsResize() {
-    return handleTabsResizeModule();
-}
+// Функции Tabs Overflow используются напрямую из модуля.
 
 
 // saveNewAlgorithm теперь импортируется из js/components/algorithms-save.js
@@ -1968,20 +2045,7 @@ function handleNoInnLinkClick(event) {
 
 // renderMainAlgorithm, loadMainAlgoCollapseState и saveMainAlgoCollapseState теперь импортируются из js/components/main-algorithm.js
 
-// Wrapper для модуля Screenshots
-async function showScreenshotViewerModal(screenshots, algorithmId, algorithmTitle) {
-    return showScreenshotViewerModalModule(screenshots, algorithmId, algorithmTitle);
-}
-
-// Wrapper для модуля Screenshots
-function renderScreenshotThumbnails(container, screenshots, onOpenLightbox, modalState = null) {
-    return renderScreenshotThumbnailsModule(container, screenshots, onOpenLightbox, modalState);
-}
-
-// Wrapper для модуля Screenshots
-function renderScreenshotList(container, screenshots, onOpenLightbox, onItemClick = null, modalState = null) {
-    return renderScreenshotListModule(container, screenshots, onOpenLightbox, onItemClick, modalState);
-}
+// Функции Screenshots используются напрямую из модуля.
 
 // escapeHtml, normalizeBrokenEntities, decodeBasicEntitiesOnce импортируются из utils/html.js
 
@@ -2022,55 +2086,9 @@ const editAlgorithm = editAlgorithmModule;
 // ============================================================================
 // editAlgorithm - imported from algorithms-operations.js module
 
-// Wrapper для модуля algorithms.js
-function initStepSorting(containerElement) {
-    return initStepSortingModule(containerElement);
-}
+// Функции algorithms используются напрямую из модулей.
 
-// Wrapper для модуля algorithms.js
-function addEditStep() {
-    return addEditStepModule();
-}
-
-// saveAlgorithm теперь импортируется из js/components/algorithms-save.js
-async function saveAlgorithm() {
-    return saveAlgorithmModule();
-}
-
-// Wrapper для модуля algorithms.js
-function extractStepsDataFromEditForm(containerElement, isMainAlgorithm = false) {
-    return extractStepsDataFromEditFormModule(containerElement, isMainAlgorithm);
-}
-
-// Wrapper для модуля algorithms.js
-function addNewStep(isFirstStep = false) {
-    return addNewStepModule(isFirstStep);
-}
-
-// Wrapper для модуля step-management.js
-function toggleStepCollapse(stepElement, forceCollapse) {
-    return toggleStepCollapseModule(stepElement, forceCollapse);
-}
-
-// Wrapper для модуля Screenshots
-function attachScreenshotHandlers(stepElement) {
-    return attachScreenshotHandlersModule(stepElement);
-}
-
-// Wrapper для модуля Screenshots
-function renderTemporaryThumbnail(blob, tempIndex, container, stepEl) {
-    return renderTemporaryThumbnailModule(blob, tempIndex, container, stepEl);
-}
-
-// Wrapper для модуля Screenshots
-async function handleImageFileForStepProcessing(fileOrBlob, addCallback, buttonElement = null) {
-    return handleImageFileForStepProcessingModule(fileOrBlob, addCallback, buttonElement);
-}
-
-// Wrapper для модуля Screenshots
-function renderScreenshotIcon(algorithmId, stepIndex, hasScreenshots = false) {
-    return renderScreenshotIconModule(algorithmId, stepIndex, hasScreenshots);
-}
+// Функции step-management используются напрямую из модуля.
 
 // ============================================================================
 // TIMER SYSTEM - MIGRATED to js/features/timer.js
@@ -2096,30 +2114,7 @@ function renderScreenshotIcon(algorithmId, stepIndex, hasScreenshots = false) {
 /* LEGACY SEARCH CODE REMOVED - See js/features/search.js */
 
 
-// Wrapper для модуля Client Data
-async function saveClientData() {
-    return saveClientDataModule();
-}
-
-// Wrapper для модуля Client Data
-function getClientData() {
-    return getClientDataModule();
-}
-
-// Wrapper для модуля Client Data
-async function exportClientDataToTxt() {
-    return exportClientDataToTxtModule();
-}
-
-// Wrapper для модуля Client Data
-function loadClientData(data) {
-    return loadClientDataModule(data);
-}
-
-// Wrapper для модуля Client Data
-function clearClientData() {
-    return clearClientDataModule();
-}
+// Функции Client Data используются напрямую из модуля.
 
 const themeToggleBtn = document.getElementById('themeToggle');
 themeToggleBtn?.addEventListener('click', async () => {
@@ -2193,33 +2188,16 @@ themeToggleBtn?.addEventListener('click', async () => {
     }
 });
 
-// Wrapper для модуля theme.js
-function migrateLegacyThemeVars() {
-    return migrateLegacyThemeVarsModule();
-}
-// Wrapper для модуля theme.js
-function applyThemeOverrides(map = {}) {
-    return applyThemeOverridesModule(map);
-}
+// Функции theme используются напрямую из модуля.
 
 document.addEventListener('DOMContentLoaded', migrateLegacyThemeVars, { once: true });
 
 const exportDataBtn = document.getElementById('exportDataBtn');
 exportDataBtn?.addEventListener('click', exportAllData);
 
-// Wrapper для модуля tabs.js
-function createTabButtonElement(tabConfig) {
-    return createTabButtonElementModule(tabConfig);
-}
-// Wrapper для модуля tabs.js
-function ensureTabPresent(panelId, visible = true) {
-    return ensureTabPresentModule(panelId, visible);
-}
+// Функции tabs используются напрямую из модуля.
 
-// Wrapper для модуля bookmarks
-function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'cards') {
-    return createBookmarkElementModule(bookmark, folderMap, viewMode);
-}
+// Функции bookmarks используются напрямую из модуля.
 
 // initBookmarkSystem уже определена выше на строке 961
 
@@ -2237,58 +2215,25 @@ const handleSaveFolderSubmit = handleSaveFolderSubmitModule;
 // getAllFromIndex импортируется напрямую из js/db/indexeddb.js (строка 88)
 // Используем напрямую
 
-// Wrapper для модуля Screenshots
-function attachBookmarkScreenshotHandlers(formElement) {
-    return attachBookmarkScreenshotHandlersModule(formElement);
-}
-
-// Wrapper для модуля Screenshots
-async function renderExistingThumbnail(screenshotId, container, parentElement) {
-    return renderExistingThumbnailModule(screenshotId, container, parentElement);
-}
-
-// Wrapper для модуля Screenshots
-async function processImageFile(fileOrBlob) {
-    return processImageFileModule(fileOrBlob);
-}
+// Функции Screenshots используются напрямую из модуля.
 
 // Bookmarks form submit function теперь импортируется из js/features/bookmarks-form.js
 const handleBookmarkFormSubmit = handleBookmarkFormSubmitModule;
 
-// loadBookmarks теперь импортируется из js/components/bookmarks.js
-async function loadBookmarks() {
-    return loadBookmarksModule();
-}
-
-// Wrapper для модуля bookmarks
-async function getAllBookmarks() {
-    return getAllBookmarksModule();
-}
+// loadBookmarks и getAllBookmarks используются напрямую из модуля.
 
 // initExternalLinksSystem уже определена выше на строке 962
 
-// loadExtLinks теперь импортируется из js/components/ext-links.js
-async function loadExtLinks() {
-    return loadExtLinksModule();
-}
+// loadExtLinks используется напрямую из модуля.
 
 // ============================================================================
 // createExtLinkElement - MIGRATED to js/components/ext-links.js
 // ============================================================================
-// Now imported from ext-links.js module as createExtLinkElementModule.
-// Use createExtLinkElementModule or the wrapper function below.
-
-function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards') {
-    // Wrapper function that calls the module version
-    return createExtLinkElementModule(link, categoryMap, viewMode);
-}
+// createExtLinkElement используется напрямую из модуля.
 
 // createExtLinkElement_OLD - migrated to js/components/ext-links.js
 
-// Wrapper для модуля ext-links
-async function renderExtLinks(links, categoryInfoMap = {}) {
-    return renderExtLinksModule(links, categoryInfoMap);
-}
+// renderExtLinks используется напрямую из модуля.
 
 // Ext Links functions теперь импортируются из js/features/ext-links-form.js и ext-links-modal.js
 const handleExtLinkFormSubmit = handleExtLinkFormSubmitModule;
@@ -2308,10 +2253,7 @@ const filterExtLinks = filterExtLinksModule;
 const handleExtLinkAction = handleExtLinkActionModule;
 
 
-// populateModalControls теперь импортируется из js/ui/ui-settings-modal.js
-function populateModalControls(settings) {
-    return populateModalControlsModule(settings);
-}
+// populateModalControls используется напрямую из модуля.
 
 // ============================================================================
 // populateModalControls - MIGRATED to js/ui/ui-settings-modal.js
@@ -2337,15 +2279,9 @@ if (typeof applyUISettings === 'undefined') {
     };
 }
 
-// applyUISettings теперь импортируется из js/ui/ui-settings.js
-async function applyUISettings() {
-    return applyUISettingsModule();
-}
+// applyUISettings используется напрямую из модуля.
 
-// Wrapper для модуля color.js
-function calculateSecondaryColor(hex, percent = 15) {
-    return calculateSecondaryColorModule(hex, percent);
-}
+// calculateSecondaryColor используется напрямую из модуля.
 
 if (typeof loadUISettings === 'undefined') {
     window.loadUISettings = () => console.log('loadUISettings called');
@@ -2363,10 +2299,7 @@ if (typeof showNotification === 'undefined') {
     window.showNotification = (msg) => console.log('Notification:', msg);
 }
 
-// resetUISettingsInModal теперь импортируется из js/ui/ui-settings-modal.js
-async function resetUISettingsInModal() {
-    return resetUISettingsInModalModule();
-}
+// resetUISettingsInModal используется напрямую из модуля.
 
 // ============================================================================
 // resetUISettingsInModal - MIGRATED to js/ui/ui-settings-modal.js
@@ -2377,15 +2310,9 @@ async function resetUISettingsInModal() {
 
 // initClearDataFunctionality уже определена выше на строке 969
 
-// clearAllApplicationData теперь импортируется из js/app/data-clear.js
-async function clearAllApplicationData(progressCallback) {
-    return clearAllApplicationDataModule(progressCallback);
-}
+// clearAllApplicationData используется напрямую из модуля.
 
-// createPanelItemElement теперь импортируется из js/ui/ui-settings-modal.js
-function createPanelItemElement(id, name, isVisible = true) {
-    return createPanelItemElementModule(id, name, isVisible);
-}
+// createPanelItemElement используется напрямую из модуля.
 
 // ============================================================================
 // createPanelItemElement - MIGRATED to js/ui/ui-settings-modal.js
@@ -2412,10 +2339,7 @@ function _onSystemThemeChange(e) {
     _applyThemeClass(e.matches);
 }
 
-// applyPreviewSettings теперь импортируется из js/ui/preview-settings.js
-async function applyPreviewSettings(settings) {
-    return applyPreviewSettingsModule(settings);
-}
+// applyPreviewSettings используется напрямую из модуля.
 
 // User Preferences Dependencies - устанавливаем ДО использования в appInit
 setUserPreferencesDependencies({
@@ -2477,15 +2401,7 @@ setUISettingsDependencies({
 });
 console.log('[script.js] Зависимости модуля UI Settings установлены');
 
-// Wrapper для модуля color.js
-function hexToHsl(hex) {
-    return hexToHslModule(hex);
-}
-
-// Wrapper для модуля color.js
-function hslToHex(h, s, l) {
-    return hslToHexModule(h, s, l);
-}
+// hexToHsl и hslToHex используются напрямую из модуля.
 
 // Color Picker Dependencies (после hexToHsl/hslToHex)
 setColorPickerDependencies({
@@ -2498,45 +2414,16 @@ setColorPickerDependencies({
 });
 console.log('[script.js] Зависимости модуля Color Picker установлены');
 
-// Wrapper для модуля color.js
-function getLuminance(hex) {
-    return getLuminanceModule(hex);
-}
+// getLuminance и adjustHsl используются напрямую из модуля.
 
-// Wrapper для модуля color.js
-function adjustHsl(hsl, l_adjust = 0, s_adjust = 0) {
-    return adjustHslModule(hsl, l_adjust, s_adjust);
-}
-
-// applyPanelOrderAndVisibility теперь импортируется из js/components/tabs.js
-function applyPanelOrderAndVisibility(order, visibility) {
-    return applyPanelOrderAndVisibilityModule(order, visibility);
-}
-
-// handleModalVisibilityToggle теперь импортируется из js/ui/ui-settings-modal.js
-function handleModalVisibilityToggle(event) {
-    return handleModalVisibilityToggleModule(event);
-}
-
-// getSettingsFromModal теперь импортируется из js/ui/ui-settings-modal.js
-function getSettingsFromModal() {
-    return getSettingsFromModalModule();
-}
-
-// updatePreviewSettingsFromModal теперь импортируется из js/ui/ui-settings-modal.js
-function updatePreviewSettingsFromModal() {
-    return updatePreviewSettingsFromModalModule();
-}
+// applyPanelOrderAndVisibility, handleModalVisibilityToggle, getSettingsFromModal, updatePreviewSettingsFromModal используются напрямую из модулей.
 
 // ============================================================================
 // handleModalVisibilityToggle, getSettingsFromModal, updatePreviewSettingsFromModal - MIGRATED to js/ui/ui-settings-modal.js
 // ============================================================================
 // Эти функции импортированы из ui-settings-modal.js module
 
-// deleteAlgorithm теперь импортируется из js/components/algorithms-save.js
-async function deleteAlgorithm(algorithmId, section) {
-    return deleteAlgorithmModule(algorithmId, section);
-}
+// deleteAlgorithm используется напрямую из модуля.
 
 const newClickHandler = async (event) => {
     const button = event.currentTarget;
@@ -2747,10 +2634,7 @@ document.addEventListener('click', (event) => {
     }
 });
 
-// Wrapper для модуля html.js
-function linkify(text) {
-    return linkifyModule(text);
-}
+// linkify используется напрямую из модуля.
 
 // initFullscreenToggles уже определена выше на строке 965
 // Вызываем её с конфигами модальных окон при необходимости
@@ -2782,30 +2666,9 @@ async function getAllFromIndexedDBWhere(storeName, indexName, indexValue) {
 
 // debounce - imported from helpers.js module
 
-// Wrapper для модуля app-reload.js
-function forceReloadApp() {
-    return forceReloadAppModule();
-}
+// Функции App Reload используются напрямую из модуля.
 
-// Wrapper для модуля app-reload.js
-// initReloadButton уже определена выше на строке 964
-
-// Wrapper-ы для модуля algorithms.js (Algorithm Editing State)
-function getCurrentEditState() {
-    return getCurrentEditStateModule();
-}
-function getCurrentAddState() {
-    return getCurrentAddStateModule();
-}
-function hasChanges(modalType) {
-    return hasChangesModule(modalType);
-}
-function captureInitialEditState(algorithm, section) {
-    return captureInitialEditStateModule(algorithm, section);
-}
-function captureInitialAddState() {
-    return captureInitialAddStateModule();
-}
+// Функции Algorithm Editing State используются напрямую из модуля.
 
 // showNoInnModal теперь импортируется из js/ui/modals-manager.js
 function showNoInnModal() {
@@ -2817,25 +2680,7 @@ function showNoInnModal() {
 // ============================================================================
 // showNoInnModal - imported from modals-manager.js module
 
-// Wrapper для модуля employee-extension.js
-async function loadEmployeeExtension() {
-    return loadEmployeeExtensionModule();
-}
-
-// Wrapper для модуля employee-extension.js
-async function saveEmployeeExtension(extensionValue) {
-    return saveEmployeeExtensionModule(extensionValue);
-}
-
-// Wrapper для модуля employee-extension.js
-function updateExtensionDisplay(extensionValue) {
-    return updateExtensionDisplayModule(extensionValue);
-}
-
-// Wrapper для модуля employee-extension.js
-function setupExtensionFieldListeners() {
-    return setupExtensionFieldListenersModule();
-}
+// Функции Employee Extension используются напрямую из модуля.
 
 // setupHotkeys уже определена выше на строке 966
 
@@ -3245,57 +3090,16 @@ async function showBookmarkDetailModal(bookmarkId) {
 
 // initHotkeysModal уже определена выше на строке 968
 
-// Wrapper для модуля Lightbox
-function showImageAtIndex(index, blobs, stateManager, elements) {
-    return showImageAtIndexModule(index, blobs, stateManager, elements);
-}
-
-// Wrapper для модуля Lightbox
-function openLightbox(blobs, initialIndex) {
-    return openLightboxModule(blobs, initialIndex);
-}
-
-
-// Wrapper для модуля Screenshots
-async function handleViewScreenshotClick(event) {
-    return handleViewScreenshotClickModule(event);
-}
+// Функции Lightbox и Screenshots используются напрямую из модулей.
 
 // Bookmarks DOM operations теперь импортируются из js/features/bookmarks-dom.js
 const addBookmarkToDOM = addBookmarkToDOMModule;
 const updateBookmarkInDOM = updateBookmarkInDOMModule;
 const removeBookmarkFromDOM = removeBookmarkFromDOMModule;
 
-// Wrapper для модуля step-management.js
-function attachStepDeleteHandler(
-    deleteButton,
-    stepElement,
-    containerElement,
-    section,
-    mode = 'edit',
-) {
-    return attachStepDeleteHandlerModule(deleteButton, stepElement, containerElement, section, mode);
-}
+// Функции step-management используются напрямую из модуля.
 
-// Wrapper для модуля step-management.js
-function updateStepNumbers(containerElement) {
-    return updateStepNumbersModule(containerElement);
-}
-
-// Wrapper для модуля helpers.js
-function deepEqual(obj1, obj2) {
-    return deepEqualModule(obj1, obj2);
-}
-
-// Wrapper для модуля modal.js
-function openAnimatedModal(modalElement) {
-    return openAnimatedModalModule(modalElement);
-}
-
-// Wrapper для модуля modal.js
-function closeAnimatedModal(modalElement) {
-    return closeAnimatedModalModule(modalElement);
-}
+// deepEqual и modal utils используются напрямую из модулей.
 
 closeModalBtn?.addEventListener('click', () => closeAnimatedModal(algorithmModal));
 
@@ -3330,536 +3134,10 @@ const showAddModal = showAddModalModule;
 // ============================================================================
 // All blacklist-related functions are now imported from the blacklist module.
 // See: js/features/blacklist.js
-// Wrapper functions below maintain backward compatibility.
-
-// initBlacklistSystem уже определена выше на строке 963
-
-async function exportBlacklistToExcel() {
-    return exportBlacklistToExcelModule();
-}
-
-async function loadBlacklistedClients() {
-    return loadBlacklistedClientsModule();
-}
-
-async function handleBlacklistSearchInput() {
-    return handleBlacklistSearchInputModule();
-}
-
-function renderBlacklistTable(entries) {
-    return renderBlacklistTableModule(entries);
-}
-
-async function getBlacklistEntriesByInn(inn) {
-    return getBlacklistEntriesByInnModule(inn);
-}
-
-function handleBlacklistActionClick(event) {
-    return handleBlacklistActionClickModule(event);
-}
-
-async function showBlacklistDetailModal(entryId) {
-    return showBlacklistDetailModalModule(entryId);
-}
-
-async function showBlacklistEntryModal(entryId = null) {
-    return showBlacklistEntryModalModule(entryId);
-}
-
-async function handleSaveBlacklistEntry(event) {
-    return handleSaveBlacklistEntryModule(event);
-}
-
-async function deleteBlacklistEntry(entryId) {
-    return deleteBlacklistEntryModule(entryId);
-}
-
-async function addBlacklistEntryDB(entry) {
-    return addBlacklistEntryDBModule(entry);
-}
-
-async function getBlacklistEntryDB(id) {
-    return getBlacklistEntryDBModule(id);
-}
-
-async function updateBlacklistEntryDB(entry) {
-    return updateBlacklistEntryDBModule(entry);
-}
-
-async function deleteBlacklistEntryDB(id) {
-    return deleteBlacklistEntryDBModule(id);
-}
-
-async function getAllBlacklistEntriesDB() {
-    return getAllBlacklistEntriesDBModule();
-}
-
-function showBlacklistWarning() {
-    return showBlacklistWarningModule();
-}
+// Функции черного списка используются напрямую из модуля.
 
 
-// applyClientNotesFontSize теперь импортируется из js/features/client-data.js
-function applyClientNotesFontSize() {
-    return applyClientNotesFontSizeModule();
-}
-
-// ============================================================================
-// applyClientNotesFontSize - MIGRATED to js/features/client-data.js
-// ============================================================================
-// applyClientNotesFontSize - imported from client-data.js module
-
-async function initClientDataSystem() {
-    ensureInnPreviewStyles();
-    const LOG_PREFIX = '[ClientDataSystem]';
-    console.log(`${LOG_PREFIX} Запуск инициализации...`);
-
-    const clientNotes = document.getElementById('clientNotes');
-    if (!clientNotes) {
-        console.error(
-            `${LOG_PREFIX} КРИТИЧЕСКАЯ ОШИБКА: поле для заметок #clientNotes не найдено. Система не будет работать.`,
-        );
-        return;
-    }
-    console.log(`${LOG_PREFIX} Поле #clientNotes успешно найдено.`);
-
-    const clearClientDataBtn = document.getElementById('clearClientDataBtn');
-    if (!clearClientDataBtn) {
-        console.warn(`${LOG_PREFIX} Кнопка #clearClientDataBtn не найдена.`);
-    }
-
-    const buttonContainer = clearClientDataBtn?.parentNode;
-    if (!buttonContainer) {
-        console.warn(
-            `${LOG_PREFIX} Родительский контейнер для кнопок управления данными клиента не найден.`,
-        );
-    }
-
-    if (State.clientNotesInputHandler) {
-        clientNotes.removeEventListener('input', State.clientNotesInputHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'input' удален.`);
-    }
-    if (State.clientNotesKeydownHandler) {
-        clientNotes.removeEventListener('keydown', State.clientNotesKeydownHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keydown' удален.`);
-    }
-
-    if (State.clientNotesCtrlClickHandler) {
-        clientNotes.removeEventListener('mousedown', State.clientNotesCtrlClickHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'click' (Ctrl+Click INN) удален.`);
-    }
-    if (State.clientNotesBlurHandler) {
-        clientNotes.removeEventListener('blur', State.clientNotesBlurHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'blur' (сброс курсора) удален.`);
-    }
-    if (State.clientNotesCtrlKeyDownHandler) {
-        document.removeEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keydown' (Ctrl cursor) удален.`);
-    }
-    if (State.clientNotesCtrlKeyUpHandler) {
-        document.removeEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keyup' (Ctrl cursor) удален.`);
-    }
-
-    if (window.__clientNotesInnPreviewInputHandler) {
-        clientNotes.removeEventListener('input', window.__clientNotesInnPreviewInputHandler);
-        window.__clientNotesInnPreviewInputHandler = null;
-        console.log(`${LOG_PREFIX} Старый обработчик 'input' (ИНН-превью) удален.`);
-    }
-    if (
-        window.__clientNotesInnPreview &&
-        typeof window.__clientNotesInnPreview.destroy === 'function'
-    ) {
-        window.__clientNotesInnPreview.destroy();
-        window.__clientNotesInnPreview = null;
-        console.log(`${LOG_PREFIX} Старое ИНН-превью уничтожено.`);
-    }
-
-    State.clientNotesInputHandler = debounce(async () => {
-        try {
-            console.log(`${LOG_PREFIX} Debounce-таймер сработал. Выполняем действия...`);
-            const currentText = clientNotes.value;
-
-            console.log(`${LOG_PREFIX}   -> Вызов await saveClientData()`);
-            await saveClientData();
-
-            console.log(`${LOG_PREFIX}   -> Вызов await checkForBlacklistedInn()`);
-            await checkForBlacklistedInn(currentText);
-        } catch (error) {
-            console.error(`${LOG_PREFIX} Ошибка внутри debounced-обработчика:`, error);
-        }
-    }, 750);
-
-    clientNotes.addEventListener('input', State.clientNotesInputHandler);
-    console.log(`${LOG_PREFIX} Новый обработчик 'input' с debounce и await успешно привязан.`);
-
-    State.clientNotesKeydownHandler = (event) => {
-        if (event.key === 'Enter' && event.ctrlKey) {
-            event.preventDefault();
-            const textarea = event.target;
-            const value = textarea.value;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const textBeforeCursor = value.substring(0, start);
-            const regex = /(?:^|\n)\s*(\d+)([).])\s/g;
-            let lastNum = 0;
-            let delimiter = ')';
-            let match;
-            while ((match = regex.exec(textBeforeCursor)) !== null) {
-                const currentNum = parseInt(match[1], 10);
-                if (currentNum >= lastNum) {
-                    lastNum = currentNum;
-                    delimiter = match[2];
-                }
-            }
-            const nextNum = lastNum + 1;
-            let prefix = '\n\n';
-            if (start === 0) {
-                prefix = '';
-            } else {
-                const charBefore = value.substring(start - 1, start);
-                if (charBefore === '\n') {
-                    if (start >= 2 && value.substring(start - 2, start) === '\n\n') {
-                        prefix = '';
-                    } else {
-                        prefix = '\n';
-                    }
-                }
-            }
-            const insertionText = prefix + nextNum + delimiter + ' ';
-            textarea.value = value.substring(0, start) + insertionText + value.substring(end);
-            textarea.selectionStart = textarea.selectionEnd = start + insertionText.length;
-            textarea.scrollTop = textarea.scrollHeight;
-            textarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-        }
-    };
-    clientNotes.addEventListener('keydown', State.clientNotesKeydownHandler);
-    console.log(`${LOG_PREFIX} Обработчик 'keydown' (Ctrl+Enter) успешно привязан.`);
-
-    function getInnAtCursor(ta) {
-        const text = ta.value || '';
-        const n = text.length;
-        const isDigit = (ch) => ch >= '0' && ch <= '9';
-        const basePos = ta.selectionStart ?? 0;
-        console.log(`[getInnAtCursor] Base position (selectionStart): ${basePos}`);
-        const candidates = [basePos, basePos - 1, basePos + 1, basePos - 2, basePos + 2];
-        for (const p of candidates) {
-            if (p < 0 || p >= n) continue;
-            if (!isDigit(text[p])) continue;
-            let l = p,
-                r = p + 1;
-            while (l > 0 && isDigit(text[l - 1])) l--;
-            while (r < n && isDigit(text[r])) r++;
-            const token = text.slice(l, r);
-            if (token.length === 10 || token.length === 12) {
-                console.log(`[getInnAtCursor] Found valid INN: "${token}" at [${l}, ${r}]`);
-                return { inn: token, start: l, end: r };
-            }
-        }
-        console.log(`[getInnAtCursor] No INN found at position ${basePos}.`);
-        return null;
-    }
-
-    const clientNotesCtrlMouseDownHandler = async (event) => {
-        console.log(
-            `[ClientNotes Handler] Event triggered: ${event.type}. Ctrl/Meta: ${
-                event.ctrlKey || event.metaKey
-            }`,
-        );
-        if (!(event.ctrlKey || event.metaKey)) return;
-        if (typeof event.button === 'number' && event.button !== 0) return;
-        if (!__acquireCopyLock(250)) return;
-
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        console.log(
-            `[ClientNotes Handler] Before getInnAtCursor: selectionStart=${clientNotes.selectionStart}, selectionEnd=${clientNotes.selectionEnd}`,
-        );
-        const hit = getInnAtCursor(clientNotes);
-
-        if (!hit) {
-            console.log('[ClientNotes Handler] INN not found, handler exits without action.');
-            return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        try {
-            clientNotes.setSelectionRange(hit.start, hit.end);
-            await copyToClipboard(hit.inn, `ИНН ${hit.inn} скопирован!`);
-        } catch (e) {
-            console.error('[ClientDataSystem] Ошибка копирования ИНН по Ctrl+MouseDown:', e);
-        }
-    };
-
-    clientNotes.addEventListener('mousedown', clientNotesCtrlMouseDownHandler);
-    State.clientNotesCtrlClickHandler = clientNotesCtrlMouseDownHandler;
-    console.log(`${LOG_PREFIX} Обработчик 'mousedown' (Ctrl+Click INN→copy) привязан.`);
-
-    State.clientNotesCtrlKeyDownHandler = (e) => {
-        const isClientNotesFocused = document.activeElement === clientNotes;
-        const ctrlOrMeta = e.ctrlKey || e.metaKey;
-        if (ctrlOrMeta && isClientNotesFocused) {
-            ensureInnPreviewStyles();
-            if (!window.__clientNotesInnPreview) {
-                window.__clientNotesInnPreview = createClientNotesInnPreview(clientNotes);
-            }
-            const p = window.__clientNotesInnPreview;
-            p.show();
-            p.update();
-            if (!window.__clientNotesInnPreviewInputHandler) {
-                window.__clientNotesInnPreviewInputHandler = () => {
-                    if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.update();
-                };
-                clientNotes.addEventListener('input', window.__clientNotesInnPreviewInputHandler);
-            }
-        }
-    };
-    State.clientNotesCtrlKeyUpHandler = (e) => {
-        if (!e.ctrlKey && !e.metaKey) {
-            clientNotes.style.cursor = '';
-            if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
-        }
-    };
-    State.clientNotesBlurHandler = () => {
-        clientNotes.style.cursor = '';
-        if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
-    };
-    document.addEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
-    document.addEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
-    clientNotes.addEventListener('blur', State.clientNotesBlurHandler);
-    console.log(`${LOG_PREFIX} Индикация курсора при Ctrl/Meta активирована.`);
-
-    if (clearClientDataBtn) {
-        clearClientDataBtn.addEventListener('click', () => {
-            if (confirm('Вы уверены, что хотите очистить все данные по обращению?')) {
-                clearClientData();
-            }
-        });
-    }
-
-    if (buttonContainer) {
-        const existingExportBtn = document.getElementById('exportTextBtn');
-        if (!existingExportBtn) {
-            const exportTextBtn = document.createElement('button');
-            exportTextBtn.id = 'exportTextBtn';
-            exportTextBtn.innerHTML = `<i class="fas fa-file-download"></i><span class="hidden lg:inline lg:ml-1">Сохранить .txt</span>`;
-            exportTextBtn.className = `p-2 lg:px-3 lg:py-1.5 text-white rounded-md transition text-sm flex items-center border-b`;
-            exportTextBtn.title = 'Сохранить заметки как .txt файл';
-            exportTextBtn.addEventListener('click', exportClientDataToTxt);
-            buttonContainer.appendChild(exportTextBtn);
-        }
-    }
-
-    try {
-        console.log(`${LOG_PREFIX} Загрузка начальных данных для clientNotes...`);
-        let clientDataNotesValue = '';
-        if (State.db) {
-            const clientDataFromDB = await getFromIndexedDB('clientData', 'current');
-            if (clientDataFromDB && clientDataFromDB.notes) {
-                clientDataNotesValue = clientDataFromDB.notes;
-            }
-        } else {
-            const localData = localStorage.getItem('clientData');
-            if (localData) {
-                try {
-                    clientDataNotesValue = JSON.parse(localData).notes || '';
-                } catch (e) {
-                    console.warn(
-                        '[initClientDataSystem] Ошибка парсинга clientData из localStorage:',
-                        e,
-                    );
-                }
-            }
-        }
-        clientNotes.value = clientDataNotesValue;
-        console.log(`${LOG_PREFIX} Данные загружены. clientNotes.value установлен.`);
-
-        applyClientNotesFontSize();
-    } catch (error) {
-        console.error(`${LOG_PREFIX} Ошибка при загрузке данных клиента:`, error);
-    }
-
-    console.log(`${LOG_PREFIX} Инициализация системы данных клиента полностью завершена.`);
-    // ensureBodyScrollUnlocked вызывается внутри createClientNotesInnPreview при необходимости
-    // Убеждаемся, что нет открытых модальных окон перед разблокировкой скролла
-    try {
-        const visibleModals = typeof getVisibleModals === 'function' ? getVisibleModals() : [];
-        if (visibleModals.length === 0) {
-            document.body.classList.remove('modal-open', 'overflow-hidden');
-            if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
-            if (document.documentElement.style.overflow === 'hidden') document.documentElement.style.overflow = '';
-        }
-    } catch (e) {
-        console.warn('[initClientDataSystem] Ошибка при проверке модальных окон:', e);
-    }
-}
-
-function ensureInnPreviewStyles() {
-    if (document.getElementById('innPreviewStyles')) return;
-    const style = document.createElement('style');
-    style.id = 'innPreviewStyles';
-    style.textContent = `
-    .client-notes-preview{
-        position: absolute;
-        --inn-offset-x: -0.4px;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        overflow: hidden;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        background: transparent;
-        pointer-events: none;
-        z-index: 2;
-    }
-    .client-notes-preview::-webkit-scrollbar{
-        width: 0; height: 0; display: none;
-    }
-        .client-notes-preview__inner{
-        position: relative;
-        will-change: transform;
-    }
-    .client-notes-preview .inn-highlight{
-        color: var(--color-primary, #7aa2ff) !important;
-        text-decoration: underline;
-        text-decoration-color: var(--color-primary);
-        text-decoration-thickness: .1em;
-        text-underline-offset: .12em;
-        text-decoration-skip-ink: auto;
-        /* НИЧЕГО, что меняет метрики инлайна */
-        display: inline;
-        padding: 0;
-        margin: 0;
-    }
- 
-  `;
-    document.head.appendChild(style);
-}
-
-// createClientNotesInnPreview теперь импортируется из js/features/client-data.js
-function createClientNotesInnPreview(textarea) {
-    return createClientNotesInnPreviewModule(textarea, escapeHtml, getVisibleModals);
-}
-
-// ============================================================================
-// createClientNotesInnPreview - MIGRATED to js/features/client-data.js
-// ============================================================================
-// createClientNotesInnPreview - imported from client-data.js module
-
-async function checkAndSetWelcomeText() {
-    console.log(
-        '[checkAndSetWelcomeText] Проверка условий для отображения приветственного текста...',
-    );
-    const clientNotesTextarea = document.getElementById('clientNotes');
-
-    if (!clientNotesTextarea) {
-        console.error(
-            '[checkAndSetWelcomeText] Textarea #clientNotes не найдена. Приветственный текст не будет установлен.',
-        );
-        return;
-    }
-
-    if (!State.userPreferences || typeof State.userPreferences.welcomeTextShownInitially === 'undefined') {
-        console.error(
-            '[checkAndSetWelcomeText] State.userPreferences не загружены или не содержат флага welcomeTextShownInitially. Выход.',
-        );
-        return;
-    }
-
-    if (State.userPreferences.welcomeTextShownInitially === true) {
-        console.log(
-            '[checkAndSetWelcomeText] Приветственный текст не будет показан, так как флаг welcomeTextShownInitially уже установлен.',
-        );
-        return;
-    }
-
-    const notesAreEmpty = !clientNotesTextarea.value || clientNotesTextarea.value.trim() === '';
-
-    if (
-        !algorithms ||
-        typeof algorithms !== 'object' ||
-        !algorithms.main ||
-        typeof DEFAULT_MAIN_ALGORITHM !== 'object' ||
-        DEFAULT_MAIN_ALGORITHM === null
-    ) {
-        console.error(
-            "[checkAndSetWelcomeText] Глобальные переменные 'algorithms.main' или 'DEFAULT_MAIN_ALGORITHM' не определены или некорректны!",
-        );
-        return;
-    }
-
-    const currentMainAlgoStepsNormalized = normalizeAlgorithmSteps(algorithms.main.steps || []);
-    const defaultMainAlgoStepsNormalized = normalizeAlgorithmSteps(
-        DEFAULT_MAIN_ALGORITHM.steps || [],
-    );
-
-    const currentMainAlgoCore = { ...algorithms.main };
-    delete currentMainAlgoCore.steps;
-    const defaultMainAlgoCore = { ...DEFAULT_MAIN_ALGORITHM };
-    delete defaultMainAlgoCore.steps;
-
-    const coreFieldsMatch = deepEqual(currentMainAlgoCore, defaultMainAlgoCore);
-    const stepsMatch = deepEqual(currentMainAlgoStepsNormalized, defaultMainAlgoStepsNormalized);
-    const isMainAlgorithmDefault = coreFieldsMatch && stepsMatch;
-
-    console.log(
-        `[checkAndSetWelcomeText - Условия] notesAreEmpty: ${notesAreEmpty}, isMainAlgorithmDefault: ${isMainAlgorithmDefault} (coreFieldsMatch: ${coreFieldsMatch}, stepsMatch: ${stepsMatch}), welcomeTextShownInitially: ${State.userPreferences.welcomeTextShownInitially}`,
-    );
-
-    if (notesAreEmpty && isMainAlgorithmDefault) {
-        clientNotesTextarea.value = DEFAULT_WELCOME_CLIENT_NOTES_TEXT;
-        console.log(
-            '[checkAndSetWelcomeText] Приветственный текст успешно установлен в #clientNotes.',
-        );
-
-        State.userPreferences.welcomeTextShownInitially = true;
-        if (typeof saveUserPreferences === 'function') {
-            try {
-                await saveUserPreferences();
-                console.log(
-                    '[checkAndSetWelcomeText] Флаг welcomeTextShownInitially установлен и настройки пользователя сохранены.',
-                );
-            } catch (error) {
-                console.error(
-                    '[checkAndSetWelcomeText] Ошибка при сохранении userPreferences после установки флага:',
-                    error,
-                );
-            }
-        } else {
-            console.warn(
-                '[checkAndSetWelcomeText] Функция saveUserPreferences не найдена. Флаг welcomeTextShownInitially может не сохраниться.',
-            );
-        }
-
-        if (typeof saveClientData === 'function') {
-            setTimeout(() => {
-                saveClientData();
-                console.log(
-                    '[checkAndSetWelcomeText] Данные клиента (с приветственным текстом) сохранены.',
-                );
-            }, 100);
-        } else {
-            console.warn(
-                '[checkAndSetWelcomeText] Функция saveClientData не найдена, приветственный текст может не сохраниться автоматически в clientData.',
-            );
-        }
-    } else {
-        if (!notesAreEmpty) {
-            console.log(
-                '[checkAndSetWelcomeText] Приветственный текст не установлен: поле заметок не пусто.',
-            );
-        }
-        if (!isMainAlgorithmDefault) {
-            console.log(
-                '[checkAndSetWelcomeText] Приветственный текст не установлен: главный алгоритм был изменен или не соответствует дефолтному.',
-            );
-            if (!coreFieldsMatch) console.log('   - Основные поля алгоритма не совпадают.');
-            if (!stepsMatch) console.log('   - Шаги алгоритма не совпадают.');
-        }
-    }
-}
+// Функции Client Data используются напрямую из модуля.
 
 // normalizeAlgorithmSteps - imported from algorithms.js module
 
@@ -3873,67 +3151,14 @@ async function checkAndSetWelcomeText() {
 // - getFavoriteButtonHTML, handleFavoriteContainerClick, handleFavoriteActionClick
 // - isFavorite, refreshAllFavoritableSectionsUI, initFavoritesSystem
 
-// Wrapper functions for backward compatibility
-async function toggleFavorite(originalItemId, itemType, originalItemSection, title, description, buttonElement) {
-    return toggleFavoriteModule(originalItemId, itemType, originalItemSection, title, description, buttonElement);
-}
-
-async function updateFavoriteStatusUI(originalItemId, itemType, isFavoriteStatus) {
-    return updateFavoriteStatusUIModule(originalItemId, itemType, isFavoriteStatus);
-}
-
-async function renderFavoritesPage() {
-    return renderFavoritesPageModule();
-}
-
-function getFavoriteButtonHTML(originalItemId, itemType, originalItemSection, title, description, isCurrentlyFavorite) {
-    return getFavoriteButtonHTMLModule(originalItemId, itemType, originalItemSection, title, description, isCurrentlyFavorite);
-}
-
-function isFavorite(itemType, originalItemId) {
-    return isFavoriteModule(itemType, originalItemId);
-}
-
-async function refreshAllFavoritableSectionsUI() {
-    return refreshAllFavoritableSectionsUIModule();
-}
-
-
-
-async function isInnBlacklisted(inn) {
-    return isInnBlacklistedModule(inn);
-}
-
-async function checkForBlacklistedInn(text) {
-    return checkForBlacklistedInnModule(text);
-}
-
-function sortAndRenderBlacklist() {
-    return sortAndRenderBlacklistModule();
-}
-
-function renderBlacklistEntries(entries) {
-    // Legacy function - uses renderBlacklistTable from module
-    return renderBlacklistTableModule(entries);
-}
+// Функции избранного и черного списка используются напрямую из модулей.
 
 // GOOGLE DOCS INTEGRATION - MIGRATED to js/features/google-docs.js
 // ============================================================================
 // All Google Docs functions are now imported from the google-docs module.
 // See: js/features/google-docs.js
 
-// Wrapper для модуля background-image.js
-function applyCustomBackgroundImage(dataUrl) {
-    return applyCustomBackgroundImageModule(dataUrl);
-}
-// Wrapper для модуля background-image.js
-function removeCustomBackgroundImage() {
-    return removeCustomBackgroundImageModule();
-}
-// Wrapper для модуля background-image.js
-function setupBackgroundImageControls() {
-    return setupBackgroundImageControlsModule();
-}
+// background-image функции используются напрямую из модуля.
 
 // ============================================================================
 // PDF ATTACHMENT SYSTEM - MIGRATED to js/features/pdf-attachments.js
@@ -4777,6 +4002,14 @@ setClientDataDependencies({
     showNotification,
     NotificationService,
     updateSearchIndex,
+    debounce,
+    checkForBlacklistedInn,
+    copyToClipboard,
+    getVisibleModals,
+    escapeHtml,
+    DEFAULT_MAIN_ALGORITHM,
+    algorithms,
+    saveUserPreferences,
 });
 console.log('[script.js] Зависимости модуля Client Data установлены');
 
@@ -4885,4 +4118,3 @@ if (typeof initCollapseAllButtons === 'function') window.initCollapseAllButtons 
 if (typeof initHotkeysModal === 'function') window.initHotkeysModal = initHotkeysModal;
 if (typeof initClearDataFunctionality === 'function') window.initClearDataFunctionality = initClearDataFunctionality;
 if (typeof showNoInnModal === 'function') window.showNoInnModal = showNoInnModal;
-

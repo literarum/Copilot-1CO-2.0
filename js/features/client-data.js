@@ -7,11 +7,22 @@
 
 import { State } from '../app/state.js';
 import { getFromIndexedDB, saveToIndexedDB } from '../db/indexeddb.js';
+import { DEFAULT_WELCOME_CLIENT_NOTES_TEXT } from '../constants.js';
+import { normalizeAlgorithmSteps } from '../components/algorithms.js';
+import { deepEqual } from '../utils/helpers.js';
 
 let deps = {
     showNotification: null,
     NotificationService: null,
     updateSearchIndex: null,
+    debounce: null,
+    checkForBlacklistedInn: null,
+    copyToClipboard: null,
+    getVisibleModals: null,
+    escapeHtml: null,
+    DEFAULT_MAIN_ALGORITHM: null,
+    algorithms: null,
+    saveUserPreferences: null,
 };
 
 /**
@@ -21,6 +32,15 @@ export function setClientDataDependencies(dependencies) {
     if (dependencies.showNotification) deps.showNotification = dependencies.showNotification;
     if (dependencies.NotificationService) deps.NotificationService = dependencies.NotificationService;
     if (dependencies.updateSearchIndex) deps.updateSearchIndex = dependencies.updateSearchIndex;
+    if (dependencies.debounce) deps.debounce = dependencies.debounce;
+    if (dependencies.checkForBlacklistedInn) deps.checkForBlacklistedInn = dependencies.checkForBlacklistedInn;
+    if (dependencies.copyToClipboard) deps.copyToClipboard = dependencies.copyToClipboard;
+    if (dependencies.getVisibleModals) deps.getVisibleModals = dependencies.getVisibleModals;
+    if (dependencies.escapeHtml) deps.escapeHtml = dependencies.escapeHtml;
+    if (dependencies.DEFAULT_MAIN_ALGORITHM)
+        deps.DEFAULT_MAIN_ALGORITHM = dependencies.DEFAULT_MAIN_ALGORITHM;
+    if (dependencies.algorithms) deps.algorithms = dependencies.algorithms;
+    if (dependencies.saveUserPreferences) deps.saveUserPreferences = dependencies.saveUserPreferences;
     console.log('[client-data.js] Зависимости установлены');
 }
 
@@ -241,13 +261,58 @@ export function applyClientNotesFontSize() {
 }
 
 /**
+ * Добавляет стили для превью ИНН в поле заметок
+ */
+export function ensureInnPreviewStyles() {
+    if (document.getElementById('innPreviewStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'innPreviewStyles';
+    style.textContent = `
+    .client-notes-preview{
+        position: absolute;
+        --inn-offset-x: -0.4px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        overflow: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        background: transparent;
+        pointer-events: none;
+        z-index: 2;
+    }
+    .client-notes-preview::-webkit-scrollbar{
+        width: 0; height: 0; display: none;
+    }
+        .client-notes-preview__inner{
+        position: relative;
+        will-change: transform;
+    }
+    .client-notes-preview .inn-highlight{
+        color: var(--color-primary, #7aa2ff) !important;
+        text-decoration: underline;
+        text-decoration-color: var(--color-primary);
+        text-decoration-thickness: .1em;
+        text-underline-offset: .12em;
+        text-decoration-skip-ink: auto;
+        /* НИЧЕГО, что меняет метрики инлайна */
+        display: inline;
+        padding: 0;
+        margin: 0;
+    }
+ 
+  `;
+    document.head.appendChild(style);
+}
+
+/**
  * Создает превью ИНН в поле заметок клиента
  * @param {HTMLTextAreaElement} textarea - элемент textarea
- * @param {Function} escapeHtml - функция для экранирования HTML
- * @param {Function} getVisibleModals - функция для получения видимых модальных окон
  * @returns {Object} объект с методами управления превью
  */
-export function createClientNotesInnPreview(textarea, escapeHtml, getVisibleModals) {
+export function createClientNotesInnPreview(textarea) {
+    const escapeHtml = deps.escapeHtml;
+    const getVisibleModals = deps.getVisibleModals;
     const wrapper = textarea.parentElement;
     try {
         const ws = getComputedStyle(wrapper);
@@ -366,4 +431,425 @@ export function createClientNotesInnPreview(textarea, escapeHtml, getVisibleModa
             preview.remove();
         },
     };
+}
+
+/**
+ * Инициализирует систему данных клиента
+ */
+export async function initClientDataSystem() {
+    ensureInnPreviewStyles();
+    const LOG_PREFIX = '[ClientDataSystem]';
+    console.log(`${LOG_PREFIX} Запуск инициализации...`);
+
+    const debounceFn =
+        typeof deps.debounce === 'function'
+            ? deps.debounce
+            : (fn) => {
+                  console.warn('[ClientDataSystem] debounce не задан, используется прямой вызов.');
+                  return fn;
+              };
+
+    const clientNotes = document.getElementById('clientNotes');
+    if (!clientNotes) {
+        console.error(
+            `${LOG_PREFIX} КРИТИЧЕСКАЯ ОШИБКА: поле для заметок #clientNotes не найдено. Система не будет работать.`,
+        );
+        return;
+    }
+    console.log(`${LOG_PREFIX} Поле #clientNotes успешно найдено.`);
+
+    const clearClientDataBtn = document.getElementById('clearClientDataBtn');
+    if (!clearClientDataBtn) {
+        console.warn(`${LOG_PREFIX} Кнопка #clearClientDataBtn не найдена.`);
+    }
+
+    const buttonContainer = clearClientDataBtn?.parentNode;
+    if (!buttonContainer) {
+        console.warn(
+            `${LOG_PREFIX} Родительский контейнер для кнопок управления данными клиента не найден.`,
+        );
+    }
+
+    if (State.clientNotesInputHandler) {
+        clientNotes.removeEventListener('input', State.clientNotesInputHandler);
+        console.log(`${LOG_PREFIX} Старый обработчик 'input' удален.`);
+    }
+    if (State.clientNotesKeydownHandler) {
+        clientNotes.removeEventListener('keydown', State.clientNotesKeydownHandler);
+        console.log(`${LOG_PREFIX} Старый обработчик 'keydown' удален.`);
+    }
+
+    if (State.clientNotesCtrlClickHandler) {
+        clientNotes.removeEventListener('mousedown', State.clientNotesCtrlClickHandler);
+        console.log(`${LOG_PREFIX} Старый обработчик 'click' (Ctrl+Click INN) удален.`);
+    }
+    if (State.clientNotesBlurHandler) {
+        clientNotes.removeEventListener('blur', State.clientNotesBlurHandler);
+        console.log(`${LOG_PREFIX} Старый обработчик 'blur' (сброс курсора) удален.`);
+    }
+    if (State.clientNotesCtrlKeyDownHandler) {
+        document.removeEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
+        console.log(`${LOG_PREFIX} Старый обработчик 'keydown' (Ctrl cursor) удален.`);
+    }
+    if (State.clientNotesCtrlKeyUpHandler) {
+        document.removeEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
+        console.log(`${LOG_PREFIX} Старый обработчик 'keyup' (Ctrl cursor) удален.`);
+    }
+
+    if (window.__clientNotesInnPreviewInputHandler) {
+        clientNotes.removeEventListener('input', window.__clientNotesInnPreviewInputHandler);
+        window.__clientNotesInnPreviewInputHandler = null;
+        console.log(`${LOG_PREFIX} Старый обработчик 'input' (ИНН-превью) удален.`);
+    }
+    if (
+        window.__clientNotesInnPreview &&
+        typeof window.__clientNotesInnPreview.destroy === 'function'
+    ) {
+        window.__clientNotesInnPreview.destroy();
+        window.__clientNotesInnPreview = null;
+        console.log(`${LOG_PREFIX} Старое ИНН-превью уничтожено.`);
+    }
+
+    State.clientNotesInputHandler = debounceFn(async () => {
+        try {
+            console.log(`${LOG_PREFIX} Debounce-таймер сработал. Выполняем действия...`);
+            const currentText = clientNotes.value;
+
+            console.log(`${LOG_PREFIX}   -> Вызов await saveClientData()`);
+            await saveClientData();
+
+            if (typeof deps.checkForBlacklistedInn === 'function') {
+                console.log(`${LOG_PREFIX}   -> Вызов await checkForBlacklistedInn()`);
+                await deps.checkForBlacklistedInn(currentText);
+            }
+        } catch (error) {
+            console.error(`${LOG_PREFIX} Ошибка внутри debounced-обработчика:`, error);
+        }
+    }, 750);
+
+    clientNotes.addEventListener('input', State.clientNotesInputHandler);
+    console.log(`${LOG_PREFIX} Новый обработчик 'input' с debounce и await успешно привязан.`);
+
+    State.clientNotesKeydownHandler = (event) => {
+        if (event.key === 'Enter' && event.ctrlKey) {
+            event.preventDefault();
+            const textarea = event.target;
+            const value = textarea.value;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const textBeforeCursor = value.substring(0, start);
+            const regex = /(?:^|\n)\s*(\d+)([).])\s/g;
+            let lastNum = 0;
+            let delimiter = ')';
+            let match;
+            while ((match = regex.exec(textBeforeCursor)) !== null) {
+                const currentNum = parseInt(match[1], 10);
+                if (currentNum >= lastNum) {
+                    lastNum = currentNum;
+                    delimiter = match[2];
+                }
+            }
+            const nextNum = lastNum + 1;
+            let prefix = '\n\n';
+            if (start === 0) {
+                prefix = '';
+            } else {
+                const charBefore = value.substring(start - 1, start);
+                if (charBefore === '\n') {
+                    if (start >= 2 && value.substring(start - 2, start) === '\n\n') {
+                        prefix = '';
+                    } else {
+                        prefix = '\n';
+                    }
+                }
+            }
+            const insertionText = prefix + nextNum + delimiter + ' ';
+            textarea.value = value.substring(0, start) + insertionText + value.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + insertionText.length;
+            textarea.scrollTop = textarea.scrollHeight;
+            textarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+        }
+    };
+    clientNotes.addEventListener('keydown', State.clientNotesKeydownHandler);
+    console.log(`${LOG_PREFIX} Обработчик 'keydown' (Ctrl+Enter) успешно привязан.`);
+
+    function getInnAtCursor(ta) {
+        const text = ta.value || '';
+        const n = text.length;
+        const isDigit = (ch) => ch >= '0' && ch <= '9';
+        const basePos = ta.selectionStart ?? 0;
+        console.log(`[getInnAtCursor] Base position (selectionStart): ${basePos}`);
+        const candidates = [basePos, basePos - 1, basePos + 1, basePos - 2, basePos + 2];
+        for (const p of candidates) {
+            if (p < 0 || p >= n) continue;
+            if (!isDigit(text[p])) continue;
+            let l = p,
+                r = p + 1;
+            while (l > 0 && isDigit(text[l - 1])) l--;
+            while (r < n && isDigit(text[r])) r++;
+            const token = text.slice(l, r);
+            if (token.length === 10 || token.length === 12) {
+                console.log(`[getInnAtCursor] Found valid INN: "${token}" at [${l}, ${r}]`);
+                return { inn: token, start: l, end: r };
+            }
+        }
+        console.log(`[getInnAtCursor] No INN found at position ${basePos}.`);
+        return null;
+    }
+
+    const clientNotesCtrlMouseDownHandler = async (event) => {
+        console.log(
+            `[ClientNotes Handler] Event triggered: ${event.type}. Ctrl/Meta: ${
+                event.ctrlKey || event.metaKey
+            }`,
+        );
+        if (!(event.ctrlKey || event.metaKey)) return;
+        if (typeof event.button === 'number' && event.button !== 0) return;
+        if (!__acquireCopyLock(250)) return;
+
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        console.log(
+            `[ClientNotes Handler] Before getInnAtCursor: selectionStart=${clientNotes.selectionStart}, selectionEnd=${clientNotes.selectionEnd}`,
+        );
+        const hit = getInnAtCursor(clientNotes);
+
+        if (!hit) {
+            console.log('[ClientNotes Handler] INN not found, handler exits without action.');
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        try {
+            clientNotes.setSelectionRange(hit.start, hit.end);
+            if (typeof deps.copyToClipboard === 'function') {
+                await deps.copyToClipboard(hit.inn, `ИНН ${hit.inn} скопирован!`);
+            } else {
+                console.warn('[ClientDataSystem] copyToClipboard не задан.');
+            }
+        } catch (e) {
+            console.error('[ClientDataSystem] Ошибка копирования ИНН по Ctrl+MouseDown:', e);
+        }
+    };
+
+    clientNotes.addEventListener('mousedown', clientNotesCtrlMouseDownHandler);
+    State.clientNotesCtrlClickHandler = clientNotesCtrlMouseDownHandler;
+    console.log(`${LOG_PREFIX} Обработчик 'mousedown' (Ctrl+Click INN→copy) привязан.`);
+
+    State.clientNotesCtrlKeyDownHandler = (e) => {
+        const isClientNotesFocused = document.activeElement === clientNotes;
+        const ctrlOrMeta = e.ctrlKey || e.metaKey;
+        if (ctrlOrMeta && isClientNotesFocused) {
+            ensureInnPreviewStyles();
+            if (!window.__clientNotesInnPreview) {
+                window.__clientNotesInnPreview = createClientNotesInnPreview(clientNotes);
+            }
+            const p = window.__clientNotesInnPreview;
+            p.show();
+            p.update();
+            if (!window.__clientNotesInnPreviewInputHandler) {
+                window.__clientNotesInnPreviewInputHandler = () => {
+                    if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.update();
+                };
+                clientNotes.addEventListener('input', window.__clientNotesInnPreviewInputHandler);
+            }
+        }
+    };
+    State.clientNotesCtrlKeyUpHandler = (e) => {
+        if (!e.ctrlKey && !e.metaKey) {
+            clientNotes.style.cursor = '';
+            if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
+        }
+    };
+    State.clientNotesBlurHandler = () => {
+        clientNotes.style.cursor = '';
+        if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
+    };
+    document.addEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
+    document.addEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
+    clientNotes.addEventListener('blur', State.clientNotesBlurHandler);
+    console.log(`${LOG_PREFIX} Индикация курсора при Ctrl/Meta активирована.`);
+
+    if (clearClientDataBtn) {
+        clearClientDataBtn.addEventListener('click', () => {
+            if (confirm('Вы уверены, что хотите очистить все данные по обращению?')) {
+                clearClientData();
+            }
+        });
+    }
+
+    if (buttonContainer) {
+        const existingExportBtn = document.getElementById('exportTextBtn');
+        if (!existingExportBtn) {
+            const exportTextBtn = document.createElement('button');
+            exportTextBtn.id = 'exportTextBtn';
+            exportTextBtn.innerHTML = `<i class="fas fa-file-download"></i><span class="hidden lg:inline lg:ml-1">Сохранить .txt</span>`;
+            exportTextBtn.className = `p-2 lg:px-3 lg:py-1.5 text-white rounded-md transition text-sm flex items-center border-b`;
+            exportTextBtn.title = 'Сохранить заметки как .txt файл';
+            exportTextBtn.addEventListener('click', exportClientDataToTxt);
+            buttonContainer.appendChild(exportTextBtn);
+        }
+    }
+
+    try {
+        console.log(`${LOG_PREFIX} Загрузка начальных данных для clientNotes...`);
+        let clientDataNotesValue = '';
+        if (State.db) {
+            const clientDataFromDB = await getFromIndexedDB('clientData', 'current');
+            if (clientDataFromDB && clientDataFromDB.notes) {
+                clientDataNotesValue = clientDataFromDB.notes;
+            }
+        } else {
+            const localData = localStorage.getItem('clientData');
+            if (localData) {
+                try {
+                    clientDataNotesValue = JSON.parse(localData).notes || '';
+                } catch (e) {
+                    console.warn(
+                        '[initClientDataSystem] Ошибка парсинга clientData из localStorage:',
+                        e,
+                    );
+                }
+            }
+        }
+        clientNotes.value = clientDataNotesValue;
+        console.log(`${LOG_PREFIX} Данные загружены. clientNotes.value установлен.`);
+
+        applyClientNotesFontSize();
+    } catch (error) {
+        console.error(`${LOG_PREFIX} Ошибка при загрузке данных клиента:`, error);
+    }
+
+    console.log(`${LOG_PREFIX} Инициализация системы данных клиента полностью завершена.`);
+    // ensureBodyScrollUnlocked вызывается внутри createClientNotesInnPreview при необходимости
+    // Убеждаемся, что нет открытых модальных окон перед разблокировкой скролла
+    try {
+        const visibleModals =
+            typeof deps.getVisibleModals === 'function' ? deps.getVisibleModals() : [];
+        if (visibleModals.length === 0) {
+            document.body.classList.remove('modal-open', 'overflow-hidden');
+            if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
+            if (document.documentElement.style.overflow === 'hidden')
+                document.documentElement.style.overflow = '';
+        }
+    } catch (e) {
+        console.warn('[initClientDataSystem] Ошибка при проверке модальных окон:', e);
+    }
+}
+
+/**
+ * Проверяет условия и устанавливает приветственный текст для заметок клиента
+ */
+export async function checkAndSetWelcomeText() {
+    console.log(
+        '[checkAndSetWelcomeText] Проверка условий для отображения приветственного текста...',
+    );
+    const clientNotesTextarea = document.getElementById('clientNotes');
+
+    if (!clientNotesTextarea) {
+        console.error(
+            '[checkAndSetWelcomeText] Textarea #clientNotes не найдена. Приветственный текст не будет установлен.',
+        );
+        return;
+    }
+
+    if (
+        !State.userPreferences ||
+        typeof State.userPreferences.welcomeTextShownInitially === 'undefined'
+    ) {
+        console.error(
+            '[checkAndSetWelcomeText] State.userPreferences не загружены или не содержат флага welcomeTextShownInitially. Выход.',
+        );
+        return;
+    }
+
+    if (State.userPreferences.welcomeTextShownInitially === true) {
+        console.log(
+            '[checkAndSetWelcomeText] Приветственный текст не будет показан, так как флаг welcomeTextShownInitially уже установлен.',
+        );
+        return;
+    }
+
+    const notesAreEmpty = !clientNotesTextarea.value || clientNotesTextarea.value.trim() === '';
+    const algorithms = deps.algorithms;
+    const defaultMainAlgorithm = deps.DEFAULT_MAIN_ALGORITHM;
+
+    if (
+        !algorithms ||
+        typeof algorithms !== 'object' ||
+        !algorithms.main ||
+        typeof defaultMainAlgorithm !== 'object' ||
+        defaultMainAlgorithm === null
+    ) {
+        console.error(
+            "[checkAndSetWelcomeText] Глобальные переменные 'algorithms.main' или 'DEFAULT_MAIN_ALGORITHM' не определены или некорректны!",
+        );
+        return;
+    }
+
+    const currentMainAlgoStepsNormalized = normalizeAlgorithmSteps(algorithms.main.steps || []);
+    const defaultMainAlgoStepsNormalized = normalizeAlgorithmSteps(
+        defaultMainAlgorithm.steps || [],
+    );
+
+    const currentMainAlgoCore = { ...algorithms.main };
+    delete currentMainAlgoCore.steps;
+    const defaultMainAlgoCore = { ...defaultMainAlgorithm };
+    delete defaultMainAlgoCore.steps;
+
+    const coreFieldsMatch = deepEqual(currentMainAlgoCore, defaultMainAlgoCore);
+    const stepsMatch = deepEqual(currentMainAlgoStepsNormalized, defaultMainAlgoStepsNormalized);
+    const isMainAlgorithmDefault = coreFieldsMatch && stepsMatch;
+
+    console.log(
+        `[checkAndSetWelcomeText - Условия] notesAreEmpty: ${notesAreEmpty}, isMainAlgorithmDefault: ${isMainAlgorithmDefault} (coreFieldsMatch: ${coreFieldsMatch}, stepsMatch: ${stepsMatch}), welcomeTextShownInitially: ${State.userPreferences.welcomeTextShownInitially}`,
+    );
+
+    if (notesAreEmpty && isMainAlgorithmDefault) {
+        clientNotesTextarea.value = DEFAULT_WELCOME_CLIENT_NOTES_TEXT;
+        console.log(
+            '[checkAndSetWelcomeText] Приветственный текст успешно установлен в #clientNotes.',
+        );
+
+        State.userPreferences.welcomeTextShownInitially = true;
+        if (typeof deps.saveUserPreferences === 'function') {
+            try {
+                await deps.saveUserPreferences();
+                console.log(
+                    '[checkAndSetWelcomeText] Флаг welcomeTextShownInitially установлен и настройки пользователя сохранены.',
+                );
+            } catch (error) {
+                console.error(
+                    '[checkAndSetWelcomeText] Ошибка при сохранении userPreferences после установки флага:',
+                    error,
+                );
+            }
+        } else {
+            console.warn(
+                '[checkAndSetWelcomeText] Функция saveUserPreferences не найдена. Флаг welcomeTextShownInitially может не сохраниться.',
+            );
+        }
+
+        setTimeout(() => {
+            saveClientData();
+            console.log(
+                '[checkAndSetWelcomeText] Данные клиента (с приветственным текстом) сохранены.',
+            );
+        }, 100);
+    } else {
+        if (!notesAreEmpty) {
+            console.log(
+                '[checkAndSetWelcomeText] Приветственный текст не установлен: поле заметок не пусто.',
+            );
+        }
+        if (!isMainAlgorithmDefault) {
+            console.log(
+                '[checkAndSetWelcomeText] Приветственный текст не установлен: главный алгоритм был изменен или не соответствует дефолтному.',
+            );
+            if (!coreFieldsMatch) console.log('   - Основные поля алгоритма не совпадают.');
+            if (!stepsMatch) console.log('   - Шаги алгоритма не совпадают.');
+        }
+    }
 }
