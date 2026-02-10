@@ -171,6 +171,17 @@ import {
     parseShablonyContent
 } from './js/features/google-docs.js';
 
+// Background Health Tests
+import {
+    setBackgroundHealthTestsDependencies,
+    initBackgroundHealthTestsSystem
+} from './js/features/background-health-tests.js';
+
+// Background Status HUD
+import {
+    initBackgroundStatusHUD
+} from './js/ui/background-status-hud.js';
+
 // SEDO System
 import {
     DEFAULT_SEDO_DATA,
@@ -572,6 +583,7 @@ import {
 import {
     setSystemsInitDependencies,
     initClearDataFunctionality as initClearDataFunctionalityModule,
+    initBackgroundSystems as initBackgroundSystemsModule,
 } from './js/ui/systems-init.js';
 
 // UI Settings Modal (extracted from script.js)
@@ -1143,6 +1155,16 @@ setUIInitDependencies({
     hotkeysModalConfig,
 });
 console.log('[script.js] Зависимости модуля UI Init установлены');
+
+// Initialize BackgroundStatusHUD early so it's available for app-init
+if (typeof initBackgroundStatusHUD === 'function' && !window.BackgroundStatusHUD) {
+    try {
+        window.BackgroundStatusHUD = initBackgroundStatusHUD();
+        console.log('[script.js] BackgroundStatusHUD инициализирован до window.onload');
+    } catch (e) {
+        console.error('[script.js] Ошибка ранней инициализации BackgroundStatusHUD:', e);
+    }
+}
 
 window.onload = async () => {
     console.log('window.onload: Страница полностью загружена.');
@@ -4608,6 +4630,7 @@ setUIInitDependencies({
     updateVisibleTabs,
     showBlacklistWarning,
     hotkeysModalConfig,
+    initBackgroundSystems: initBackgroundSystemsModule,
 });
 console.log('[script.js] Зависимости модуля UI Init установлены');
 
@@ -4628,6 +4651,9 @@ setSystemsInitDependencies({
     loadingOverlayManager,
     NotificationService,
     showNotification,
+    initBackgroundHealthTestsSystem,
+    setBackgroundHealthTestsDependencies,
+    BackgroundStatusHUDFactory: initBackgroundStatusHUD,
 });
 console.log('[script.js] Зависимости модуля Systems Init установлены');
 
