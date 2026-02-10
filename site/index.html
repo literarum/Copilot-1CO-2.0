@@ -733,6 +733,14 @@
                         <i class="fas fa-user-secret mr-1"></i>
                         <span class="hidden sm:inline">Черный список жаб</span>
                     </button>
+                    <button
+                        id="fnsCertTab"
+                        class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
+                        aria-controls="fnsCertContent"
+                    >
+                        <i class="fas fa-certificate mr-1"></i>
+                        <span class="hidden sm:inline">Сертификаты ФНС</span>
+                    </button>
                     <div class="relative group ml-auto md:ml-1 shrink-0">
                         <button
                             id="moreTabsBtn"
@@ -1410,6 +1418,40 @@
                     <p class="text-gray-500 dark:text-gray-400 text-center py-4">
                         Загрузка данных...
                     </p>
+                </div>
+            </div>
+
+            <!-- Проверка сертификатов ФНС (отзыв по CRL) -->
+            <div id="fnsCertContent" class="tab-content hidden p-4" aria-labelledby="fnsCertTab">
+                <div class="max-w-4xl space-y-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                        Проверка сертификата ФНС по спискам отзыва (CRL)
+                    </h2>
+                    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg space-y-4">
+                        <div>
+                            <label for="fnsCertFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сертификат (PEM или DER)</label>
+                            <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
+                            <div id="fnsCertInfo" class="mt-2 text-sm text-gray-600 dark:text-gray-400 min-h-[2rem]"></div>
+                        </div>
+                        <div>
+                            <label for="fnsCrlUrls" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL списков отзыва (CRL), по одному на строку</label>
+                            <textarea id="fnsCrlUrls" rows="3" class="block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 text-sm" placeholder="https://..."></textarea>
+                        </div>
+                        <div>
+                            <label for="fnsCrlFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Или загрузить CRL-файлы</label>
+                            <input type="file" id="fnsCrlFileInput" accept=".crl,.der" multiple class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" id="fnsCertCheckBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md text-sm">
+                                <i class="fas fa-check-circle mr-2"></i>Проверить
+                            </button>
+                            <button type="button" id="fnsCertResetBtn" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 text-white rounded-md text-sm">
+                                <i class="fas fa-undo mr-2"></i>Сбросить
+                            </button>
+                        </div>
+                        <div id="fnsCrlStatus" class="text-sm"></div>
+                        <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-400"></div>
+                    </div>
                 </div>
             </div>
 

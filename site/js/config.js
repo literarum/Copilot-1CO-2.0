@@ -23,6 +23,7 @@ export const tabsConfig = [
         icon: 'fa-user-secret',
         isSpecial: true,
     },
+    { id: 'fnsCert', name: 'Сертификаты ФНС', icon: 'fa-certificate' },
 ];
 
 export const allPanelIdsForDefault = tabsConfig.map((t) => t.id);
