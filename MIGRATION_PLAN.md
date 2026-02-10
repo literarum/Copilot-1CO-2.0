@@ -212,6 +212,10 @@
 - Делегированный обработчик кликов по вкладкам — в `site/js/components/tabs.js`.
 - HUD фоновой инициализации — в `site/js/ui/background-status-hud.js`.
 - Стили `.pdf-dropzone` и `.pdf-empty` из PR11 добавлены в `site/css/styles.css`.
+- В **`site/js/app/app-init.js`** в цепочку инициализации и в зависимости добавлены: `initFNSCertificateRevocationSystem`, `initAlgorithmsPdfExportSystem`, `initBackgroundHealthTestsSystem`; в `site/script.js` эти функции передаются в `setAppInitDependencies`.
+- В **`site/js/app.js`** в `Bookmarks.setBookmarksDependencies` добавлены из PR11: `showEditBookmarkModal`, `deleteBookmark`, `showBookmarkDetailModal`, `handleViewBookmarkScreenshots`, `NotificationService`, `showScreenshotViewerModal`; в `site/script.js` в оба вызова `setBookmarksDependencies` добавлены `NotificationService` и `showScreenshotViewerModal`.
+- В **`site/js/components/tabs.js`** добавлена функция **`initTabClickDelegation()`** и её вызов в `site/js/app/onload-handler.js` (в том же `requestAnimationFrame`, что и `setupTabsOverflow`).
+- В **`site/js/config.js`** название вкладки ФНС приведено к PR11: «Проверка сертификата ФНС».
 
 ---
 

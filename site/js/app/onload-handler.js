@@ -6,6 +6,7 @@ let deps = {
     appInit: null,
     initGoogleDocSections: null,
     setupTabsOverflow: null,
+    initTabClickDelegation: null,
     updateVisibleTabs: null,
     initUISettingsModalHandlers: null,
     backgroundStatusHUD: null,
@@ -102,6 +103,9 @@ export function registerOnloadHandler() {
                     }
 
                     requestAnimationFrame(() => {
+                        if (typeof deps.initTabClickDelegation === 'function') {
+                            deps.initTabClickDelegation();
+                        }
                         if (typeof deps.setupTabsOverflow === 'function') {
                             console.log(
                                 'window.onload (FIXED): Вызов setupTabsOverflow для инициализации обработчиков.',

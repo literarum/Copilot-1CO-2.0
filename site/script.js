@@ -522,6 +522,7 @@ import {
     ensureTabPresent as ensureTabPresentModule,
     setActiveTab as setActiveTabModule,
     applyPanelOrderAndVisibility as applyPanelOrderAndVisibilityModule,
+    initTabClickDelegation,
 } from './js/components/tabs.js';
 
 // Раннее определение setActiveTab для передачи в setUIInitDependencies и initUI
@@ -1113,6 +1114,9 @@ setAppInitDependencies({
     initTimerSystem,
     initSedoTypesSystem,
     initBlacklistSystem,
+    initFNSCertificateRevocationSystem,
+    initAlgorithmsPdfExportSystem,
+    initBackgroundHealthTestsSystem,
     initReloadButton,
     initClearDataFunctionality,
     initUICustomization,
@@ -1175,6 +1179,8 @@ setBookmarksDependencies({
     deleteBookmark: deleteBookmarkModule,
     showBookmarkDetailModal,
     handleViewBookmarkScreenshots: handleViewBookmarkScreenshotsModule,
+    NotificationService,
+    showScreenshotViewerModal,
 });
 console.log('[script.js] Зависимости модуля Bookmarks установлены');
 
@@ -1210,6 +1216,7 @@ setOnloadHandlerDependencies({
     appInit,
     initGoogleDocSections,
     setupTabsOverflow,
+    initTabClickDelegation,
     updateVisibleTabs,
     initUISettingsModalHandlers: typeof initUISettingsModalHandlersModule === 'function' ? initUISettingsModalHandlersModule : null,
     backgroundStatusHUD: window.BackgroundStatusHUD || null,

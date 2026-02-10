@@ -234,6 +234,23 @@ export function updateVisibleTabs() {
 }
 
 /**
+ * Делегированный обработчик кликов по вкладкам
+ */
+export function initTabClickDelegation() {
+    if (initTabClickDelegation._isAttached) return;
+    initTabClickDelegation._isAttached = true;
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.tab-btn');
+        if (!btn || btn.id === 'moreTabsBtn') return;
+        const tabId = (btn.id || '').replace(/Tab$/, '');
+        if (tabId && typeof deps.setActiveTab === 'function') {
+            deps.setActiveTab(tabId);
+        }
+    });
+}
+
+/**
  * Настраивает обработчики событий для переполнения вкладок
  */
 export function setupTabsOverflow() {

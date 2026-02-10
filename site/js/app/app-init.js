@@ -54,6 +54,9 @@ export async function appInit(context = 'normal') {
         initTimerSystem,
         initSedoTypesSystem,
         initBlacklistSystem,
+        initFNSCertificateRevocationSystem,
+        initAlgorithmsPdfExportSystem,
+        initBackgroundHealthTestsSystem,
         initReloadButton,
         initClearDataFunctionality,
         initUICustomization,
@@ -427,6 +430,33 @@ export async function appInit(context = 'normal') {
                         typeof initBlacklistSystem === 'function'
                             ? initBlacklistSystem
                             : () => console.warn('initBlacklistSystem not defined'),
+                    critical: false,
+                },
+                {
+                    name: 'initFNSCertificateRevocationSystem',
+                    func:
+                        typeof initFNSCertificateRevocationSystem === 'function'
+                            ? initFNSCertificateRevocationSystem
+                            : () =>
+                                console.warn(
+                                    'initFNSCertificateRevocationSystem not defined',
+                                ),
+                    critical: false,
+                },
+                {
+                    name: 'initAlgorithmsPdfExportSystem',
+                    func:
+                        typeof initAlgorithmsPdfExportSystem === 'function'
+                            ? initAlgorithmsPdfExportSystem
+                            : () => console.warn('initAlgorithmsPdfExportSystem not defined'),
+                    critical: false,
+                },
+                {
+                    name: 'initBackgroundHealthTestsSystem',
+                    func:
+                        typeof initBackgroundHealthTestsSystem === 'function'
+                            ? initBackgroundHealthTestsSystem
+                            : () => console.warn('initBackgroundHealthTestsSystem not defined'),
                     critical: false,
                 },
                 {
