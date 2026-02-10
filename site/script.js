@@ -1011,7 +1011,7 @@ const initReglamentsSystem = initReglamentsSystemModule;
 const initBookmarkSystem = initBookmarkSystemModule;
 const initExternalLinksSystem = initExternalLinksSystemModule;
 const initBlacklistSystem = initBlacklistSystemModule;
-const initReloadButton = initReloadButtonModule;
+const initReloadButtonFn = initReloadButtonModule;
 
 // setActiveTab уже определена выше (после импорта tabs.js)
 const initFullscreenToggles = initFullscreenTogglesModule;
@@ -1068,7 +1068,7 @@ setAppInitDependencies({
     initTimerSystem,
     initSedoTypesSystem,
     initBlacklistSystem,
-    initReloadButton,
+    initReloadButton: initReloadButtonFn,
     initClearDataFunctionality,
     initUICustomization,
     initHotkeysModal,
@@ -4885,4 +4885,3 @@ if (typeof initCollapseAllButtons === 'function') window.initCollapseAllButtons 
 if (typeof initHotkeysModal === 'function') window.initHotkeysModal = initHotkeysModal;
 if (typeof initClearDataFunctionality === 'function') window.initClearDataFunctionality = initClearDataFunctionality;
 if (typeof showNoInnModal === 'function') window.showNoInnModal = showNoInnModal;
-
