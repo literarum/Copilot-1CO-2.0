@@ -195,22 +195,7 @@ export function initBackgroundSystems() {
         }
     }
 
-    if (typeof setBackgroundHealthTestsDependencies === 'function') {
-        try {
-            setBackgroundHealthTestsDependencies({
-                saveToIndexedDB: State?.db ? State.db.saveToIndexedDB : null,
-                getFromIndexedDB: State?.db ? State.db.getFromIndexedDB : null,
-                deleteFromIndexedDB: State?.db ? State.db.deleteFromIndexedDB : null,
-                performDBOperation: State?.db ? State.db.performDBOperation : null,
-            });
-            console.log('[BackgroundSystems] Зависимости для фоновых health-тестов установлены.');
-        } catch (e) {
-            console.error(
-                '[BackgroundSystems] Ошибка установки зависимостей фоновых health-тестов:',
-                e,
-            );
-        }
-    }
+    // Зависимости для health-тестов задаются в script.js (saveToIndexedDB, getFromIndexedDB и т.д.)
 
     if (typeof initBackgroundHealthTestsSystem === 'function') {
         try {

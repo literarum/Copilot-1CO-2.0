@@ -177,10 +177,23 @@ import {
     initBackgroundHealthTestsSystem
 } from './js/features/background-health-tests.js';
 
+// Algorithms PDF Export (PR11)
+import {
+    setAlgorithmsPdfExportDependencies,
+    initAlgorithmsPdfExportSystem
+} from './js/features/algorithms-pdf-export.js';
+
 // Background Status HUD
 import {
     initBackgroundStatusHUD
 } from './js/ui/background-status-hud.js';
+
+// UI modules from PR11
+import { setEscapeHandlerDependencies, addEscapeHandler as addEscapeHandlerModule, removeEscapeHandler as removeEscapeHandlerModule } from './js/ui/escape-handler.js';
+import { setHeaderButtonsDependencies, initHeaderButtons as initHeaderButtonsModule } from './js/ui/header-buttons.js';
+import { setThemeToggleDependencies, initThemeToggle as initThemeToggleModule } from './js/ui/theme-toggle.js';
+import { setModalOverlayHandlerDependencies, initModalOverlayHandler as initModalOverlayHandlerModule } from './js/ui/modal-overlay-handler.js';
+import { setAlgorithmModalControlDependencies, initAlgorithmModalControls as initAlgorithmModalControlsModule } from './js/ui/algorithm-modal-controls.js';
 
 // SEDO System
 import {
@@ -1027,6 +1040,10 @@ const initReloadButton = initReloadButtonModule;
 
 // setActiveTab уже определена выше (после импорта tabs.js)
 const initFullscreenToggles = initFullscreenTogglesModule;
+const initHeaderButtons = initHeaderButtonsModule;
+const initThemeToggle = initThemeToggleModule;
+const initModalOverlayHandler = initModalOverlayHandlerModule;
+const initAlgorithmModalControls = initAlgorithmModalControlsModule;
 const setupHotkeys = setupHotkeysModule;
 const initUI = initUIModule;
 const initHotkeysModal = initHotkeysModalModule;
@@ -1086,6 +1103,10 @@ setAppInitDependencies({
     initHotkeysModal,
     setupHotkeys,
     initFullscreenToggles,
+    initHeaderButtons,
+    initThemeToggle,
+    initModalOverlayHandler,
+    initAlgorithmModalControls,
     applyInitialUISettings,
     initUI,
 });
@@ -1246,6 +1267,11 @@ window.onload = async () => {
                         initGoogleDocSections();
                     } else {
                         console.error('Функция initGoogleDocSections не найдена в window.onload!');
+                    }
+                    // PR11: инициализация экспорта алгоритмов в PDF
+                    setAlgorithmsPdfExportDependencies({ algorithms, ExportService, showNotification });
+                    if (typeof initAlgorithmsPdfExportSystem === 'function') {
+                        initAlgorithmsPdfExportSystem();
                     }
                     // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
                     // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
@@ -4657,6 +4683,15 @@ setSystemsInitDependencies({
 });
 console.log('[script.js] Зависимости модуля Systems Init установлены');
 
+// Background Health Tests Dependencies (IndexedDB API)
+setBackgroundHealthTestsDependencies({
+    saveToIndexedDB,
+    getFromIndexedDB,
+    deleteFromIndexedDB,
+    performDBOperation,
+});
+console.log('[script.js] Зависимости фоновых health-тестов установлены');
+
 // Hotkeys Handler Dependencies
 setHotkeysDependencies({
     showNoInnModal,
@@ -4685,6 +4720,43 @@ setHotkeysDependencies({
     toggleActiveSectionView: toggleActiveSectionViewModule,
 });
 console.log('[script.js] Зависимости модуля Hotkeys Handler установлены');
+
+// Escape Handler Dependencies (PR11)
+setEscapeHandlerDependencies({ getVisibleModals, getTopmostModal });
+
+// Header Buttons Dependencies (PR11)
+setHeaderButtonsDependencies({ setActiveTab });
+
+// Theme Toggle Dependencies (PR11)
+setThemeToggleDependencies({
+    State,
+    DEFAULT_UI_SETTINGS,
+    setTheme,
+    showNotification,
+    saveUserPreferences,
+    getSettingsFromModal: getSettingsFromModalModule,
+    deepEqual: deepEqualModule,
+});
+
+// Modal Overlay Handler Dependencies (PR11)
+setModalOverlayHandlerDependencies({
+    getVisibleModals,
+    getTopmostModal,
+    requestCloseModal: typeof requestCloseModal !== 'undefined' ? requestCloseModal : null,
+    removeEscapeHandler,
+});
+
+// Algorithm Modal Controls Dependencies (PR11)
+setAlgorithmModalControlDependencies({
+    deleteAlgorithm: deleteAlgorithmModule,
+    showNotification,
+    editAlgorithm: editAlgorithmModule,
+    ExportService,
+    closeAnimatedModal: closeAnimatedModalModule,
+});
+
+// Algorithms PDF Export Dependencies (PR11) — algorithms, ExportService, showNotification задаются после загрузки данных
+// setAlgorithmsPdfExportDependencies вызывается в window.onload после appInit
 
 // UI Settings Modal Dependencies (applyPreviewSettings определена ниже, но доступна благодаря hoisting)
 // setUISettingsModalDependencies вызывается после определения applyPreviewSettings - см. после функции applyPreviewSettings
