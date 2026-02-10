@@ -19,10 +19,12 @@ let defaultPanelVisibility = null;
 let applyPreviewSettings = null;
 let showNotification = null;
 let loadUserPreferences = null;
+let saveUserPreferences = null;
 let applyPanelOrderAndVisibility = null;
 let ensureTabPresent = null;
 let setupTabsOverflow = null;
 let updateVisibleTabs = null;
+let getSettingsFromModal = null;
 
 export function setUISettingsDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
@@ -33,10 +35,12 @@ export function setUISettingsDependencies(deps) {
     if (deps.applyPreviewSettings !== undefined) applyPreviewSettings = deps.applyPreviewSettings;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
     if (deps.loadUserPreferences !== undefined) loadUserPreferences = deps.loadUserPreferences;
+    if (deps.saveUserPreferences !== undefined) saveUserPreferences = deps.saveUserPreferences;
     if (deps.applyPanelOrderAndVisibility !== undefined) applyPanelOrderAndVisibility = deps.applyPanelOrderAndVisibility;
     if (deps.ensureTabPresent !== undefined) ensureTabPresent = deps.ensureTabPresent;
     if (deps.setupTabsOverflow !== undefined) setupTabsOverflow = deps.setupTabsOverflow;
     if (deps.updateVisibleTabs !== undefined) updateVisibleTabs = deps.updateVisibleTabs;
+    if (deps.getSettingsFromModal !== undefined) getSettingsFromModal = deps.getSettingsFromModal;
 }
 
 // ============================================================================
@@ -199,6 +203,105 @@ export async function applyUISettings() {
             );
         }
         return Promise.reject(applyError);
+    }
+}
+
+/**
+ * Загружает настройки для модального окна UI
+ */
+export async function loadUISettings() {
+    console.log('loadUISettings V2 (Unified): Загрузка настроек для модального окна...');
+
+    if (typeof State.userPreferences !== 'object' || Object.keys(State.userPreferences).length === 0) {
+        console.error(
+            'loadUISettings: Глобальные настройки (State.userPreferences) не загружены. Попытка аварийной загрузки.',
+        );
+        await loadUserPreferences();
+    }
+
+    State.originalUISettings = JSON.parse(JSON.stringify(State.userPreferences));
+    State.currentPreviewSettings = JSON.parse(JSON.stringify(State.userPreferences));
+
+    if (typeof applyPreviewSettings === 'function') {
+        await applyPreviewSettings(State.currentPreviewSettings);
+    } else {
+        console.warn(
+            '[loadUISettings] Функция applyPreviewSettings не найдена. Предпросмотр не будет применен.',
+        );
+    }
+
+    console.log(
+        'loadUISettings: Настройки для модального окна подготовлены:',
+        State.currentPreviewSettings,
+    );
+    return State.currentPreviewSettings;
+}
+
+/**
+ * Сохраняет настройки UI из модального окна
+ */
+export async function saveUISettings() {
+    console.log('Saving UI settings (Unified Logic V3 - Fixed Checkboxes)...');
+
+    const newSettings = getSettingsFromModal?.();
+    if (!newSettings) {
+        showNotification?.('Ошибка: Не удалось получить настройки из модального окна.', 'error');
+        return false;
+    }
+
+    State.userPreferences = { ...State.userPreferences, ...newSettings };
+
+    try {
+        if (typeof saveUserPreferences === 'function') {
+            await saveUserPreferences();
+            console.log('Единые настройки пользователя сохранены через saveUserPreferences().');
+        } else {
+            throw new Error('saveUserPreferences function not found.');
+        }
+
+        State.originalUISettings = JSON.parse(JSON.stringify(State.userPreferences));
+        State.currentPreviewSettings = JSON.parse(JSON.stringify(State.userPreferences));
+        State.isUISettingsDirty = false;
+
+        if (typeof applyPreviewSettings === 'function') {
+            await applyPreviewSettings(State.userPreferences);
+            console.log('UI settings applied immediately after saving.');
+        } else {
+            throw new Error(
+                'applyPreviewSettings function not found! UI might not update after save.',
+            );
+        }
+
+        const fallbackOrder =
+            Array.isArray(defaultPanelOrder) && defaultPanelOrder.length
+                ? [...defaultPanelOrder]
+                : Array.isArray(tabsConfig)
+                ? tabsConfig.map((t) => t.id)
+                : [];
+        const order =
+            Array.isArray(State.userPreferences?.panelOrder) && State.userPreferences.panelOrder.length
+                ? [...State.userPreferences.panelOrder]
+                : fallbackOrder;
+        const visibility =
+            Array.isArray(State.userPreferences?.panelVisibility) &&
+            State.userPreferences.panelVisibility.length === order.length
+                ? [...State.userPreferences.panelVisibility]
+                : order.map((id) => !(id === 'sedoTypes' || id === 'blacklistedClients'));
+        if (typeof applyPanelOrderAndVisibility === 'function') {
+            applyPanelOrderAndVisibility(order, visibility);
+        } else {
+            console.warn(
+                'applyPanelOrderAndVisibility not found; tabs order may not update immediately after save.',
+            );
+        }
+
+        showNotification?.('Настройки успешно сохранены.', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error saving unified UI settings:', error);
+        showNotification?.(`Ошибка при сохранении настроек: ${error.message}`, 'error');
+        State.userPreferences = JSON.parse(JSON.stringify(State.originalUISettings));
+        return false;
     }
 }
 

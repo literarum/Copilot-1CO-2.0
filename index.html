@@ -697,6 +697,12 @@
                         <i class="fas fa-key mr-1"></i>СКЗИ
                     </button>
                     <button
+                        id="fnsCertTab"
+                        class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
+                    >
+                        <i class="fas fa-certificate mr-1"></i>Проверка сертификата ФНС
+                    </button>
+                    <button
                         id="lk1cTab"
                         class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
                     >
@@ -898,6 +904,13 @@
                                 </button>
                             </div>
                             <button
+                                id="exportProgramAlgorithmsPdfBtn"
+                                data-algorithm-export="program"
+                                class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2 text-red-500"></i>Экспорт PDF
+                            </button>
+                            <button
                                 id="addProgramAlgorithmBtn"
                                 class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
                             >
@@ -941,6 +954,13 @@
                                 </button>
                             </div>
                             <button
+                                id="exportSkziAlgorithmsPdfBtn"
+                                data-algorithm-export="skzi"
+                                class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2 text-red-500"></i>Экспорт PDF
+                            </button>
+                            <button
                                 id="addSkziAlgorithmBtn"
                                 class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
                             >
@@ -954,6 +974,105 @@
                         data-section-id="skziAlgorithms"
                         data-default-view="cards"
                     ></div>
+                </div>
+            </div>
+
+            <!-- Проверка сертификата ФНС -->
+            <div id="fnsCertContent" class="tab-content hidden">
+                <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md space-y-6">
+                    <div class="space-y-2">
+                        <h2 class="text-2xl font-bold">
+                            Проверка сертификата на отзыв (ФНС России)
+                        </h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Раздел проверяет .cer сертификаты по спискам отзыва ФНС России (CRL).
+                            Парсер обрабатывает ГОСТ-сертификаты, корректно считывая серийный номер,
+                            издателя и сроки действия.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-content">
+                        <div class="bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold mb-3">To-do алгоритм проверки</h3>
+                            <ol class="list-decimal list-inside text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                <li>Загрузите сертификат клиента в формате .cer.</li>
+                                <li>
+                                    Добавьте ссылки на CRL ФНС России или загрузите файлы списков
+                                    отзыва вручную.
+                                </li>
+                                <li>Нажмите «Проверить отзыв» и дождитесь результата.</li>
+                                <li>
+                                    Сверьте статус отзыва и параметры сертификата (серийный номер,
+                                    издатель, период действия).
+                                </li>
+                            </ol>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm space-y-3">
+                            <h3 class="text-lg font-semibold">Загрузка сертификата (.cer)</h3>
+                            <input
+                                id="fnsCertFileInput"
+                                type="file"
+                                accept=".cer,.crt,.der"
+                                class="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-secondary"
+                            />
+                            <div
+                                id="fnsCertInfo"
+                                class="text-sm text-gray-600 dark:text-gray-300"
+                            >
+                                Сертификат не выбран.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-content">
+                        <div class="bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm space-y-3">
+                            <h3 class="text-lg font-semibold">Списки отзыва ФНС (CRL)</h3>
+                            <textarea
+                                id="fnsCrlUrls"
+                                rows="4"
+                                placeholder="Один URL CRL ФНС на строку"
+                                class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-2 text-sm text-gray-700 dark:text-gray-200"
+                            ></textarea>
+                            <input
+                                id="fnsCrlFileInput"
+                                type="file"
+                                accept=".crl,.der"
+                                multiple
+                                class="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-200 file:text-gray-700 dark:file:bg-gray-600 dark:file:text-gray-100"
+                            />
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                Можно комбинировать URL и локальные CRL. Если доступ к URL закрыт
+                                политикой CORS, загрузите файл вручную.
+                            </p>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm space-y-3">
+                            <h3 class="text-lg font-semibold">Результат проверки</h3>
+                            <div
+                                id="fnsCrlStatus"
+                                class="rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-3 text-sm text-gray-700 dark:text-gray-200"
+                            >
+                                Ожидание данных для проверки.
+                            </div>
+                            <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-300"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button
+                            id="fnsCertCheckBtn"
+                            class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
+                        >
+                            <i class="fas fa-shield-alt mr-2"></i>Проверить отзыв
+                        </button>
+                        <button
+                            id="fnsCertResetBtn"
+                            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                        >
+                            Очистить
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -983,6 +1102,13 @@
                                     <i class="fas fa-list"></i>
                                 </button>
                             </div>
+                            <button
+                                id="exportLk1cAlgorithmsPdfBtn"
+                                data-algorithm-export="lk1c"
+                                class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2 text-red-500"></i>Экспорт PDF
+                            </button>
                             <button
                                 id="addLk1cAlgorithmBtn"
                                 class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
@@ -1026,6 +1152,13 @@
                                     <i class="fas fa-list"></i>
                                 </button>
                             </div>
+                            <button
+                                id="exportWebRegAlgorithmsPdfBtn"
+                                data-algorithm-export="webReg"
+                                class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2 text-red-500"></i>Экспорт PDF
+                            </button>
                             <button
                                 id="addWebRegAlgorithmBtn"
                                 class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
