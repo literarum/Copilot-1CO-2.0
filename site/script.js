@@ -1032,6 +1032,92 @@ function initUICustomization() {
     console.warn('initUICustomization: функция не реализована');
 }
 
+function initCertificateChecksSystem() {
+    const serialsInput = document.getElementById('certSerialsInput');
+    const crlInput = document.getElementById('certCrlInput');
+    const runBtn = document.getElementById('runCertChecksBtn');
+    const clearBtn = document.getElementById('clearCertChecksBtn');
+    const summary = document.getElementById('certChecksSummary');
+    const resultsContainer = document.getElementById('certChecksResults');
+    const resultsBody = document.getElementById('certChecksResultsBody');
+
+    if (!serialsInput || !crlInput || !runBtn || !clearBtn || !summary || !resultsContainer || !resultsBody) {
+        return;
+    }
+
+    const normalizeSerial = (value) =>
+        value
+            .toUpperCase()
+            .replace(/0X/g, '')
+            .replace(/[^0-9A-F]/g, '')
+            .trim();
+
+    const parseInputSerials = (text) => {
+        const tokens = text
+            .split(/[\n,;\s]+/)
+            .map(normalizeSerial)
+            .filter((token) => token.length >= 6);
+        return [...new Set(tokens)];
+    };
+
+    const parseCrlSerials = (text) => {
+        const matches = text.toUpperCase().match(/[0-9A-F][0-9A-F:\-\s]{4,}[0-9A-F]/g) || [];
+        const normalized = matches
+            .map(normalizeSerial)
+            .filter((token) => token.length >= 6);
+        return new Set(normalized);
+    };
+
+    const renderResults = (checkedSerials, crlSet) => {
+        resultsBody.innerHTML = '';
+
+        if (!checkedSerials.length) {
+            summary.className =
+                'mb-content-sm p-3 rounded-lg border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/30 text-sm';
+            summary.textContent = 'Добавьте хотя бы один номер сертификата для проверки.';
+            summary.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+            return;
+        }
+
+        let revokedCount = 0;
+        checkedSerials.forEach((serial) => {
+            const isRevoked = crlSet.has(serial);
+            if (isRevoked) revokedCount += 1;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-3 py-2 font-mono">${escapeHtml(serial)}</td>
+                <td class="px-3 py-2 ${isRevoked ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-green-600 dark:text-green-400 font-semibold'}">
+                    ${isRevoked ? 'Отозван' : 'Не найден в CRL'}
+                </td>
+            `;
+            resultsBody.appendChild(row);
+        });
+
+        const okCount = checkedSerials.length - revokedCount;
+        summary.className =
+            'mb-content-sm p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm';
+        summary.textContent = `Проверено: ${checkedSerials.length}. Отозвано: ${revokedCount}. Действующих: ${okCount}.`;
+        summary.classList.remove('hidden');
+        resultsContainer.classList.remove('hidden');
+    };
+
+    runBtn.addEventListener('click', () => {
+        const checkedSerials = parseInputSerials(serialsInput.value);
+        const crlSet = parseCrlSerials(crlInput.value);
+        renderResults(checkedSerials, crlSet);
+    });
+
+    clearBtn.addEventListener('click', () => {
+        serialsInput.value = '';
+        crlInput.value = '';
+        summary.classList.add('hidden');
+        resultsContainer.classList.add('hidden');
+        resultsBody.innerHTML = '';
+    });
+}
+
 // showNotification и showBookmarkDetailModal определены ниже как function declarations
 // Благодаря hoisting они доступны здесь, но мы не можем их переопределить
 // Поэтому используем их напрямую в зависимостях
@@ -1160,6 +1246,8 @@ window.onload = async () => {
         console.error('NotificationService не определен в window.onload!');
     }
 
+    initCertificateChecksSystem();
+
     if (typeof loadingOverlayManager !== 'undefined' && loadingOverlayManager.createAndShow) {
         if (!loadingOverlayManager.overlayElement) {
             console.log('[window.onload] Overlay not shown by earlyAppSetup, creating it now.');
@@ -1170,22 +1258,70 @@ window.onload = async () => {
     }
 
     const minDisplayTime = 3000;
+    const maxWaitForAppInitBeforeReveal = 7000;
     const minDisplayTimePromise = new Promise((resolve) => setTimeout(resolve, minDisplayTime));
     let appInitSuccessfully = false;
+    let appInitCompleted = false;
+    let uiRevealed = false;
+    let postAppInitActionsExecuted = false;
+
+    const runPostAppInitActions = () => {
+        if (!appInitSuccessfully || postAppInitActionsExecuted) {
+            return;
+        }
+
+        if (typeof initGoogleDocSections === 'function') {
+            initGoogleDocSections();
+        } else {
+            console.error('Функция initGoogleDocSections не найдена в window.onload!');
+        }
+
+        // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
+        // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
+        if (
+            typeof window.BackgroundStatusHUD !== 'undefined' &&
+            typeof window.BackgroundStatusHUD.finishTask === 'function'
+        ) {
+            window.BackgroundStatusHUD.finishTask('app-init', true);
+        }
+
+        postAppInitActionsExecuted = true;
+    };
 
     const appLoadPromise = appInit()
         .then((dbReady) => {
             appInitSuccessfully = dbReady;
+            appInitCompleted = true;
             console.log(`[window.onload] appInit завершен. Статус готовности БД: ${dbReady}`);
+
+            if (uiRevealed) {
+                runPostAppInitActions();
+            }
         })
         .catch((err) => {
             console.error('appInit rejected in window.onload wrapper:', err);
             appInitSuccessfully = false;
+            appInitCompleted = true;
         });
 
-    Promise.all([minDisplayTimePromise, appLoadPromise])
+    Promise.all([
+        minDisplayTimePromise,
+        Promise.race([
+            appLoadPromise,
+            new Promise((resolve) =>
+                setTimeout(() => {
+                    console.log(
+                        `[window.onload] appInit не завершился за ${maxWaitForAppInitBeforeReveal}мс. Показываем интерфейс и продолжаем инициализацию в фоне.`,
+                    );
+                    resolve();
+                }, maxWaitForAppInitBeforeReveal),
+            ),
+        ]),
+    ])
         .then(async () => {
-            console.log('[window.onload Promise.all.then] appInit и минимальное время отображения оверлея завершены.');
+            console.log(
+                '[window.onload Promise.all.then] Минимальное время отображения оверлея соблюдено. Показываем интерфейс.',
+            );
 
             if (
                 loadingOverlayManager &&
@@ -1213,23 +1349,15 @@ window.onload = async () => {
             if (appContent) {
                 appContent.classList.remove('hidden');
                 appContent.classList.add('content-fading-in');
+                uiRevealed = true;
                 console.log(
                     '[window.onload Promise.all.then] appContent показан с fade-in эффектом.',
                 );
 
                 await new Promise((resolve) => requestAnimationFrame(resolve));
 
-                if (appInitSuccessfully) {
-                    if (typeof initGoogleDocSections === 'function') {
-                        initGoogleDocSections();
-                    } else {
-                        console.error('Функция initGoogleDocSections не найдена в window.onload!');
-                    }
-                    // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
-                    // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
-                    if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.finishTask === 'function') {
-                        window.BackgroundStatusHUD.finishTask('app-init', true);
-                    }
+                if (appInitCompleted) {
+                    runPostAppInitActions();
                 }
 
                 requestAnimationFrame(() => {
@@ -4885,4 +5013,3 @@ if (typeof initCollapseAllButtons === 'function') window.initCollapseAllButtons 
 if (typeof initHotkeysModal === 'function') window.initHotkeysModal = initHotkeysModal;
 if (typeof initClearDataFunctionality === 'function') window.initClearDataFunctionality = initClearDataFunctionality;
 if (typeof showNoInnModal === 'function') window.showNoInnModal = showNoInnModal;
-
