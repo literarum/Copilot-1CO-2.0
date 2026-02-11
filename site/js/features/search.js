@@ -2941,6 +2941,9 @@ export function initSearchSystem() {
     const searchInput = document.getElementById('searchInput');
     const searchResultsContainer = document.getElementById('searchResults');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const advancedSearchOptions = document.getElementById('advancedSearchOptions');
+    const toggleAdvancedSearchBtn = document.getElementById('toggleAdvancedSearchBtn');
+    const toggleAdvancedSearch = document.getElementById('toggleAdvancedSearch');
     const searchFieldFilters = document.querySelectorAll('.search-field-filter');
 
     if (!searchInput) {
@@ -3028,6 +3031,19 @@ export function initSearchSystem() {
         }
     };
 
+    const toggleAdvancedSearchPanel = () => {
+        if (!advancedSearchOptions) {
+            return;
+        }
+
+        const willBeVisible = advancedSearchOptions.classList.contains('hidden');
+        advancedSearchOptions.classList.toggle('hidden');
+
+        if (toggleAdvancedSearchBtn) {
+            toggleAdvancedSearchBtn.classList.toggle('text-primary', willBeVisible);
+        }
+    };
+
     searchInput.addEventListener('input', handleInput);
     document.addEventListener('click', handleClickOutside);
 
@@ -3038,6 +3054,14 @@ export function initSearchSystem() {
         } else {
             clearSearchBtn.classList.add('hidden');
         }
+    }
+
+    if (toggleAdvancedSearchBtn) {
+        toggleAdvancedSearchBtn.addEventListener('click', toggleAdvancedSearchPanel);
+    }
+
+    if (toggleAdvancedSearch) {
+        toggleAdvancedSearch.addEventListener('click', toggleAdvancedSearchPanel);
     }
 
     document.addEventListener('keydown', (event) => {
