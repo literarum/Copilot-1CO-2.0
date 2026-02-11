@@ -177,7 +177,7 @@ export function toggleModalFullscreen(
  */
 export function initFullscreenToggles(modalConfigs) {
     if (!Array.isArray(modalConfigs) || modalConfigs.length === 0) {
-        console.warn('[initFullscreenToggles] No modal configs provided.');
+        console.log('[initFullscreenToggles] No modal configs provided.');
         return;
     }
 

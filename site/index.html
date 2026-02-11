@@ -9,6 +9,21 @@
             href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><title>SOS Icon (Red)</title><defs><style>.sos-text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-weight:bold;text-anchor:middle;dominant-baseline:central;fill:%23DC2626;letter-spacing:-0.5px}.frame{fill:none;stroke:%23DC2626;stroke-width:2}</style></defs><rect x="4" y="4" width="24" height="24" rx="4" class="frame"/><text x="16" y="16" class="sos-text">SOS</text></svg>'
         />
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+        <script>
+            (function () {
+                const originalWarn = console.warn;
+                console.warn = function (...args) {
+                    const firstArg = args && args[0];
+                    if (
+                        typeof firstArg === "string" &&
+                        firstArg.includes("cdn.tailwindcss.com should not be used in production")
+                    ) {
+                        return;
+                    }
+                    return originalWarn.apply(this, args);
+                };
+            })();
+        </script>
         <script src="https://cdn.tailwindcss.com"></script>
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
@@ -17,6 +32,7 @@
             referrerpolicy="no-referrer"
         ></script>
         <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js"></script>
         <script>
             tailwind.config = {
                 darkMode: 'class',
@@ -474,7 +490,7 @@
             <header class="mb-4">
                 <div class="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-3">
                     <div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-primary">Copilot 1СО</h1>
+                        <h1 class="text-2xl md:text-3xl font-bold text-primary">Copilot 1СО 2.0</h1>
                         <p id="appSlogan" class="text-sm md:text-base text-primary">
                             Ваш надежный второй пилот
                         </p>
@@ -548,15 +564,24 @@
                                 type="text"
                                 id="searchInput"
                                 placeholder="Поиск..."
-                                class="w-full pl-10 pr-10 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
+                                class="w-full pl-10 pr-24 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
                             />
                             <i
                                 class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                             ></i>
                             <button
-                                id="clearSearchInputBtn"
+                                id="toggleAdvancedSearchBtn"
                                 type="button"
-                                class="absolute top-1/2 right-3 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden"
+                                class="absolute top-1/2 right-2 transform -translate-y-1/2 p-1.5 rounded-md text-[#B0B0B0] hover:text-[#c4c4c4] dark:text-[#B0B0B0] dark:hover:text-[#d0d0d0]"
+                                title="Параметры поиска"
+                                aria-label="Параметры поиска"
+                            >
+                                <i class="fas fa-cog"></i>
+                            </button>
+                            <button
+                                id="clearSearchBtn"
+                                type="button"
+                                class="absolute top-1/2 right-10 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden"
                                 title="Очистить поиск"
                             >
                                 <i class="fas fa-times"></i>
@@ -607,60 +632,6 @@
                     </div>
                 </div>
 
-                <div
-                    id="advancedSearchOptions"
-                    class="hidden bg-gray-100 dark:bg-gray-800 p-3 rounded-lg mb-3"
-                >
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                            <label
-                                class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
-                                >Искать по:</label
-                            >
-                            <div class="flex flex-wrap gap-2">
-                                <label class="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
-                                        value="title"
-                                    />
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300"
-                                        >Заголовок</span
-                                    >
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
-                                        value="description"
-                                    />
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300"
-                                        >Описание/Содержимое</span
-                                    >
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
-                                        value="steps"
-                                    />
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Шаги</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="flex justify-end items-end md:col-start-3">
-                            <button
-                                id="toggleAdvancedSearch"
-                                class="px-3 py-1.5 text-sm bg-primary hover:bg-secondary text-white rounded-md transition"
-                            >
-                                <i class="fas fa-cog mr-1"></i>Параметры поиска
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </header>
 
             <!-- Навигация по вкладкам -->
@@ -725,6 +696,12 @@
                         class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
                     >
                         <i class="fas fa-comments mr-1"></i>Типы СЭДО
+                    </button>
+                    <button
+                        id="certChecksTab"
+                        class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
+                    >
+                        <i class="fas fa-certificate mr-1"></i>Проверка сертификатов
                     </button>
                     <button
                         id="blacklistedClientsTab"
@@ -1316,6 +1293,69 @@
                 </div>
             </div>
 
+            <div id="certChecksContent" class="tab-content hidden">
+                <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-content">
+                        <h2 class="text-2xl font-bold">Проверка сертификатов по спискам отзывов</h2>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-content-sm">
+                        Загрузите или перетащите сертификат. Приложение автоматически извлечёт CRL из сертификата,
+                        скачает списки отзывов из интернета и выполнит проверку.
+                    </p>
+
+                    <div
+                        id="certDropZone"
+                        class="mb-content-sm p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-center cursor-pointer transition hover:border-primary"
+                    >
+                        <input id="certFileInput" type="file" accept=".cer,.crt,.pem,.der" class="hidden" />
+                        <i class="fas fa-file-certificate text-2xl mb-2 text-primary"></i>
+                        <p class="font-semibold">Перетащите сертификат сюда или нажмите для выбора файла</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Поддерживаются форматы DER/PEM (.cer, .crt, .pem)
+                        </p>
+                    </div>
+
+                    <div id="certFileMeta" class="hidden mb-content-sm text-sm text-gray-700 dark:text-gray-200"></div>
+
+                    <div class="flex flex-wrap gap-2 mb-content-sm">
+                        <button
+                            id="runCertChecksBtn"
+                            class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
+                        >
+                            <i class="fas fa-shield-check mr-2"></i>Проверить
+                        </button>
+                        <button
+                            id="clearCertChecksBtn"
+                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md transition"
+                        >
+                            Очистить
+                        </button>
+                    </div>
+
+                    <div
+                        id="certChecksSummary"
+                        class="hidden mb-content-sm p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+                    ></div>
+
+                    <div
+                        id="certChecksCrlSources"
+                        class="hidden mb-content-sm p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm space-y-1"
+                    ></div>
+
+                    <div id="certChecksResults" class="hidden overflow-x-auto">
+                        <table class="min-w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                            <thead class="bg-gray-200 dark:bg-gray-700 text-left">
+                                <tr>
+                                    <th class="px-3 py-2">Серийный номер</th>
+                                    <th class="px-3 py-2">Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody id="certChecksResultsBody" class="divide-y divide-gray-200 dark:divide-gray-600"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Внешние ресурсы -->
             <div id="extLinksContent" class="tab-content hidden">
                 <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md">
@@ -1414,6 +1454,75 @@
             </div>
 
             <!-- Модальные окна -->
+            <div
+                id="advancedSearchOptions"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4 overflow-y-auto"
+            >
+                <div class="flex items-center justify-center min-h-full">
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+                    >
+                        <div class="p-content border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+                                    Параметры поиска
+                                </h3>
+                                <button
+                                    id="closeAdvancedSearchBtn"
+                                    type="button"
+                                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                    title="Закрыть"
+                                >
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-content space-y-4 overflow-y-auto max-h-[calc(90vh-90px)]">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                >Искать по:</label
+                            >
+                            <div class="flex flex-wrap sm:flex-nowrap gap-3">
+                                <label
+                                    class="inline-flex items-center p-2 rounded-md bg-gray-50 dark:bg-gray-700/40 whitespace-nowrap"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked
+                                        class="search-field search-field-filter form-checkbox text-primary focus:ring-primary"
+                                        value="title"
+                                    />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">Заголовок</span>
+                                </label>
+                                <label
+                                    class="inline-flex items-center p-2 rounded-md bg-gray-50 dark:bg-gray-700/40 whitespace-nowrap"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked
+                                        class="search-field search-field-filter form-checkbox text-primary focus:ring-primary"
+                                        value="description"
+                                    />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                                        >Описание/Содержимое</span
+                                    >
+                                </label>
+                                <label
+                                    class="inline-flex items-center p-2 rounded-md bg-gray-50 dark:bg-gray-700/40 whitespace-nowrap"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked
+                                        class="search-field search-field-filter form-checkbox text-primary focus:ring-primary"
+                                        value="steps"
+                                    />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">Шаги</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div
                 id="algorithmModal"
                 class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto"
