@@ -18,6 +18,11 @@ export const tabsConfig = [
     { id: 'shablony', name: 'Шаблоны', icon: 'fa-file-invoice' },
     { id: 'sedoTypes', name: 'Типы сообщений СЭДО', icon: 'fa-comments' },
     {
+        id: 'certChecks',
+        name: 'Проверка сертификатов',
+        icon: 'fa-certificate',
+    },
+    {
         id: 'blacklistedClients',
         name: 'Черный список жаб',
         icon: 'fa-user-secret',

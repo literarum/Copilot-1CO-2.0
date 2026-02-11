@@ -315,7 +315,7 @@ export function initBookmarkSystem() {
     if (State && State.db) {
         loadBookmarks();
     } else {
-        console.warn(
+        console.log(
             '[initBookmarkSystem] БД ещё не готова, вызов loadBookmarks отложен (закладки подгрузятся после инициализации БД).',
         );
     }
@@ -340,7 +340,7 @@ export async function getAllBookmarks() {
  */
 export async function loadBookmarks() {
     if (!State || !State.db) {
-        console.warn(
+        console.log(
             'loadBookmarks: База данных ещё не инициализирована. Загрузка закладок будет выполнена после готовности БД.',
         );
         await renderBookmarkFolders([]);
