@@ -1029,7 +1029,245 @@ const initViewToggles = initViewTogglesModule;
 // Определяем как пустую функцию для совместимости
 function initUICustomization() {
     // Функция не определена - возможно, функционал был перенесен в другой модуль
-    console.warn('initUICustomization: функция не реализована');
+    console.log('initUICustomization: отдельная инициализация не требуется (noop).');
+}
+
+function initCertificateChecksSystem() {
+    const fileInput = document.getElementById('certFileInput');
+    const dropZone = document.getElementById('certDropZone');
+    const fileMeta = document.getElementById('certFileMeta');
+    const runBtn = document.getElementById('runCertChecksBtn');
+    const clearBtn = document.getElementById('clearCertChecksBtn');
+    const summary = document.getElementById('certChecksSummary');
+    const crlSources = document.getElementById('certChecksCrlSources');
+    const resultsContainer = document.getElementById('certChecksResults');
+    const resultsBody = document.getElementById('certChecksResultsBody');
+
+    if (
+        !fileInput ||
+        !dropZone ||
+        !fileMeta ||
+        !runBtn ||
+        !clearBtn ||
+        !summary ||
+        !crlSources ||
+        !resultsContainer ||
+        !resultsBody
+    ) {
+        return;
+    }
+
+    let selectedFile = null;
+
+    const normalizeSerial = (value) =>
+        value
+            .toUpperCase()
+            .replace(/0X/g, '')
+            .replace(/[^0-9A-F]/g, '')
+            .trim();
+
+    const fileToArrayBuffer = async (file) => {
+        const buffer = await file.arrayBuffer();
+        return buffer;
+    };
+
+    const arrayBufferToHex = (buffer) =>
+        Array.from(new Uint8Array(buffer))
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+
+    const arrayBufferToBase64 = (buffer) => {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+        return btoa(binary);
+    };
+
+    const derHexFromPem = (pemText) => {
+        const stripped = pemText
+            .replace(/-----BEGIN CERTIFICATE-----/g, '')
+            .replace(/-----END CERTIFICATE-----/g, '')
+            .replace(/\s+/g, '');
+        try {
+            return rstrtohex(atob(stripped));
+        } catch (error) {
+            console.error('[certChecks] Ошибка преобразования PEM в HEX:', error);
+            return null;
+        }
+    };
+
+    const parseCertificate = async (file) => {
+        const isPem = /\.(pem)$/i.test(file.name);
+        const text = isPem ? await file.text() : null;
+        const buffer = !isPem ? await fileToArrayBuffer(file) : null;
+        let certHex = null;
+
+        if (isPem && text) {
+            certHex = derHexFromPem(text);
+        } else if (buffer) {
+            certHex = arrayBufferToHex(buffer);
+        }
+
+        if (!certHex) {
+            throw new Error('Не удалось распознать сертификат.');
+        }
+
+        if (typeof X509 !== 'function') {
+            throw new Error('Библиотека X509 не загружена.');
+        }
+
+        const x509 = new X509();
+        x509.readCertHex(certHex);
+
+        const serialHex = normalizeSerial(x509.getSerialNumberHex());
+        const crlDpUris = (x509.getExtCRLDistributionPointsURI?.() || []).filter(Boolean);
+
+        return {
+            serialHex,
+            crlDpUris,
+            certHex,
+            base64: buffer ? arrayBufferToBase64(buffer) : btoa(text || ''),
+        };
+    };
+
+    const parseCrlSerialsFromText = (text) => {
+        const matches = text.toUpperCase().match(/[0-9A-F][0-9A-F:\-\s]{4,}[0-9A-F]/g) || [];
+        return new Set(matches.map(normalizeSerial).filter((token) => token.length >= 6));
+    };
+
+    const fetchCrlAsText = async (url) => {
+        const proxyUrl = `https://r.jina.ai/http://${url.replace(/^https?:\/\//, '')}`;
+        const response = await fetch(proxyUrl, { cache: 'no-store' });
+        if (!response.ok) {
+            throw new Error(`Не удалось загрузить CRL (${response.status})`);
+        }
+        return response.text();
+    };
+
+    const renderResults = (serialHex, crlSet, loadedSources = []) => {
+        resultsBody.innerHTML = '';
+        crlSources.innerHTML = '';
+
+        if (!serialHex) {
+            summary.className =
+                'mb-content-sm p-3 rounded-lg border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/30 text-sm';
+            summary.textContent = 'Сначала загрузите сертификат.';
+            summary.classList.remove('hidden');
+            crlSources.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+            return;
+        }
+
+        const isRevoked = crlSet.has(serialHex);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-3 py-2 font-mono">${escapeHtml(serialHex)}</td>
+            <td class="px-3 py-2 ${isRevoked ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-green-600 dark:text-green-400 font-semibold'}">
+                ${isRevoked ? 'Отозван' : 'Не найден в CRL'}
+            </td>
+        `;
+        resultsBody.appendChild(row);
+
+        summary.className =
+            'mb-content-sm p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm';
+        summary.textContent = isRevoked
+            ? 'Статус: сертификат найден в списках отзыва.'
+            : 'Статус: сертификат не найден в загруженных списках отзыва.';
+        summary.classList.remove('hidden');
+
+        if (loadedSources.length) {
+            crlSources.innerHTML = `
+                <div class="font-semibold mb-1">Загруженные источники CRL:</div>
+                ${loadedSources.map((src) => `<div class="truncate">• ${escapeHtml(src)}</div>`).join('')}
+            `;
+            crlSources.classList.remove('hidden');
+        } else {
+            crlSources.classList.add('hidden');
+        }
+
+        resultsContainer.classList.remove('hidden');
+    };
+
+    const setSelectedFile = (file) => {
+        selectedFile = file || null;
+        if (!selectedFile) {
+            fileMeta.classList.add('hidden');
+            fileMeta.textContent = '';
+            return;
+        }
+        fileMeta.textContent = `Файл: ${selectedFile.name} (${Math.round(selectedFile.size / 1024)} KB)`;
+        fileMeta.classList.remove('hidden');
+    };
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (event) => {
+        setSelectedFile(event.target.files?.[0] || null);
+    });
+    dropZone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropZone.classList.add('border-primary');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-primary');
+    });
+    dropZone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('border-primary');
+        setSelectedFile(event.dataTransfer?.files?.[0] || null);
+    });
+
+    runBtn.addEventListener('click', async () => {
+        if (!selectedFile) {
+            renderResults('', new Set(), []);
+            return;
+        }
+
+        runBtn.disabled = true;
+        runBtn.textContent = 'Проверка...';
+
+        try {
+            const certData = await parseCertificate(selectedFile);
+            const loadedSources = [];
+            const combinedCrlSet = new Set();
+
+            for (const crlUrl of certData.crlDpUris) {
+                try {
+                    const crlText = await fetchCrlAsText(crlUrl);
+                    const extracted = parseCrlSerialsFromText(crlText);
+                    extracted.forEach((item) => combinedCrlSet.add(item));
+                    loadedSources.push(crlUrl);
+                } catch (error) {
+                    console.error(`[certChecks] Ошибка загрузки CRL ${crlUrl}:`, error);
+                }
+            }
+
+            renderResults(certData.serialHex, combinedCrlSet, loadedSources);
+        } catch (error) {
+            summary.className =
+                'mb-content-sm p-3 rounded-lg border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/30 text-sm';
+            summary.textContent = `Ошибка проверки сертификата: ${error.message}`;
+            summary.classList.remove('hidden');
+            crlSources.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+            console.error('[certChecks] Проверка завершилась с ошибкой:', error);
+        } finally {
+            runBtn.disabled = false;
+            runBtn.innerHTML = '<i class="fas fa-shield-check mr-2"></i>Проверить';
+        }
+    });
+
+    clearBtn.addEventListener('click', () => {
+        setSelectedFile(null);
+        fileInput.value = '';
+        summary.classList.add('hidden');
+        crlSources.classList.add('hidden');
+        resultsContainer.classList.add('hidden');
+        resultsBody.innerHTML = '';
+    });
 }
 
 // showNotification и showBookmarkDetailModal определены ниже как function declarations
@@ -1160,6 +1398,8 @@ window.onload = async () => {
         console.error('NotificationService не определен в window.onload!');
     }
 
+    initCertificateChecksSystem();
+
     if (typeof loadingOverlayManager !== 'undefined' && loadingOverlayManager.createAndShow) {
         if (!loadingOverlayManager.overlayElement) {
             console.log('[window.onload] Overlay not shown by earlyAppSetup, creating it now.');
@@ -1170,22 +1410,70 @@ window.onload = async () => {
     }
 
     const minDisplayTime = 3000;
+    const maxWaitForAppInitBeforeReveal = 7000;
     const minDisplayTimePromise = new Promise((resolve) => setTimeout(resolve, minDisplayTime));
     let appInitSuccessfully = false;
+    let appInitCompleted = false;
+    let uiRevealed = false;
+    let postAppInitActionsExecuted = false;
+
+    const runPostAppInitActions = () => {
+        if (!appInitSuccessfully || postAppInitActionsExecuted) {
+            return;
+        }
+
+        if (typeof initGoogleDocSections === 'function') {
+            initGoogleDocSections();
+        } else {
+            console.error('Функция initGoogleDocSections не найдена в window.onload!');
+        }
+
+        // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
+        // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
+        if (
+            typeof window.BackgroundStatusHUD !== 'undefined' &&
+            typeof window.BackgroundStatusHUD.finishTask === 'function'
+        ) {
+            window.BackgroundStatusHUD.finishTask('app-init', true);
+        }
+
+        postAppInitActionsExecuted = true;
+    };
 
     const appLoadPromise = appInit()
         .then((dbReady) => {
             appInitSuccessfully = dbReady;
+            appInitCompleted = true;
             console.log(`[window.onload] appInit завершен. Статус готовности БД: ${dbReady}`);
+
+            if (uiRevealed) {
+                runPostAppInitActions();
+            }
         })
         .catch((err) => {
             console.error('appInit rejected in window.onload wrapper:', err);
             appInitSuccessfully = false;
+            appInitCompleted = true;
         });
 
-    Promise.all([minDisplayTimePromise, appLoadPromise])
+    Promise.all([
+        minDisplayTimePromise,
+        Promise.race([
+            appLoadPromise,
+            new Promise((resolve) =>
+                setTimeout(() => {
+                    console.log(
+                        `[window.onload] appInit не завершился за ${maxWaitForAppInitBeforeReveal}мс. Показываем интерфейс и продолжаем инициализацию в фоне.`,
+                    );
+                    resolve();
+                }, maxWaitForAppInitBeforeReveal),
+            ),
+        ]),
+    ])
         .then(async () => {
-            console.log('[window.onload Promise.all.then] appInit и минимальное время отображения оверлея завершены.');
+            console.log(
+                '[window.onload Promise.all.then] Минимальное время отображения оверлея соблюдено. Показываем интерфейс.',
+            );
 
             if (
                 loadingOverlayManager &&
@@ -1213,23 +1501,15 @@ window.onload = async () => {
             if (appContent) {
                 appContent.classList.remove('hidden');
                 appContent.classList.add('content-fading-in');
+                uiRevealed = true;
                 console.log(
                     '[window.onload Promise.all.then] appContent показан с fade-in эффектом.',
                 );
 
                 await new Promise((resolve) => requestAnimationFrame(resolve));
 
-                if (appInitSuccessfully) {
-                    if (typeof initGoogleDocSections === 'function') {
-                        initGoogleDocSections();
-                    } else {
-                        console.error('Функция initGoogleDocSections не найдена в window.onload!');
-                    }
-                    // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
-                    // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
-                    if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.finishTask === 'function') {
-                        window.BackgroundStatusHUD.finishTask('app-init', true);
-                    }
+                if (appInitCompleted) {
+                    runPostAppInitActions();
                 }
 
                 requestAnimationFrame(() => {
@@ -4885,4 +5165,3 @@ if (typeof initCollapseAllButtons === 'function') window.initCollapseAllButtons 
 if (typeof initHotkeysModal === 'function') window.initHotkeysModal = initHotkeysModal;
 if (typeof initClearDataFunctionality === 'function') window.initClearDataFunctionality = initClearDataFunctionality;
 if (typeof showNoInnModal === 'function') window.showNoInnModal = showNoInnModal;
-
