@@ -2941,6 +2941,9 @@ export function initSearchSystem() {
     const searchInput = document.getElementById('searchInput');
     const searchResultsContainer = document.getElementById('searchResults');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const advancedSearchOptions = document.getElementById('advancedSearchOptions');
+    const toggleAdvancedSearchBtn = document.getElementById('toggleAdvancedSearchBtn');
+    const closeAdvancedSearchBtn = document.getElementById('closeAdvancedSearchBtn');
     const searchFieldFilters = document.querySelectorAll('.search-field-filter');
 
     if (!searchInput) {
@@ -3028,6 +3031,24 @@ export function initSearchSystem() {
         }
     };
 
+    const toggleAdvancedSearchPanel = (forceVisible = null) => {
+        if (!advancedSearchOptions) {
+            return;
+        }
+
+        const willBeVisible =
+            forceVisible === null
+                ? advancedSearchOptions.classList.contains('hidden')
+                : forceVisible;
+
+        advancedSearchOptions.classList.toggle('hidden', !willBeVisible);
+        document.body.classList.toggle('modal-open', willBeVisible);
+
+        if (toggleAdvancedSearchBtn) {
+            toggleAdvancedSearchBtn.classList.toggle('text-primary', willBeVisible);
+        }
+    };
+
     searchInput.addEventListener('input', handleInput);
     document.addEventListener('click', handleClickOutside);
 
@@ -3040,7 +3061,28 @@ export function initSearchSystem() {
         }
     }
 
+    if (toggleAdvancedSearchBtn) {
+        toggleAdvancedSearchBtn.addEventListener('click', toggleAdvancedSearchPanel);
+    }
+
+    if (closeAdvancedSearchBtn) {
+        closeAdvancedSearchBtn.addEventListener('click', () => toggleAdvancedSearchPanel(false));
+    }
+
+    if (advancedSearchOptions) {
+        advancedSearchOptions.addEventListener('click', (event) => {
+            if (event.target === advancedSearchOptions) {
+                toggleAdvancedSearchPanel(false);
+            }
+        });
+    }
+
     document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && advancedSearchOptions && !advancedSearchOptions.classList.contains('hidden')) {
+            toggleAdvancedSearchPanel(false);
+            return;
+        }
+
         if (event.ctrlKey && event.key === 'k') {
             event.preventDefault();
             if (searchInput) searchInput.focus();
