@@ -97,6 +97,8 @@ export function getSectionName(section) {
             return '1СО ЛК';
         case 'webReg':
             return 'Веб-Регистратор';
+        case 'fnsCrl':
+            return 'Проверка сертификата ФНС (CRL)';
         default:
             return 'Основной';
     }
