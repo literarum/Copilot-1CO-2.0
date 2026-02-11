@@ -1170,22 +1170,70 @@ window.onload = async () => {
     }
 
     const minDisplayTime = 3000;
+    const maxWaitForAppInitBeforeReveal = 7000;
     const minDisplayTimePromise = new Promise((resolve) => setTimeout(resolve, minDisplayTime));
     let appInitSuccessfully = false;
+    let appInitCompleted = false;
+    let uiRevealed = false;
+    let postAppInitActionsExecuted = false;
+
+    const runPostAppInitActions = () => {
+        if (!appInitSuccessfully || postAppInitActionsExecuted) {
+            return;
+        }
+
+        if (typeof initGoogleDocSections === 'function') {
+            initGoogleDocSections();
+        } else {
+            console.error('Функция initGoogleDocSections не найдена в window.onload!');
+        }
+
+        // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
+        // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
+        if (
+            typeof window.BackgroundStatusHUD !== 'undefined' &&
+            typeof window.BackgroundStatusHUD.finishTask === 'function'
+        ) {
+            window.BackgroundStatusHUD.finishTask('app-init', true);
+        }
+
+        postAppInitActionsExecuted = true;
+    };
 
     const appLoadPromise = appInit()
         .then((dbReady) => {
             appInitSuccessfully = dbReady;
+            appInitCompleted = true;
             console.log(`[window.onload] appInit завершен. Статус готовности БД: ${dbReady}`);
+
+            if (uiRevealed) {
+                runPostAppInitActions();
+            }
         })
         .catch((err) => {
             console.error('appInit rejected in window.onload wrapper:', err);
             appInitSuccessfully = false;
+            appInitCompleted = true;
         });
 
-    Promise.all([minDisplayTimePromise, appLoadPromise])
+    Promise.all([
+        minDisplayTimePromise,
+        Promise.race([
+            appLoadPromise,
+            new Promise((resolve) =>
+                setTimeout(() => {
+                    console.warn(
+                        `[window.onload] appInit не завершился за ${maxWaitForAppInitBeforeReveal}мс. Показываем интерфейс и продолжаем инициализацию в фоне.`,
+                    );
+                    resolve();
+                }, maxWaitForAppInitBeforeReveal),
+            ),
+        ]),
+    ])
         .then(async () => {
-            console.log('[window.onload Promise.all.then] appInit и минимальное время отображения оверлея завершены.');
+            console.log(
+                '[window.onload Promise.all.then] Минимальное время отображения оверлея соблюдено. Показываем интерфейс.',
+            );
 
             if (
                 loadingOverlayManager &&
@@ -1213,23 +1261,15 @@ window.onload = async () => {
             if (appContent) {
                 appContent.classList.remove('hidden');
                 appContent.classList.add('content-fading-in');
+                uiRevealed = true;
                 console.log(
                     '[window.onload Promise.all.then] appContent показан с fade-in эффектом.',
                 );
 
                 await new Promise((resolve) => requestAnimationFrame(resolve));
 
-                if (appInitSuccessfully) {
-                    if (typeof initGoogleDocSections === 'function') {
-                        initGoogleDocSections();
-                    } else {
-                        console.error('Функция initGoogleDocSections не найдена в window.onload!');
-                    }
-                    // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
-                    // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
-                    if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.finishTask === 'function') {
-                        window.BackgroundStatusHUD.finishTask('app-init', true);
-                    }
+                if (appInitCompleted) {
+                    runPostAppInitActions();
                 }
 
                 requestAnimationFrame(() => {
@@ -4885,4 +4925,3 @@ if (typeof initCollapseAllButtons === 'function') window.initCollapseAllButtons 
 if (typeof initHotkeysModal === 'function') window.initHotkeysModal = initHotkeysModal;
 if (typeof initClearDataFunctionality === 'function') window.initClearDataFunctionality = initClearDataFunctionality;
 if (typeof showNoInnModal === 'function') window.showNoInnModal = showNoInnModal;
-
