@@ -390,13 +390,15 @@ export async function showAddModal(section) {
     newAlgorithmDesc.value = '';
     newStepsContainerElement.innerHTML = '';
 
+    // Важно: секция нужна addNewStep для корректного определения контекста
+    addModal.dataset.section = section;
+
     if (typeof addNewStep === 'function') {
         addNewStep(true);
     } else {
         console.error('showAddModal: Функция addNewStep не найдена');
     }
 
-    addModal.dataset.section = section;
     saveButton.disabled = false;
     saveButton.innerHTML = 'Сохранить';
 
