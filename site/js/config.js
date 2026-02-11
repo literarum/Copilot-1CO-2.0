@@ -13,6 +13,7 @@ export const tabsConfig = [
     { id: 'skzi', name: 'СКЗИ', icon: 'fa-key' },
     { id: 'lk1c', name: '1СО ЛК', icon: 'fa-user-circle' },
     { id: 'webReg', name: 'Веб-Регистратор', icon: 'fa-plug' },
+    { id: 'fnsCrl', name: 'Проверка сертификата ФНС (CRL)', icon: 'fa-certificate' },
     { id: 'reglaments', name: 'Регламенты', icon: 'fa-clipboard-list' },
     { id: 'bookmarks', name: 'Закладки', icon: 'fa-bookmark' },
     { id: 'shablony', name: 'Шаблоны', icon: 'fa-file-invoice' },
