@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="UTF-8"><title>Certificate tools tests</title></head>
+<body>
+<script type="module">
+import { normalizeCertificateInput, checkRevocationStatus } from './js/features/certificate-tools.js';
+
+const encoder = new TextEncoder();
+const der = new Uint8Array([0x30, 0x03, 0x02, 0x01, 0x01]);
+const b64 = btoa(String.fromCharCode(...der));
+
+function assert(cond, msg) {
+  if (!cond) throw new Error(msg);
+}
+
+const derRes = normalizeCertificateInput(der);
+assert(derRes.ok && derRes.sourceFormat === 'der', 'DER detection failed');
+
+const b64Res = normalizeCertificateInput(encoder.encode(b64));
+assert(b64Res.ok && b64Res.sourceFormat === 'base64', 'base64 detection failed');
+
+const pem = `-----BEGIN CERTIFICATE-----\n${b64}\n-----END CERTIFICATE-----`;
+const pemRes = normalizeCertificateInput(encoder.encode(pem));
+assert(pemRes.ok && pemRes.sourceFormat === 'pem', 'PEM detection failed');
+
+const wrong = normalizeCertificateInput(encoder.encode('not a cert'));
+assert(!wrong.ok, 'invalid data should fail');
+
+const emulated = await checkRevocationStatus({ serialNumberHex: '01AB', ocspUrls: [], crlUrls: [], endpoint: '' });
+assert(emulated.source === 'emulator', 'emulator fallback failed');
+assert(emulated.status === 'unknown', 'emulator expected unknown fallback');
+
+console.log('certificate-tools tests passed');
+window.__testsPassed = true;
+</script>
+</body>
+</html>
