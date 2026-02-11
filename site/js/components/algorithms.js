@@ -312,6 +312,7 @@ export function renderAllAlgorithms() {
     renderAlgorithmCards('skzi');
     renderAlgorithmCards('webReg');
     renderAlgorithmCards('lk1c');
+    renderAlgorithmCards('fnsCrl');
 }
 
 // ============================================================================

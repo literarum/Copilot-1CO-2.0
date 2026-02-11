@@ -934,6 +934,7 @@ let algorithms = {
     skzi: [],
     lk1c: [],
     webReg: [],
+    fnsCrl: [],
 };
 
 // loadingOverlayManager теперь импортируется из js/ui/loading-overlay-manager.js
@@ -2611,6 +2612,8 @@ const triggerSelectors = [
     '#addProgramAlgorithmBtn',
     '#addSkziAlgorithmBtn',
     '#addWebRegAlgorithmBtn',
+    '#addLk1cAlgorithmBtn',
+    '#addFnsCrlAlgorithmBtn',
     '#customizeUIBtn',
     '#addBookmarkBtn',
     '#addLinkBtn',
@@ -3317,8 +3320,47 @@ if (exportMainBtn) {
     });
 }
 
+const ALGORITHM_SECTION_EXPORT_CONFIG = [
+    { buttonId: 'exportProgramBtn', containerId: 'programAlgorithms', title: 'Программа 1С/УП' },
+    { buttonId: 'exportSkziBtn', containerId: 'skziAlgorithms', title: 'СКЗИ' },
+    { buttonId: 'exportLk1cBtn', containerId: 'lk1cAlgorithms', title: '1СО ЛК (Личный кабинет)' },
+    { buttonId: 'exportWebRegBtn', containerId: 'webRegAlgorithms', title: 'Веб-Регистратор' },
+    {
+        buttonId: 'exportFnsCrlBtn',
+        containerId: 'fnsCrlAlgorithms',
+        title: 'Проверка сертификата ФНС (CRL)',
+    },
+];
+
+ALGORITHM_SECTION_EXPORT_CONFIG.forEach(({ buttonId, containerId, title }) => {
+    const exportBtn = document.getElementById(buttonId);
+    if (!exportBtn) return;
+    exportBtn.addEventListener('click', () => {
+        const sectionContainer = document.getElementById(containerId);
+        ExportService.exportElementToPdf(sectionContainer, title);
+    });
+});
+
+
 // showAddModal теперь импортируется из js/components/algorithms-operations.js
 const showAddModal = showAddModalModule;
+
+[
+    { buttonId: 'addProgramAlgorithmBtn', section: 'program' },
+    { buttonId: 'addSkziAlgorithmBtn', section: 'skzi' },
+    { buttonId: 'addLk1cAlgorithmBtn', section: 'lk1c' },
+    { buttonId: 'addWebRegAlgorithmBtn', section: 'webReg' },
+    { buttonId: 'addFnsCrlAlgorithmBtn', section: 'fnsCrl' },
+].forEach(({ buttonId, section }) => {
+    const addBtn = document.getElementById(buttonId);
+    if (!addBtn) return;
+    addBtn.addEventListener('click', async () => {
+        if (typeof showAddModal === 'function') {
+            await showAddModal(section);
+        }
+    });
+});
+
 
 // ============================================================================
 // showAddModal - MIGRATED to js/components/algorithms-operations.js

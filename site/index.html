@@ -622,7 +622,7 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="title"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300"
@@ -633,7 +633,7 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="description"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300"
@@ -644,22 +644,54 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="steps"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300">Шаги</span>
                                 </label>
                             </div>
                         </div>
-                        <div class="flex justify-end items-end md:col-start-3">
-                            <button
-                                id="toggleAdvancedSearch"
-                                class="px-3 py-1.5 text-sm bg-primary hover:bg-secondary text-white rounded-md transition"
+                        <div>
+                            <label
+                                class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
+                                >Типы контента:</label
                             >
-                                <i class="fas fa-cog mr-1"></i>Параметры поиска
-                            </button>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="algorithm" />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Алгоритмы</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="link" />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Ссылки</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="bookmark" />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Закладки</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="reglament" />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Регламенты</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="extLink" />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Внешние ресурсы</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="blacklistedClient" />
+                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Черный список</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
+                </div>
+                <div class="mb-3 flex justify-end">
+                    <button
+                        id="toggleAdvancedSearch"
+                        class="px-3 py-1.5 text-sm bg-primary hover:bg-secondary text-white rounded-md transition"
+                    >
+                        <i class="fas fa-cog mr-1"></i>Параметры поиска
+                    </button>
                 </div>
             </header>
 
@@ -707,6 +739,12 @@
                         class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
                     >
                         <i class="fas fa-plug mr-1"></i>Веб-Регистратор
+                    </button>
+                    <button
+                        id="fnsCrlTab"
+                        class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
+                    >
+                        <i class="fas fa-certificate mr-1"></i>Проверка сертификата ФНС (CRL)
                     </button>
                     <button
                         id="reglamentsTab"
@@ -898,6 +936,12 @@
                                 </button>
                             </div>
                             <button
+                                id="exportProgramBtn"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2"></i>Экспорт PDF
+                            </button>
+                            <button
                                 id="addProgramAlgorithmBtn"
                                 class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
                             >
@@ -940,6 +984,12 @@
                                     <i class="fas fa-list"></i>
                                 </button>
                             </div>
+                            <button
+                                id="exportSkziBtn"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2"></i>Экспорт PDF
+                            </button>
                             <button
                                 id="addSkziAlgorithmBtn"
                                 class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
@@ -984,6 +1034,12 @@
                                 </button>
                             </div>
                             <button
+                                id="exportLk1cBtn"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2"></i>Экспорт PDF
+                            </button>
+                            <button
                                 id="addLk1cAlgorithmBtn"
                                 class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
                             >
@@ -1027,6 +1083,12 @@
                                 </button>
                             </div>
                             <button
+                                id="exportWebRegBtn"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2"></i>Экспорт PDF
+                            </button>
+                            <button
                                 id="addWebRegAlgorithmBtn"
                                 class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
                             >
@@ -1038,6 +1100,47 @@
                         id="webRegAlgorithms"
                         class="grid gap-content"
                         data-section-id="webRegAlgorithms"
+                        data-default-view="cards"
+                    ></div>
+                </div>
+            </div>
+
+            <!-- Проверка сертификата ФНС (CRL) -->
+            <div id="fnsCrlContent" class="tab-content hidden">
+                <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md">
+                    <div
+                        class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-content"
+                    >
+                        <h2 class="text-2xl font-bold">Проверка сертификата ФНС (CRL)</h2>
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="flex items-center space-x-1 border border-gray-300 dark:border-gray-600 rounded-md p-0.5"
+                            >
+                                <button class="view-toggle p-1.5 rounded" data-view="cards" title="Вид карточек">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                                <button class="view-toggle p-1.5 rounded" data-view="list" title="Вид списка">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                            <button
+                                id="exportFnsCrlBtn"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+                            >
+                                <i class="fas fa-file-pdf mr-2"></i>Экспорт PDF
+                            </button>
+                            <button
+                                id="addFnsCrlAlgorithmBtn"
+                                class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
+                            >
+                                <i class="fas fa-plus mr-2"></i>Добавить
+                            </button>
+                        </div>
+                    </div>
+                    <div
+                        id="fnsCrlAlgorithms"
+                        class="grid gap-content"
+                        data-section-id="fnsCrlAlgorithms"
                         data-default-view="cards"
                     ></div>
                 </div>
