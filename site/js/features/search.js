@@ -905,12 +905,6 @@ export async function updateSearchIndex(storeName, itemId, newItemData, operatio
         return;
     }
 
-    if (storeName === 'blacklistedClients') {
-        console.log(
-            `${LOG_PREFIX_USI} Indexing of 'blacklistedClients' is disabled. Skipping operation for ${storeName}:${itemId}.`,
-        );
-        return;
-    }
 
     if (!State.db) {
         console.warn(
@@ -1491,6 +1485,7 @@ export async function buildInitialSearchIndex(progressCallback) {
             { name: 'bookmarks', type: 'bookmarks' },
             { name: 'bookmarkFolders', type: 'bookmarkFolders' },
             { name: 'clientData', type: 'clientData' },
+            { name: 'blacklistedClients', type: 'blacklistedClients' },
             {
                 name: 'preferences',
                 type: 'preferences',
@@ -1835,13 +1830,6 @@ export async function performSearch(query) {
 
         let candidateDocs = await searchCandidates(queryTokens, searchContext, query);
 
-        const filteredCandidateDocs = new Map();
-        for (const [key, value] of candidateDocs.entries()) {
-            if (value.ref.store !== 'blacklistedClients') {
-                filteredCandidateDocs.set(key, value);
-            }
-        }
-        candidateDocs = filteredCandidateDocs;
 
         const finalResults = await processSearchResults(candidateDocs, query, query);
 
@@ -2131,6 +2119,32 @@ function applyFieldFilters(docEntries) {
     });
 }
 
+
+/**
+ * Применяет фильтры по типам контента
+ */
+function applyTypeFilters(searchResults) {
+    const typeCheckboxes = document.querySelectorAll('.search-type-filter:checked');
+    if (typeCheckboxes.length === 0) {
+        return [];
+    }
+
+    const selectedTypes = new Set(Array.from(typeCheckboxes).map((cb) => cb.value));
+    return searchResults.filter((result) => {
+        if (!result || !result.type) return false;
+        if (result.type === 'section_link' || result.type === 'sedoInfoItem' || result.type === 'clientNote') {
+            return true;
+        }
+        if (selectedTypes.has('algorithm') && (result.type === 'algorithm' || result.type === 'main')) return true;
+        if (selectedTypes.has('link') && result.type === 'link') return true;
+        if (selectedTypes.has('bookmark') && (result.type === 'bookmark' || result.type === 'bookmark_note' || result.type === 'bookmarkFolder')) return true;
+        if (selectedTypes.has('reglament') && result.type === 'reglament') return true;
+        if (selectedTypes.has('extLink') && result.type === 'extLink') return true;
+        if (selectedTypes.has('blacklistedClient') && result.type === 'blacklistedClient') return true;
+        return false;
+    });
+}
+
 /**
  * Проверяет соответствие поля
  */
@@ -2372,13 +2386,14 @@ async function processSearchResults(candidateDocs, normalizedQuery, originalQuer
             searchResults.push(result);
         }
     }
+    const filteredByType = applyTypeFilters(searchResults);
     const endTime = performance.now();
     console.log(
         `[processSearchResults V4] Обработка кандидатов завершена за ${(
             endTime - startTime
         ).toFixed(2)}ms. Финальных результатов: ${searchResults.length}.`,
     );
-    return searchResults;
+    return filteredByType;
 }
 
 /**
@@ -2942,6 +2957,10 @@ export function initSearchSystem() {
     const searchResultsContainer = document.getElementById('searchResults');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
     const searchFieldFilters = document.querySelectorAll('.search-field-filter');
+    const searchTypeFilters = document.querySelectorAll('.search-type-filter');
+    const toggleAdvancedSearchBtn = document.getElementById('toggleAdvancedSearch');
+    const advancedSearchOptions = document.getElementById('advancedSearchOptions');
+    const closeSearchSettingsBtn = document.getElementById('closeSearchSettingsBtn');
 
     if (!searchInput) {
         console.error(
@@ -3003,12 +3022,16 @@ export function initSearchSystem() {
         ) {
             const isClickInsideSearchInput = searchInput.contains(event.target);
             const isClickInsideSearchResults = searchResultsContainer.contains(event.target);
-            const isClickInsideFilters = Array.from(searchFieldFilters).some(
+            const isClickInsideFieldFilters = Array.from(searchFieldFilters).some(
+                (filter) =>
+                    filter.contains(event.target) || filter.labels?.[0]?.contains(event.target),
+            );
+            const isClickInsideTypeFilters = Array.from(searchTypeFilters).some(
                 (filter) =>
                     filter.contains(event.target) || filter.labels?.[0]?.contains(event.target),
             );
 
-            if (!isClickInsideSearchInput && !isClickInsideSearchResults && !isClickInsideFilters) {
+            if (!isClickInsideSearchInput && !isClickInsideSearchResults && !isClickInsideFieldFilters && !isClickInsideTypeFilters) {
                 searchResultsContainer.classList.add('hidden');
             }
         }
@@ -3038,6 +3061,47 @@ export function initSearchSystem() {
         } else {
             clearSearchBtn.classList.add('hidden');
         }
+    }
+
+    searchFieldFilters.forEach((filter) => {
+        filter.addEventListener('change', () => {
+            const searchQueryValue = sanitizeQuery(searchInput.value);
+            if (searchQueryValue.length >= 1) {
+                performSearch(searchQueryValue);
+            }
+        });
+    });
+
+    searchTypeFilters.forEach((filter) => {
+        filter.addEventListener('change', () => {
+            const searchQueryValue = sanitizeQuery(searchInput.value);
+            if (searchQueryValue.length >= 1) {
+                performSearch(searchQueryValue);
+            }
+        });
+    });
+
+    if (toggleAdvancedSearchBtn && advancedSearchOptions) {
+        toggleAdvancedSearchBtn.addEventListener('click', () => {
+            advancedSearchOptions.classList.remove('hidden');
+        });
+
+        const closeAdvancedSearchModal = () => {
+            advancedSearchOptions.classList.add('hidden');
+        };
+
+        closeSearchSettingsBtn?.addEventListener('click', closeAdvancedSearchModal);
+        advancedSearchOptions.addEventListener('click', (event) => {
+            if (event.target === advancedSearchOptions) {
+                closeAdvancedSearchModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !advancedSearchOptions.classList.contains('hidden')) {
+                closeAdvancedSearchModal();
+            }
+        });
     }
 
     document.addEventListener('keydown', (event) => {
