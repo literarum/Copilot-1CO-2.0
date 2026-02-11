@@ -93,6 +93,7 @@
                                 class="absolute z-50 top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg hidden max-h-96 overflow-y-auto"
                             ></div>
                         </div>
+                        <button id="toggleAdvancedSearch" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-colors flex-shrink-0" title="Параметры поиска"><i class="fas fa-cog"></i></button>
                         <div class="flex gap-2 flex-shrink-0">
                             <button
                                 id="customizeUIBtn"
@@ -136,56 +137,31 @@
 
                 <div
                     id="advancedSearchOptions"
-                    class="hidden bg-gray-100 dark:bg-gray-800 p-3 rounded-lg mb-3"
+                    class="hidden fixed inset-0 z-[80] bg-black/50 p-4 flex items-center justify-center"
                 >
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                            <label
-                                class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
-                                >Искать по:</label
-                            >
-                            <div class="flex flex-wrap gap-2">
-                                <label class="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
-                                        value="title"
-                                    />
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300"
-                                        >Заголовок</span
-                                    >
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
-                                        value="description"
-                                    />
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300"
-                                        >Описание/Содержимое</span
-                                    >
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
-                                        value="steps"
-                                    />
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Шаги</span>
-                                </label>
-                            </div>
+                    <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-semibold">Параметры поиска</h3>
+                            <button id="closeSearchSettingsBtn" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-colors" title="Закрыть"><i class="fas fa-times"></i></button>
                         </div>
-                        <div class="flex justify-end items-end md:col-start-3">
-                            <button
-                                id="toggleAdvancedSearch"
-                                class="px-3 py-1.5 text-sm bg-primary hover:bg-secondary text-white rounded-md transition"
-                            >
-                                <i class="fas fa-cog mr-1"></i>Параметры поиска
-                            </button>
+                        <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Искать по:</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <label class="inline-flex items-center"><input type="checkbox" checked class="search-field-filter form-checkbox text-primary focus:ring-primary" value="title" /><span class="ml-2 text-gray-700 dark:text-gray-300">Заголовок</span></label>
+                                    <label class="inline-flex items-center"><input type="checkbox" checked class="search-field-filter form-checkbox text-primary focus:ring-primary" value="description" /><span class="ml-2 text-gray-700 dark:text-gray-300">Описание/Содержимое</span></label>
+                                    <label class="inline-flex items-center"><input type="checkbox" checked class="search-field-filter form-checkbox text-primary focus:ring-primary" value="steps" /><span class="ml-2 text-gray-700 dark:text-gray-300">Шаги</span></label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Типы контента:</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <label class="inline-flex items-center"><input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="algorithm" /><span class="ml-2 text-gray-700 dark:text-gray-300">Алгоритмы</span></label>
+                                    <label class="inline-flex items-center"><input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="link" /><span class="ml-2 text-gray-700 dark:text-gray-300">Ссылки</span></label>
+                                    <label class="inline-flex items-center"><input type="checkbox" checked class="search-type-filter form-checkbox text-primary focus:ring-primary" value="bookmark" /><span class="ml-2 text-gray-700 dark:text-gray-300">Закладки</span></label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </header>
+                </header>
