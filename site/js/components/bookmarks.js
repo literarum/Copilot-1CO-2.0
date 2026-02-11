@@ -421,9 +421,9 @@ export async function loadBookmarks() {
                     dateAdded: new Date().toISOString(),
                 },
                 {
-                    title: 'База знаний Рутокен',
-                    url: 'https://dev.rutoken.ru/',
-                    description: 'Официальная база знаний Рутокен.',
+                    title: 'Список отзыва сертификатов (Минцифры)',
+                    url: 'https://e-trust.gosuslugi.ru/#/crl',
+                    description: 'Официальный список отзыва сертификатов в ЕДР Минцифры РФ.',
                     folder: targetFolderIdForKB,
                     dateAdded: new Date().toISOString(),
                 },

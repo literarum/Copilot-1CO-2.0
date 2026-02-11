@@ -29,7 +29,7 @@ export function setTabsOverflowDependencies(dependencies) {
 // ============================================================================
 
 const MAX_UPDATE_VISIBLE_TABS_RETRIES = 5;
-const LAYOUT_ERROR_MARGIN = 5;
+const LAYOUT_ERROR_MARGIN = 2;
 
 // ============================================================================
 // ОСНОВНЫЕ ФУНКЦИИ
@@ -111,35 +111,40 @@ export function updateVisibleTabs() {
     }
 
     const navWidth = tabsNav.offsetWidth;
-    let totalWidth = 0;
-    let firstOverflowIndex = -1;
+
+    const getFirstOverflowIndex = (reserveWidth = 0) => {
+        let totalWidth = 0;
+        for (let i = 0; i < visibleTabs.length; i++) {
+            const tab = visibleTabs[i];
+            const currentTabWidth = tab.offsetWidth;
+
+            if (currentTabWidth === 0) {
+                console.warn(
+                    `[updateVisibleTabs v8_FIXED] Tab ${
+                        tab.id || 'with no id'
+                    } has offsetWidth 0! Skipping.`,
+                );
+                continue;
+            }
+
+            if (totalWidth + currentTabWidth + reserveWidth + LAYOUT_ERROR_MARGIN > navWidth) {
+                return i;
+            }
+            totalWidth += currentTabWidth;
+        }
+        return -1;
+    };
+
+    let firstOverflowIndex = getFirstOverflowIndex(0);
 
     let moreTabsWidth = 0;
-    if (moreTabsContainer) {
+    if (firstOverflowIndex !== -1 && moreTabsContainer) {
         const wasMoreButtonHidden = moreTabsContainer.classList.contains('hidden');
         if (wasMoreButtonHidden) moreTabsContainer.classList.remove('hidden');
         moreTabsWidth = moreTabsContainer.offsetWidth;
         if (wasMoreButtonHidden) moreTabsContainer.classList.add('hidden');
-    }
 
-    for (let i = 0; i < visibleTabs.length; i++) {
-        const tab = visibleTabs[i];
-        const currentTabWidth = tab.offsetWidth;
-
-        if (currentTabWidth === 0) {
-            console.warn(
-                `[updateVisibleTabs v8_FIXED] Tab ${
-                    tab.id || 'with no id'
-                } has offsetWidth 0! Skipping.`,
-            );
-            continue;
-        }
-
-        if (totalWidth + currentTabWidth + moreTabsWidth + LAYOUT_ERROR_MARGIN > navWidth) {
-            firstOverflowIndex = i;
-            break;
-        }
-        totalWidth += currentTabWidth;
+        firstOverflowIndex = getFirstOverflowIndex(moreTabsWidth);
     }
 
     if (firstOverflowIndex !== -1) {
@@ -156,10 +161,21 @@ export function updateVisibleTabs() {
             const dropdownItem = document.createElement('a');
             dropdownItem.href = '#';
             dropdownItem.className =
-                'block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 overflow-dropdown-item';
+                'flex items-center gap-2 px-3 py-2 text-sm sm:text-base text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100 overflow-dropdown-item';
             const icon = tab.querySelector('i');
             const text = tab.textContent.trim();
-            dropdownItem.innerHTML = `${icon ? icon.outerHTML + ' ' : ''}${text}`;
+
+            if (icon) {
+                const iconClone = icon.cloneNode(true);
+                iconClone.classList.remove('mr-1');
+                iconClone.classList.add('w-4', 'text-center', 'shrink-0');
+                dropdownItem.appendChild(iconClone);
+            }
+
+            const textNode = document.createElement('span');
+            textNode.className = 'truncate';
+            textNode.textContent = text;
+            dropdownItem.appendChild(textNode);
             dropdownItem.dataset.tabId = tab.id.replace('Tab', '');
             dropdownItem.addEventListener('click', (e) => {
                 e.preventDefault();
