@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Проверка сертификата .cer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/11.1.0/jsrsasign-all-min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+  <main class="max-w-4xl mx-auto py-10 px-4">
+    <h1 class="text-2xl font-bold mb-2">Проверка сертификатов .cer (DER / PEM / base64)</h1>
+    <p class="text-sm text-slate-600 mb-6">Страница автоматически нормализует формат сертификата, извлекает AIA/CDP (OCSP/CRL) и может вызвать backend для криптографически корректной проверки отзыва.</p>
+
+    <section class="bg-white rounded-lg shadow p-5 space-y-4">
+      <label class="block text-sm font-medium">Файл сертификата (.cer/.crt/.pem)</label>
+      <input id="certFile" type="file" accept=".cer,.crt,.pem,.der,.txt" class="block w-full text-sm" />
+
+      <label class="block text-sm font-medium">Backend endpoint для проверки отзыва (опционально)</label>
+      <input id="revocationEndpoint" type="text" placeholder="Например: http://localhost:8080/api/revocation/check" class="w-full border rounded px-3 py-2 text-sm" />
+
+      <button id="analyzeBtn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Проверить сертификат</button>
+    </section>
+
+    <section class="mt-6 grid md:grid-cols-2 gap-4">
+      <article class="bg-white rounded-lg shadow p-5">
+        <h2 class="font-semibold mb-3">Результат парсинга</h2>
+        <pre id="parseResult" class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-auto min-h-40"></pre>
+      </article>
+      <article class="bg-white rounded-lg shadow p-5">
+        <h2 class="font-semibold mb-3">Проверка отзыва</h2>
+        <pre id="revocationResult" class="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-auto min-h-40"></pre>
+      </article>
+    </section>
+  </main>
+
+  <script type="module" src="./js/pages/cert-checker-page.js"></script>
+</body>
+</html>
