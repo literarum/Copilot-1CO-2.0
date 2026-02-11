@@ -548,13 +548,22 @@
                                 type="text"
                                 id="searchInput"
                                 placeholder="Поиск..."
-                                class="w-full pl-10 pr-10 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
+                                class="w-full pl-10 pr-20 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
                             />
                             <i
                                 class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                             ></i>
                             <button
-                                id="clearSearchInputBtn"
+                                id="toggleAdvancedSearchBtn"
+                                type="button"
+                                class="absolute top-1/2 right-9 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                title="Параметры поиска"
+                                aria-label="Параметры поиска"
+                            >
+                                <i class="fas fa-cog"></i>
+                            </button>
+                            <button
+                                id="clearSearchBtn"
                                 type="button"
                                 class="absolute top-1/2 right-3 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden"
                                 title="Очистить поиск"
@@ -622,7 +631,7 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="title"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300"
@@ -633,7 +642,7 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="description"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300"
@@ -644,7 +653,7 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="steps"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300">Шаги</span>
