@@ -532,8 +532,8 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                     const row = document.createElement('tr');
                     row.className = rowIndex % 2 === 0 
                         ? 'bg-white dark:bg-gray-800' 
-                        : 'bg-gray-50 dark:bg-gray-750';
-                    row.classList.add('hover:bg-blue-50', 'dark:hover:bg-gray-700');
+                        : 'bg-gray-50 dark:bg-gray-900';
+                    row.classList.add('hover:bg-gray-100', 'dark:hover:bg-gray-700');
 
                     fields.forEach((field, colIndex) => {
                         if (colIndex >= columns.length) return;

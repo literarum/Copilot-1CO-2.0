@@ -102,4 +102,47 @@ export function initAlgorithmModalControls() {
     }
     deleteAlgorithmBtn.addEventListener('click', clickHandler);
     deleteAlgorithmBtn._clickHandler = clickHandler;
+
+    initAdditionalAlgorithmUiControls();
 }
+
+
+export function initAdditionalAlgorithmUiControls() {
+    const bindClose = (buttonId, modalId) => {
+        const button = document.getElementById(buttonId);
+        const modal = document.getElementById(modalId);
+        if (!button || !modal || typeof deps.closeAnimatedModal !== 'function') return;
+        if (button._closeHandler) button.removeEventListener('click', button._closeHandler);
+        button._closeHandler = () => deps.closeAnimatedModal(modal);
+        button.addEventListener('click', button._closeHandler);
+    };
+
+    bindClose('closeEditModalBtn', 'editModal');
+    bindClose('cancelEditBtn', 'editModal');
+    bindClose('closeAddModalBtn', 'addModal');
+    bindClose('cancelAddBtn', 'addModal');
+
+    const addButtonToSectionMap = {
+        addProgramAlgorithmBtn: 'program',
+        addSkziAlgorithmBtn: 'skzi',
+        addLk1cAlgorithmBtn: 'lk1c',
+        addWebRegAlgorithmBtn: 'webReg',
+        addCibAlgorithmBtn: 'cib',
+    };
+
+    Object.entries(addButtonToSectionMap).forEach(([buttonId, sectionId]) => {
+        const button = document.getElementById(buttonId);
+        if (!button) return;
+        if (button._openAddModalHandler) {
+            button.removeEventListener('click', button._openAddModalHandler);
+        }
+        button._openAddModalHandler = () => {
+            if (typeof window.showAddModal === 'function') {
+                window.showAddModal(sectionId);
+            }
+        };
+        button.addEventListener('click', button._openAddModalHandler);
+    });
+}
+
+window.initAdditionalAlgorithmUiControls = initAdditionalAlgorithmUiControls;
