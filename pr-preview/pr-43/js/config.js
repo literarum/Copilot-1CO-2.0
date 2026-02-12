@@ -8,7 +8,7 @@ import { SEDO_CONFIG_KEY } from './constants.js';
 // Если задан URL Worker'а, проверка по спискам отзыва (CRL URL) идёт через бэкенд.
 // После первого деплоя Worker (Actions → Deploy Revocation Worker) скопируйте URL
 // из логов и подставьте сюда — тогда при каждом мерже PR в main фронт и бэкенд работают вместе.
-export const REVOCATION_API_BASE_URL = '';
+export const REVOCATION_API_BASE_URL = 'https://copilot-1co-revocation.gleb-998.workers.dev';
 
 // ============================================================================
 // КОНФИГУРАЦИЯ ВКЛАДОК
