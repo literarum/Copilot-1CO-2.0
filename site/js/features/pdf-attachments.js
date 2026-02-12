@@ -233,7 +233,7 @@ export async function addPdfRecords(files, parentType, parentId) {
                 createdAt: Date.now(),
             };
 
-            const savedId = await saveToIndexedDB('pdfAttachments', record);
+            const savedId = await saveToIndexedDB('pdfFiles', record);
             results.push({ ...record, id: savedId });
             console.log(`[addPdfRecords] Saved PDF: ${file.name}, id=${savedId}`);
         } catch (err) {
@@ -249,7 +249,7 @@ export async function addPdfRecords(files, parentType, parentId) {
 export async function getPdfsForParent(parentType, parentId) {
     try {
         if (!State.db) throw new Error('DB not ready');
-        const all = await getAllFromIndexedDB('pdfAttachments');
+        const all = await getAllFromIndexedDB('pdfFiles');
         return all.filter(
             (r) => r.parentType === parentType && String(r.parentId) === String(parentId),
         );
@@ -389,7 +389,7 @@ async function refreshPdfList(section, parentType, parentId) {
 
         li.querySelector('[data-act="rm"]')?.addEventListener('click', async () => {
             try {
-                await deleteFromIndexedDB('pdfAttachments', pdf.id);
+                await deleteFromIndexedDB('pdfFiles', pdf.id);
                 refreshPdfList(section, parentType, parentId);
                 showNotification('PDF удален', 'success');
             } catch (err) {

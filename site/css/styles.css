@@ -497,6 +497,29 @@
                 background-color: transparent !important;
             }
 
+
+
+            #appContent > div.mb-3.border-b > nav {
+                display: flex;
+                width: 100%;
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 0;
+                overflow: hidden;
+            }
+
+            #appContent > div.mb-3.border-b > nav .tab-btn:not(#moreTabsBtn) {
+                flex: 1 1 auto;
+                min-width: 0;
+                justify-content: center;
+                text-align: center;
+            }
+
+            #appContent #moreTabsDropdown .overflow-dropdown-item {
+                color: inherit !important;
+                background: transparent !important;
+            }
+
             .tab-btn {
                 transition: color 0.2s ease-in-out, border-color 0.2s ease-in-out;
                 position: relative;
@@ -535,7 +558,7 @@
                 text-decoration: none !important;
             }
 
-            #moreTabsDropdown a:hover {
+             #moreTabsDropdown .overflow-dropdown-item:hover {
                 text-decoration: none !important;
             }
 
@@ -543,7 +566,7 @@
             #appContent #moreTabsDropdown .overflow-dropdown-item {
                 text-decoration: none !important;
             }
-            #appContent #moreTabsDropdown a:hover {
+            #appContent  #moreTabsDropdown .overflow-dropdown-item:hover {
                 text-decoration: none !important;
             }
 
@@ -1023,12 +1046,6 @@
             html.dark .tab-btn.tab-active:hover svg {
                 color: #9955FF !important;
             }
-            html.dark #appContent a {
-                color: #00BFFF !important;
-            }
-            html.dark #appContent a:hover {
-                color: #40d4ff !important;
-            }
             html.dark #clearClientDataBtn {
                 background-color: #363653 !important;
                 border: 1px solid #3a3a52 !important;
@@ -1146,7 +1163,7 @@
             #appContent #moreTabsDropdown .overflow-dropdown-item {
                 text-decoration: none !important;
             }
-            #appContent #moreTabsDropdown a:hover {
+            #appContent  #moreTabsDropdown .overflow-dropdown-item:hover {
                 text-decoration: none !important;
             }
 
@@ -2143,3 +2160,7 @@
                 border-left: none !important;
             }
         
+
+.dark .sedo-table-container table tbody tr:nth-child(odd) { background-color: #1f2937 !important; }
+.dark .sedo-table-container table tbody tr:nth-child(even) { background-color: #111827 !important; }
+.dark .sedo-table-container table tbody tr:hover { background-color: #374151 !important; }
