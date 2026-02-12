@@ -6,6 +6,7 @@
  * Связывает новые модули с глобальными зависимостями, без повторной инициализации БД.
  */
 import { setDependencies } from './app.js';
+import { initCertificateTab } from './features/certificate-tab.js';
 
 (function connectModules() {
     const deps = {
@@ -41,5 +42,6 @@ import { setDependencies } from './app.js';
     };
 
     setDependencies(deps);
+    initCertificateTab();
     console.log('[entry.js] Модули связаны с глобальными зависимостями.');
 })();
