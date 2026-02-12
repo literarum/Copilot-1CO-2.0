@@ -262,7 +262,7 @@ export function initExternalLinksSystem() {
  */
 export async function loadExtLinks() {
     if (!State || !State.db) {
-        console.warn('loadExtLinks: База данных не инициализирована.');
+        console.debug('loadExtLinks: База данных не инициализирована.');
         if (State) {
             State.extLinkCategoryInfo = {};
         }
