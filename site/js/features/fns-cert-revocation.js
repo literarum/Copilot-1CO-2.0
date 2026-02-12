@@ -302,11 +302,29 @@ export function initFNSCertificateRevocationSystem() {
         crlUrls.value = savedUrls;
     }
 
+    const getStatusEl = () => document.getElementById('fnsCrlStatus');
+
+    const setStatus = (text, className) => {
+        const currentStatusEl = getStatusEl();
+        if (!currentStatusEl) return;
+        currentStatusEl.textContent = text;
+        currentStatusEl.className = className;
+    };
+
+    const replaceStatus = (text, tone) => {
+        const currentStatusEl = getStatusEl();
+        if (!currentStatusEl) return;
+        const nextStatusEl = createStatusElement(text, tone);
+        currentStatusEl.replaceWith(nextStatusEl);
+        nextStatusEl.id = 'fnsCrlStatus';
+    };
+
     const resetOutput = () => {
-        if (statusEl) {
-            statusEl.textContent = 'Ожидание данных для проверки.';
-            statusEl.className =
-                'rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-3 text-sm text-gray-700 dark:text-gray-200';
+        if (getStatusEl()) {
+            setStatus(
+                'Ожидание данных для проверки.',
+                'rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-3 text-sm text-gray-700 dark:text-gray-200',
+            );
         }
         if (detailsEl) detailsEl.textContent = '';
     };
@@ -334,17 +352,12 @@ export function initFNSCertificateRevocationSystem() {
         resetOutput();
         const file = certInput.files?.[0];
         if (!file) {
-            const warning = createStatusElement(
-                'Загрузите сертификат .cer для проверки.',
-                'warn',
-            );
-            statusEl.replaceWith(warning);
-            warning.id = 'fnsCrlStatus';
+            replaceStatus('Загрузите сертификат .cer для проверки.', 'warn');
             return;
         }
 
         try {
-            statusEl.textContent = 'Чтение сертификата...';
+            setStatus('Чтение сертификата...', getStatusEl()?.className || '');
             const certBuffer = await file.arrayBuffer();
             const certInfoData = parseCertificate(certBuffer);
 
@@ -364,16 +377,11 @@ export function initFNSCertificateRevocationSystem() {
             const fileList = Array.from(crlFilesInput.files || []);
 
             if (!urlList.length && !fileList.length) {
-                const warning = createStatusElement(
-                    'Добавьте URL или загрузите CRL ФНС для проверки.',
-                    'warn',
-                );
-                statusEl.replaceWith(warning);
-                warning.id = 'fnsCrlStatus';
+                replaceStatus('Добавьте URL или загрузите CRL ФНС для проверки.', 'warn');
                 return;
             }
 
-            statusEl.textContent = 'Загрузка списков отзыва...';
+            setStatus('Загрузка списков отзыва...', getStatusEl()?.className || '');
 
             const crlSources = [];
             const apiBase = (typeof REVOCATION_API_BASE_URL === 'string' && REVOCATION_API_BASE_URL.trim()) ? REVOCATION_API_BASE_URL.trim().replace(/\/$/, '') : '';
@@ -450,6 +458,7 @@ export function initFNSCertificateRevocationSystem() {
 
             let revokedAt = null;
             let revokedSource = null;
+            let successfulSources = 0;
             const detailList = document.createElement('ul');
             detailList.className = 'space-y-2';
 
@@ -460,6 +469,7 @@ export function initFNSCertificateRevocationSystem() {
                 if (source.error) {
                     item.textContent = `${source.label}: ${source.error}`;
                 } else {
+                    successfulSources += 1;
                     const { revokedSerials, issuer, thisUpdate, nextUpdate } = source.data;
                     const revokedDate = revokedSerials.get(certInfoData.serialNormalized);
                     if (revokedDate && !revokedAt) {
@@ -475,27 +485,23 @@ export function initFNSCertificateRevocationSystem() {
             detailsEl.appendChild(detailList);
 
             if (revokedAt) {
-                const danger = createStatusElement(
+                replaceStatus(
                     `Сертификат ОТОЗВАН. Источник: ${revokedSource}. Дата отзыва: ${revokedAt}.`,
                     'danger',
                 );
-                statusEl.replaceWith(danger);
-                danger.id = 'fnsCrlStatus';
+            } else if (successfulSources === 0) {
+                replaceStatus(
+                    'Не удалось проверить сертификат: ни один источник CRL не был успешно загружен.',
+                    'danger',
+                );
             } else {
-                const success = createStatusElement(
+                replaceStatus(
                     'Сертификат не найден в загруженных списках отзыва ФНС.',
                     'success',
                 );
-                statusEl.replaceWith(success);
-                success.id = 'fnsCrlStatus';
             }
         } catch (error) {
-            const danger = createStatusElement(
-                `Ошибка проверки сертификата: ${error.message}`,
-                'danger',
-            );
-            statusEl.replaceWith(danger);
-            danger.id = 'fnsCrlStatus';
+            replaceStatus(`Ошибка проверки сертификата: ${error.message}`, 'danger');
         }
     });
 }
