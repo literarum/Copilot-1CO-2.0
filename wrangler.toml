@@ -1,0 +1,11 @@
+# Минимальный wrangler.toml в корне для прохождения мастера Cloudflare Dashboard
+# Основной конфиг и код Worker находятся в папке worker/
+# Для деплоя через Cloudflare Dashboard: укажите Root directory = worker
+# Для деплоя через GitHub Actions: используется worker/wrangler.toml
+
+name = "copilot-1co-revocation"
+main = "worker/src/index.js"
+compatibility_date = "2024-12-01"
+
+# Примечание: если деплоите через Cloudflare Dashboard, убедитесь что Root directory = worker
+# Тогда Cloudflare будет использовать worker/wrangler.toml и worker/src/index.js

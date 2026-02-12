@@ -1,0 +1,10 @@
+# Cloudflare Worker: API проверки отзыва сертификатов для Copilot 1CO 2.0
+# Деплой: из корня репозитория запускать из папки worker: cd worker && npx wrangler deploy
+# В Cloudflare Dashboard (Pages/Workers): укажите Root directory = worker
+
+name = "copilot-1co-revocation"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+# После первого деплоя Worker получит URL вида https://copilot-1co-revocation.<your-subdomain>.workers.dev
+# Этот URL нужно подставить во фронт как API_BASE_URL (или задать свой домен в Cloudflare)

@@ -1,5 +1,7 @@
 'use strict';
 
+import { REVOCATION_API_BASE_URL } from '../config.js';
+
 const STORAGE_KEY_CRL_URLS = 'fnsCrlUrls';
 
 const OID_LABELS = {
@@ -374,23 +376,59 @@ export function initFNSCertificateRevocationSystem() {
             statusEl.textContent = 'Загрузка списков отзыва...';
 
             const crlSources = [];
+            const apiBase = (typeof REVOCATION_API_BASE_URL === 'string' && REVOCATION_API_BASE_URL.trim()) ? REVOCATION_API_BASE_URL.trim().replace(/\/$/, '') : '';
+
             for (const url of urlList) {
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
+                if (apiBase) {
+                    try {
+                        const response = await fetch(`${apiBase}/api/revocation/check`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ serial: certInfoData.serialNormalized, listUrl: url }),
+                        });
+                        const result = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            crlSources.push({ label: url, error: result.error || `HTTP ${response.status}` });
+                        } else if (result.error) {
+                            crlSources.push({ label: url, error: result.error });
+                        } else {
+                            const revokedSerials = result.revoked
+                                ? new Map([[certInfoData.serialNormalized, '—']])
+                                : new Map();
+                            crlSources.push({
+                                label: url,
+                                data: {
+                                    revokedSerials,
+                                    issuer: '—',
+                                    thisUpdate: '—',
+                                    nextUpdate: '—',
+                                },
+                            });
+                        }
+                    } catch (error) {
+                        crlSources.push({
+                            label: url,
+                            error: `Бэкенд проверки отзыва: ${error.message}.`,
+                        });
                     }
-                    const buffer = await response.arrayBuffer();
-                    const crlData = parseCrl(buffer);
-                    crlSources.push({
-                        label: url,
-                        data: crlData,
-                    });
-                } catch (error) {
-                    crlSources.push({
-                        label: url,
-                        error: `Не удалось загрузить CRL (${error.message}).`,
-                    });
+                } else {
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        const buffer = await response.arrayBuffer();
+                        const crlData = parseCrl(buffer);
+                        crlSources.push({
+                            label: url,
+                            data: crlData,
+                        });
+                    } catch (error) {
+                        crlSources.push({
+                            label: url,
+                            error: `Не удалось загрузить CRL (${error.message}).`,
+                        });
+                    }
                 }
             }
 
