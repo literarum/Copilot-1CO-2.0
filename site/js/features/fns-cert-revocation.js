@@ -2,7 +2,11 @@
 
 import { REVOCATION_API_BASE_URL } from '../config.js';
 
-const STORAGE_KEY_CRL_URLS = 'fnsCrlUrls';
+
+const DEFAULT_FNS_CRL_URLS = [
+    'https://www.nalog.gov.ru/files/77/CAcerts/2024/ucfns77.crl',
+    'https://www.nalog.gov.ru/files/77/CAcerts/ucfns77.crl',
+];
 
 const OID_LABELS = {
     '2.5.4.3': 'CN',
@@ -285,70 +289,61 @@ function createStatusElement(text, tone = 'neutral') {
 export function initFNSCertificateRevocationSystem() {
     const certInput = document.getElementById('fnsCertFileInput');
     const certInfo = document.getElementById('fnsCertInfo');
-    const crlUrls = document.getElementById('fnsCrlUrls');
-    const crlFilesInput = document.getElementById('fnsCrlFileInput');
-    const checkBtn = document.getElementById('fnsCertCheckBtn');
+    const dropzone = document.getElementById('fnsCertDropzone');
     const resetBtn = document.getElementById('fnsCertResetBtn');
-    const statusEl = document.getElementById('fnsCrlStatus');
     const detailsEl = document.getElementById('fnsCrlDetails');
 
-    if (!certInput || !certInfo || !crlUrls || !crlFilesInput || !checkBtn || !resetBtn) {
+    if (!certInput || !certInfo || !resetBtn) {
         console.warn('[FNS Cert Revocation] Не найдены элементы интерфейса.');
         return;
     }
 
-    const savedUrls = localStorage.getItem(STORAGE_KEY_CRL_URLS);
-    if (savedUrls && !crlUrls.value.trim()) {
-        crlUrls.value = savedUrls;
-    }
+
+    const getStatusEl = () => document.getElementById('fnsCrlStatus');
+
+    const setStatus = (text, className) => {
+        const currentStatusEl = getStatusEl();
+        if (!currentStatusEl) return;
+        currentStatusEl.textContent = text;
+        currentStatusEl.className = className;
+    };
+
+    const replaceStatus = (text, tone) => {
+        const currentStatusEl = getStatusEl();
+        if (!currentStatusEl) return;
+        const nextStatusEl = createStatusElement(text, tone);
+        currentStatusEl.replaceWith(nextStatusEl);
+        nextStatusEl.id = 'fnsCrlStatus';
+    };
 
     const resetOutput = () => {
-        if (statusEl) {
-            statusEl.textContent = 'Ожидание данных для проверки.';
-            statusEl.className =
-                'rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-3 text-sm text-gray-700 dark:text-gray-200';
+        if (getStatusEl()) {
+            setStatus(
+                'Ожидание данных для проверки.',
+                'rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-3 text-sm text-gray-700 dark:text-gray-200',
+            );
         }
         if (detailsEl) detailsEl.textContent = '';
     };
 
     resetOutput();
 
-    crlUrls.addEventListener('input', () => {
-        localStorage.setItem(STORAGE_KEY_CRL_URLS, crlUrls.value);
-    });
 
-    certInput.addEventListener('change', () => {
-        const file = certInput.files?.[0];
-        certInfo.textContent = file ? `Выбран файл: ${file.name}` : 'Сертификат не выбран.';
-        resetOutput();
-    });
-
-    resetBtn.addEventListener('click', () => {
-        certInput.value = '';
-        crlFilesInput.value = '';
-        certInfo.textContent = 'Сертификат не выбран.';
-        resetOutput();
-    });
-
-    checkBtn.addEventListener('click', async () => {
+    const runCheck = async () => {
         resetOutput();
         const file = certInput.files?.[0];
         if (!file) {
-            const warning = createStatusElement(
-                'Загрузите сертификат .cer для проверки.',
-                'warn',
-            );
-            statusEl.replaceWith(warning);
-            warning.id = 'fnsCrlStatus';
+            replaceStatus('Загрузите сертификат .cer для проверки.', 'warn');
             return;
         }
 
         try {
-            statusEl.textContent = 'Чтение сертификата...';
+            setStatus('Чтение сертификата...', getStatusEl()?.className || '');
             const certBuffer = await file.arrayBuffer();
             const certInfoData = parseCertificate(certBuffer);
 
             const infoLines = [
+                `Файл: ${file.name}`,
                 `Серийный номер: ${certInfoData.serialHex}`,
                 `Издатель: ${certInfoData.issuer}`,
                 `Владелец: ${certInfoData.subject}`,
@@ -357,28 +352,12 @@ export function initFNSCertificateRevocationSystem() {
             ];
             certInfo.textContent = infoLines.join(' | ');
 
-            const urlList = crlUrls.value
-                .split('\n')
-                .map((line) => line.trim())
-                .filter(Boolean);
-            const fileList = Array.from(crlFilesInput.files || []);
-
-            if (!urlList.length && !fileList.length) {
-                const warning = createStatusElement(
-                    'Добавьте URL или загрузите CRL ФНС для проверки.',
-                    'warn',
-                );
-                statusEl.replaceWith(warning);
-                warning.id = 'fnsCrlStatus';
-                return;
-            }
-
-            statusEl.textContent = 'Загрузка списков отзыва...';
+            setStatus('Загрузка списков отзыва...', getStatusEl()?.className || '');
 
             const crlSources = [];
             const apiBase = (typeof REVOCATION_API_BASE_URL === 'string' && REVOCATION_API_BASE_URL.trim()) ? REVOCATION_API_BASE_URL.trim().replace(/\/$/, '') : '';
 
-            for (const url of urlList) {
+            for (const url of DEFAULT_FNS_CRL_URLS) {
                 if (apiBase) {
                     try {
                         const response = await fetch(`${apiBase}/api/revocation/check`, {
@@ -432,24 +411,9 @@ export function initFNSCertificateRevocationSystem() {
                 }
             }
 
-            for (const crlFile of fileList) {
-                try {
-                    const buffer = await crlFile.arrayBuffer();
-                    const crlData = parseCrl(buffer);
-                    crlSources.push({
-                        label: crlFile.name,
-                        data: crlData,
-                    });
-                } catch (error) {
-                    crlSources.push({
-                        label: crlFile.name,
-                        error: `Не удалось прочитать файл CRL (${error.message}).`,
-                    });
-                }
-            }
-
             let revokedAt = null;
             let revokedSource = null;
+            let successfulSources = 0;
             const detailList = document.createElement('ul');
             detailList.className = 'space-y-2';
 
@@ -460,6 +424,7 @@ export function initFNSCertificateRevocationSystem() {
                 if (source.error) {
                     item.textContent = `${source.label}: ${source.error}`;
                 } else {
+                    successfulSources += 1;
                     const { revokedSerials, issuer, thisUpdate, nextUpdate } = source.data;
                     const revokedDate = revokedSerials.get(certInfoData.serialNormalized);
                     if (revokedDate && !revokedAt) {
@@ -475,29 +440,66 @@ export function initFNSCertificateRevocationSystem() {
             detailsEl.appendChild(detailList);
 
             if (revokedAt) {
-                const danger = createStatusElement(
+                replaceStatus(
                     `Сертификат ОТОЗВАН. Источник: ${revokedSource}. Дата отзыва: ${revokedAt}.`,
                     'danger',
                 );
-                statusEl.replaceWith(danger);
-                danger.id = 'fnsCrlStatus';
+            } else if (successfulSources === 0) {
+                replaceStatus(
+                    'Не удалось проверить сертификат: ни один источник CRL не был успешно загружен.',
+                    'danger',
+                );
             } else {
-                const success = createStatusElement(
+                replaceStatus(
                     'Сертификат не найден в загруженных списках отзыва ФНС.',
                     'success',
                 );
-                statusEl.replaceWith(success);
-                success.id = 'fnsCrlStatus';
             }
         } catch (error) {
-            const danger = createStatusElement(
-                `Ошибка проверки сертификата: ${error.message}`,
-                'danger',
-            );
-            statusEl.replaceWith(danger);
-            danger.id = 'fnsCrlStatus';
+            replaceStatus(`Ошибка проверки сертификата: ${error.message}`, 'danger');
+        }
+    };
+
+    certInput.addEventListener('change', () => {
+        const file = certInput.files?.[0];
+        certInfo.textContent = file ? `Выбран файл: ${file.name}` : 'Сертификат не выбран.';
+        if (file) {
+            runCheck();
+        } else {
+            resetOutput();
         }
     });
+
+    if (dropzone) {
+        const dragClass = 'border-primary';
+        ['dragenter', 'dragover'].forEach((eventName) => {
+            dropzone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                dropzone.classList.add(dragClass);
+            });
+        });
+        ['dragleave', 'drop'].forEach((eventName) => {
+            dropzone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                dropzone.classList.remove(dragClass);
+            });
+        });
+        dropzone.addEventListener('drop', (event) => {
+            const [file] = Array.from(event.dataTransfer?.files || []);
+            if (!file) return;
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            certInput.files = dt.files;
+            certInput.dispatchEvent(new Event('change'));
+        });
+    }
+
+    resetBtn.addEventListener('click', () => {
+        certInput.value = '';
+        certInfo.textContent = 'Сертификат не выбран.';
+        resetOutput();
+    });
+
 }
 
 window.initFNSCertificateRevocationSystem = initFNSCertificateRevocationSystem;
