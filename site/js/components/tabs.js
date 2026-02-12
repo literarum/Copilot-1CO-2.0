@@ -212,16 +212,15 @@ export function updateVisibleTabs() {
             tab.style.display = 'none';
             tab.classList.add('overflow-tab');
 
-            const dropdownItem = document.createElement('a');
-            dropdownItem.href = '#';
+            const dropdownItem = document.createElement('button');
+            dropdownItem.type = 'button';
             dropdownItem.className =
-                'block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 overflow-dropdown-item';
+                'w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 overflow-dropdown-item';
             const icon = tab.querySelector('i');
             const text = tab.textContent.trim();
             dropdownItem.innerHTML = `${icon ? icon.outerHTML + ' ' : ''}${text}`;
             dropdownItem.dataset.tabId = tab.id.replace('Tab', '');
             dropdownItem.addEventListener('click', (e) => {
-                e.preventDefault();
                 if (typeof window.setActiveTab === 'function') {
                     window.setActiveTab(dropdownItem.dataset.tabId);
                 }
