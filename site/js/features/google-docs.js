@@ -570,9 +570,6 @@ export function initGoogleDocSections() {
 
     let mainContentArea = appContent.querySelector('main');
     if (!mainContentArea) {
-        console.warn(
-            'ПРЕДУПРЕЖДЕНИЕ (initGoogleDocSections): Тег <main> внутри #appContent не найден. Создаю его динамически.',
-        );
         mainContentArea = document.createElement('main');
         mainContentArea.className = 'flex-grow p-4 overflow-y-auto custom-scrollbar';
         const tabNavContainer = appContent.querySelector('.border-b.border-gray-200');

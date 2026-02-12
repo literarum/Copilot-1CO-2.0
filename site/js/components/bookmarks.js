@@ -340,9 +340,6 @@ export async function getAllBookmarks() {
  */
 export async function loadBookmarks() {
     if (!State || !State.db) {
-        console.warn(
-            'loadBookmarks: База данных ещё не инициализирована. Загрузка закладок будет выполнена после готовности БД.',
-        );
         await renderBookmarkFolders([]);
         await renderBookmarks([]);
         return false;

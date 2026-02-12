@@ -66,18 +66,12 @@ export function updateVisibleTabs() {
         State.updateVisibleTabsRetryCount < MAX_UPDATE_VISIBLE_TABS_RETRIES
     ) {
         State.updateVisibleTabsRetryCount++;
-        console.warn(
-            `[updateVisibleTabs v8_FIXED - Retry ${State.updateVisibleTabsRetryCount}/${MAX_UPDATE_VISIBLE_TABS_RETRIES}] tabsNav.offsetWidth is 0. Retrying in next frame...`,
-        );
         requestAnimationFrame(updateVisibleTabs);
         return;
     } else if (
         tabsNav.offsetWidth === 0 &&
         State.updateVisibleTabsRetryCount >= MAX_UPDATE_VISIBLE_TABS_RETRIES
     ) {
-        console.warn(
-            `[updateVisibleTabs] Element not visible yet (offsetWidth=0). Will recalculate on resize.`,
-        );
         if (moreTabsContainer && document.body.contains(moreTabsContainer)) {
             moreTabsContainer.classList.add('hidden');
         }
