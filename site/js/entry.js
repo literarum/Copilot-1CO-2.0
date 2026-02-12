@@ -29,6 +29,16 @@ import { initCertificateTab } from './features/certificate-tab.js';
         loadFoldersList: window.loadFoldersList,
         removeEscapeHandler: window.removeEscapeHandler,
         getVisibleModals: window.getVisibleModals,
+        addEscapeHandler: window.addEscapeHandler,
+        handleSaveFolderSubmit: window.handleSaveFolderSubmit,
+        getAllFromIndex: window.getAllFromIndex,
+        State: window.State,
+        showEditBookmarkModal: window.showEditBookmarkModal,
+        deleteBookmark: window.deleteBookmark,
+        showBookmarkDetailModal: window.showBookmarkDetailModal,
+        handleViewBookmarkScreenshots: window.handleViewBookmarkScreenshots,
+        NotificationService: window.NotificationService,
+        showScreenshotViewerModal: window.showScreenshotViewerModal,
     };
 
     setDependencies(deps);
