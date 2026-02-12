@@ -548,11 +548,20 @@
                                 type="text"
                                 id="searchInput"
                                 placeholder="Поиск..."
-                                class="w-full pl-10 pr-10 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
+                                class="w-full pl-10 pr-20 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
                             />
                             <i
                                 class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                             ></i>
+
+                            <button
+                                id="openAdvancedSearchModalBtn"
+                                type="button"
+                                class="absolute top-1/2 right-10 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                title="Параметры поиска"
+                            >
+                                <i class="fas fa-sliders-h"></i>
+                            </button>
                             <button
                                 id="clearSearchInputBtn"
                                 type="button"
@@ -622,7 +631,7 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="title"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300"
@@ -633,7 +642,7 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="description"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300"
@@ -644,14 +653,14 @@
                                     <input
                                         type="checkbox"
                                         checked
-                                        class="search-field form-checkbox text-primary focus:ring-primary"
+                                        class="search-field-filter form-checkbox text-primary focus:ring-primary"
                                         value="steps"
                                     />
                                     <span class="ml-2 text-gray-700 dark:text-gray-300">Шаги</span>
                                 </label>
                             </div>
                         </div>
-                        <div class="flex justify-end items-end md:col-start-3">
+                        <div class="hidden">
                             <button
                                 id="toggleAdvancedSearch"
                                 class="px-3 py-1.5 text-sm bg-primary hover:bg-secondary text-white rounded-md transition"
@@ -741,7 +750,7 @@
                         <i class="fas fa-certificate mr-1"></i>
                         <span class="hidden sm:inline">Проверка сертификата ФНС</span>
                     </button>
-                    <div class="relative group ml-auto md:ml-1 shrink-0">
+                    <div class="relative group shrink-0">
                         <button
                             id="moreTabsBtn"
                             class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
@@ -750,7 +759,7 @@
                         </button>
                         <div
                             id="moreTabsDropdown"
-                            class="absolute hidden right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10 w-48"
+                            class="absolute hidden right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-20 w-56 overflow-hidden"
                         ></div>
                     </div>
                 </nav>
@@ -1451,23 +1460,25 @@
 
             <!-- Проверка сертификатов ФНС (отзыв по CRL) -->
             <div id="fnsCertContent" class="tab-content hidden p-4" aria-labelledby="fnsCertTab">
-                <div class="max-w-4xl space-y-6">
-                    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-                        Проверка сертификата ФНС по спискам отзыва (CRL)
-                    </h2>
-                    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg space-y-4">
-                        <div>
-                            <label for="fnsCertFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сертификат (PEM или DER)</label>
-                            <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
-                            <div id="fnsCertInfo" class="mt-2 text-sm text-gray-600 dark:text-gray-400 min-h-[2rem]"></div>
-                        </div>
-                        <div>
-                            <label for="fnsCrlUrls" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL списков отзыва (CRL), по одному на строку</label>
-                            <textarea id="fnsCrlUrls" rows="3" class="block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 text-sm" placeholder="https://..."></textarea>
-                        </div>
-                        <div>
-                            <label for="fnsCrlFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Или загрузить CRL-файлы</label>
-                            <input type="file" id="fnsCrlFileInput" accept=".crl,.der" multiple class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
+                <div class="max-w-5xl mx-auto">
+                    <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md space-y-content-sm">
+                        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                            Проверка сертификата на отзыв
+                        </h2>
+                        <div class="grid gap-4">
+                            <div>
+                                <label for="fnsCertFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сертификат (PEM или DER)</label>
+                                <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
+                            </div>
+                            <div id="fnsCertInfo" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700 dark:text-gray-200"></div>
+                            <div>
+                                <label for="fnsCrlUrls" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL списков отзыва (CRL), по одному на строку</label>
+                                <textarea id="fnsCrlUrls" rows="3" class="block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 text-sm" placeholder="https://..."></textarea>
+                            </div>
+                            <div>
+                                <label for="fnsCrlFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Или загрузить CRL-файлы</label>
+                                <input type="file" id="fnsCrlFileInput" accept=".crl,.der" multiple class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
+                            </div>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button type="button" id="fnsCertCheckBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md text-sm">
@@ -1478,7 +1489,22 @@
                             </button>
                         </div>
                         <div id="fnsCrlStatus" class="text-sm"></div>
-                        <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-400"></div>
+                        <div id="fnsCrlDetails" class="space-y-2 text-sm text-gray-600 dark:text-gray-400"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Модальное окно параметров поиска -->
+            <div id="advancedSearchModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4 overflow-y-auto">
+                <div class="flex items-center justify-center min-h-full">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full">
+                        <div class="p-content border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                            <h2 class="text-xl font-bold">Параметры поиска</h2>
+                            <button id="closeAdvancedSearchModalBtn" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Закрыть"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="p-content"> 
+                            <div id="advancedSearchOptionsModalHost"></div>
+                        </div>
                     </div>
                 </div>
             </div>
