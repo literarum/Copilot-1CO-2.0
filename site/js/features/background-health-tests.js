@@ -126,13 +126,9 @@ export function initBackgroundHealthTestsSystem() {
                         throw new Error('Метод performDBOperation не доступен.');
                     }
                     const count = await runWithTimeout(
-                        deps.performDBOperation('searchIndex', 'readonly', (store) => {
-                            return new Promise((resolve, reject) => {
-                                const req = store.count();
-                                req.onsuccess = () => resolve(req.result || 0);
-                                req.onerror = () => reject(req.error || new Error('Ошибка подсчета'));
-                            });
-                        }),
+                        deps.performDBOperation('searchIndex', 'readonly', (store) =>
+                            store.count(),
+                        ),
                         5000,
                     );
                     if (!count) {
@@ -172,13 +168,9 @@ export function initBackgroundHealthTestsSystem() {
                 // Тест 5: целостность списка жаб
                 try {
                     const blacklistCount = await runWithTimeout(
-                        deps.performDBOperation?.('blacklistedClients', 'readonly', (store) => {
-                            return new Promise((resolve, reject) => {
-                                const req = store.count();
-                                req.onsuccess = () => resolve(req.result || 0);
-                                req.onerror = () => reject(req.error || new Error('Ошибка подсчета'));
-                            });
-                        }),
+                        deps.performDBOperation?.('blacklistedClients', 'readonly', (store) =>
+                            store.count(),
+                        ),
                         5000,
                     );
                     report('info', 'Черный список', `Записей в списке: ${blacklistCount}.`);
@@ -228,4 +220,3 @@ export function initBackgroundHealthTestsSystem() {
 }
 
 window.initBackgroundHealthTestsSystem = initBackgroundHealthTestsSystem;
-
