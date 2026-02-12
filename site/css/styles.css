@@ -2102,6 +2102,19 @@
                 line-height: 1.2;
                 font-size: clamp(10px, 1.8vw, 14px);
             }
+            .pdf-dropzone {
+                background: rgba(59, 130, 246, 0.04);
+                transition: border-color 0.2s ease, background 0.2s ease;
+            }
+            .dark .pdf-dropzone {
+                background: rgba(59, 130, 246, 0.08);
+            }
+            .pdf-dropzone:hover {
+                border-color: rgba(59, 130, 246, 0.6);
+            }
+            .pdf-empty {
+                padding: 0.5rem 0.25rem;
+            }
 
             /*Прочие стили*/
             .bookmark-item.view-item {

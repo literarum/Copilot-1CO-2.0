@@ -19,6 +19,7 @@ let renderFavoritesPage = null;
 let updateVisibleTabs = null;
 let showBlacklistWarning = null;
 let hotkeysModalConfig = null;
+let initBackgroundSystems = null;
 
 export function setUIInitDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
@@ -31,6 +32,7 @@ export function setUIInitDependencies(deps) {
     if (deps.updateVisibleTabs !== undefined) updateVisibleTabs = deps.updateVisibleTabs;
     if (deps.showBlacklistWarning !== undefined) showBlacklistWarning = deps.showBlacklistWarning;
     if (deps.hotkeysModalConfig !== undefined) hotkeysModalConfig = deps.hotkeysModalConfig;
+    if (deps.initBackgroundSystems !== undefined) initBackgroundSystems = deps.initBackgroundSystems;
 }
 
 // ============================================================================
@@ -47,6 +49,14 @@ export function initUI() {
         window.setActiveTab('main');
     } else {
         console.error('initUI: Функция setActiveTab не найдена!');
+    }
+
+    if (typeof initBackgroundSystems === 'function') {
+        try {
+            initBackgroundSystems();
+        } catch (e) {
+            console.error('[initUI] Ошибка инициализации фоновых систем:', e);
+        }
     }
 }
 

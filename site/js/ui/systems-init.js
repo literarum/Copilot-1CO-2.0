@@ -24,6 +24,9 @@ let exportAllData = null;
 let loadingOverlayManager = null;
 let NotificationService = null;
 let showNotification = null;
+let initBackgroundHealthTestsSystem = null;
+let setBackgroundHealthTestsDependencies = null;
+let BackgroundStatusHUDFactory = null;
 
 export function setSystemsInitDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
@@ -41,6 +44,9 @@ export function setSystemsInitDependencies(deps) {
     if (deps.loadingOverlayManager !== undefined) loadingOverlayManager = deps.loadingOverlayManager;
     if (deps.NotificationService !== undefined) NotificationService = deps.NotificationService;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
+    if (deps.initBackgroundHealthTestsSystem !== undefined) initBackgroundHealthTestsSystem = deps.initBackgroundHealthTestsSystem;
+    if (deps.setBackgroundHealthTestsDependencies !== undefined) setBackgroundHealthTestsDependencies = deps.setBackgroundHealthTestsDependencies;
+    if (deps.BackgroundStatusHUDFactory !== undefined) BackgroundStatusHUDFactory = deps.BackgroundStatusHUDFactory;
 }
 
 // ============================================================================
@@ -174,4 +180,33 @@ export function initClearDataFunctionality() {
     console.log(
         'Функционал очистки данных инициализирован с исправленной логикой флага и оверлея.',
     );
+}
+
+/**
+ * Инициализирует фоновые диагностические тесты и HUD статуса
+ */
+export function initBackgroundSystems() {
+    if (typeof BackgroundStatusHUDFactory === 'function' && !window.BackgroundStatusHUD) {
+        try {
+            window.BackgroundStatusHUD = BackgroundStatusHUDFactory();
+            console.log('[BackgroundSystems] BackgroundStatusHUD инициализирован.');
+        } catch (e) {
+            console.error('[BackgroundSystems] Ошибка инициализации BackgroundStatusHUD:', e);
+        }
+    }
+
+    // Зависимости для health-тестов задаются в script.js (saveToIndexedDB, getFromIndexedDB и т.д.)
+
+    if (typeof initBackgroundHealthTestsSystem === 'function') {
+        try {
+            initBackgroundHealthTestsSystem();
+            console.log('[BackgroundSystems] Фоновые health-тесты инициализированы.');
+        } catch (e) {
+            console.error('[BackgroundSystems] Ошибка запуска фоновых health-тестов:', e);
+        }
+    } else {
+        console.warn(
+            '[BackgroundSystems] initBackgroundHealthTestsSystem не задан, фоновые тесты не будут запущены.',
+        );
+    }
 }
