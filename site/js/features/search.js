@@ -2940,7 +2940,8 @@ export async function handleSearchResultClick(result) {
 export function initSearchSystem() {
     const searchInput = document.getElementById('searchInput');
     const searchResultsContainer = document.getElementById('searchResults');
-    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const clearSearchBtn = document.getElementById('clearSearchInputBtn');
+    const searchSettingsBtn = document.getElementById('searchSettingsBtn');
     const searchFieldFilters = document.querySelectorAll('.search-field-filter');
 
     if (!searchInput) {
@@ -3038,6 +3039,13 @@ export function initSearchSystem() {
         } else {
             clearSearchBtn.classList.add('hidden');
         }
+    }
+
+    if (searchSettingsBtn) {
+        searchSettingsBtn.addEventListener('click', () => {
+            const advancedToggleBtn = document.getElementById('toggleAdvancedSearch');
+            advancedToggleBtn?.click();
+        });
     }
 
     document.addEventListener('keydown', (event) => {

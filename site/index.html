@@ -9,7 +9,7 @@
             href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><title>SOS Icon (Red)</title><defs><style>.sos-text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-weight:bold;text-anchor:middle;dominant-baseline:central;fill:%23DC2626;letter-spacing:-0.5px}.frame{fill:none;stroke:%23DC2626;stroke-width:2}</style></defs><rect x="4" y="4" width="24" height="24" rx="4" class="frame"/><text x="16" y="16" class="sos-text">SOS</text></svg>'
         />
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
             integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
@@ -17,53 +17,6 @@
             referrerpolicy="no-referrer"
         ></script>
         <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-        <script>
-            tailwind.config = {
-                darkMode: 'class',
-                theme: {
-                    extend: {
-                        colors: {
-                            primary: 'var(--color-primary, #9933FF)',
-                            secondary: 'var(--color-secondary, #7B2FDF)',
-                            blue: {
-                                ...tailwind.colors.blue,
-                                DEFAULT: 'var(--color-primary, #5D5CDE)',
-                            },
-                        },
-
-                        borderRadius: {
-                            none: '0px',
-                            sm: 'calc(var(--border-radius, 8px) * 0.5)',
-                            DEFAULT: 'var(--border-radius, 8px)',
-                            md: 'calc(var(--border-radius, 8px) * 0.75)',
-                            lg: 'calc(var(--border-radius, 8px) * 1.25)',
-                            xl: 'calc(var(--border-radius, 8px) * 1.75)',
-                            '2xl': 'calc(var(--border-radius, 8px) * 2.25)',
-                            '3xl': 'calc(var(--border-radius, 8px) * 3.0)',
-                            full: '9999px',
-                        },
-
-                        spacing: {
-                            content: 'var(--content-spacing, 1rem)',
-                            'content-sm': 'calc(var(--content-spacing, 1rem) * 0.75)',
-                            'content-lg': 'calc(var(--content-spacing, 1rem) * 1.5)',
-                        },
-
-                        gap: (theme) => ({
-                            ...theme('spacing'),
-                        }),
-
-                        padding: (theme) => ({
-                            ...theme('spacing'),
-                        }),
-
-                        margin: (theme) => ({
-                            ...theme('spacing'),
-                        }),
-                    },
-                },
-            };
-        </script>
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -548,11 +501,19 @@
                                 type="text"
                                 id="searchInput"
                                 placeholder="Поиск..."
-                                class="w-full pl-10 pr-10 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
+                                class="w-full pl-10 pr-16 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
                             />
                             <i
                                 class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                             ></i>
+                            <button
+                                id="searchSettingsBtn"
+                                type="button"
+                                class="absolute top-1/2 right-9 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                title="Настройки поиска"
+                            >
+                                <i class="fas fa-cog"></i>
+                            </button>
                             <button
                                 id="clearSearchInputBtn"
                                 type="button"
@@ -1457,26 +1418,18 @@
                     </h2>
                     <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg space-y-4">
                         <div>
-                            <label for="fnsCertFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сертификат (PEM или DER)</label>
-                            <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
-                            <div id="fnsCertInfo" class="mt-2 text-sm text-gray-600 dark:text-gray-400 min-h-[2rem]"></div>
-                        </div>
-                        <div>
-                            <label for="fnsCrlUrls" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL списков отзыва (CRL), по одному на строку</label>
-                            <textarea id="fnsCrlUrls" rows="3" class="block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 text-sm" placeholder="https://..."></textarea>
-                        </div>
-                        <div>
-                            <label for="fnsCrlFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Или загрузить CRL-файлы</label>
-                            <input type="file" id="fnsCrlFileInput" accept=".crl,.der" multiple class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
+                            <label for="fnsCertFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Сертификат (PEM/DER): перетащите файл сюда или выберите с компьютера</label>
+                            <label for="fnsCertFileInput" id="fnsCertDropzone" class="flex items-center justify-center w-full min-h-[8rem] cursor-pointer rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-700/40 text-sm text-gray-700 dark:text-gray-200 px-4 py-6 text-center hover:border-primary hover:text-primary transition-colors">
+                                Перетащите сертификат сюда или нажмите для выбора файла
+                            </label>
+                            <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="hidden" />
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button type="button" id="fnsCertCheckBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md text-sm">
-                                <i class="fas fa-check-circle mr-2"></i>Проверить
-                            </button>
                             <button type="button" id="fnsCertResetBtn" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 text-white rounded-md text-sm">
                                 <i class="fas fa-undo mr-2"></i>Сбросить
                             </button>
                         </div>
+                        <div id="fnsCertInfo" class="text-sm text-gray-700 dark:text-gray-300"></div>
                         <div id="fnsCrlStatus" class="text-sm"></div>
                         <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-400"></div>
                     </div>
