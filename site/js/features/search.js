@@ -2900,6 +2900,24 @@ export async function handleSearchResultClick(result) {
                 if (textarea) {
                     textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     textarea.focus();
+
+                    const term = (result.highlightTerm || result.title || '').trim();
+                    if (term) {
+                        const haystack = String(textarea.value || '').toLowerCase();
+                        const needle = term.toLowerCase();
+                        const idx = haystack.indexOf(needle);
+                        if (idx >= 0) {
+                            const end = idx + term.length;
+                            textarea.setSelectionRange(idx, end);
+                            const before = textarea.value.slice(0, idx);
+                            const line = before.split('
+').length - 1;
+                            const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 20;
+                            const targetTop = Math.max(0, line * lineHeight - textarea.clientHeight / 2 + lineHeight);
+                            textarea.scrollTop = targetTop;
+                        }
+                    }
+
                     highlightElement(textarea, result.highlightTerm);
                 }
                 break;

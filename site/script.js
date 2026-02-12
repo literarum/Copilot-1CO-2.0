@@ -1936,7 +1936,102 @@ function clearClientData() {
     return clearClientDataModule();
 }
 
+
+
+
+
+function initClientNotesCtrlClickFallback() {
+    const ta = document.getElementById('clientNotes');
+    if (!ta || ta.dataset.ctrlCopyFallbackBound === '1') return;
+
+    const findInnNearCaret = () => {
+        const text = ta.value || '';
+        const pos = ta.selectionStart || 0;
+        const isDigit = (ch) => ch >= '0' && ch <= '9';
+        const probes = [pos, pos - 1, pos + 1, pos - 2, pos + 2, pos - 3, pos + 3];
+        for (const p of probes) {
+            if (p < 0 || p >= text.length || !isDigit(text[p])) continue;
+            let l = p;
+            let r = p + 1;
+            while (l > 0 && isDigit(text[l - 1])) l -= 1;
+            while (r < text.length && isDigit(text[r])) r += 1;
+            const token = text.slice(l, r);
+            if (token.length === 10 || token.length === 12) {
+                return { token, start: l, end: r };
+            }
+        }
+        return null;
+    };
+
+    ta.addEventListener('click', async (event) => {
+        if (!(event.ctrlKey || event.metaKey)) return;
+        if (!__acquireCopyLock(200)) return;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const hit = findInnNearCaret();
+        if (!hit) return;
+        event.preventDefault();
+        ta.setSelectionRange(hit.start, hit.end);
+        try {
+            await copyToClipboard(hit.token, `ИНН ${hit.token} скопирован!`);
+        } catch (_) {}
+    });
+
+    ta.dataset.ctrlCopyFallbackBound = '1';
+}
+
+function initAdvancedSearchModalFallback() {
+    const openBtn = document.getElementById('openAdvancedSearchModalBtn');
+    const legacyBtn = document.getElementById('toggleAdvancedSearch');
+    const modal = document.getElementById('advancedSearchModal');
+    const closeBtn = document.getElementById('closeAdvancedSearchModalBtn');
+    const options = document.getElementById('advancedSearchOptions');
+    const optionsHost = document.getElementById('advancedSearchOptionsModalHost');
+
+    if (options && optionsHost && !optionsHost.contains(options)) {
+        options.classList.remove('hidden', 'mb-3');
+        options.classList.add('bg-transparent', 'dark:bg-transparent', 'p-0', 'rounded-none', 'mb-0');
+        optionsHost.appendChild(options);
+    }
+
+    const open = () => {
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    };
+    const close = () => {
+        if (!modal) return;
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    if (openBtn && !openBtn.dataset.modalBound) {
+        openBtn.addEventListener('click', open);
+        openBtn.dataset.modalBound = '1';
+    }
+    if (legacyBtn && !legacyBtn.dataset.modalBound) {
+        legacyBtn.addEventListener('click', open);
+        legacyBtn.dataset.modalBound = '1';
+    }
+    if (closeBtn && !closeBtn.dataset.modalBound) {
+        closeBtn.addEventListener('click', close);
+        closeBtn.dataset.modalBound = '1';
+    }
+    if (modal && !modal.dataset.overlayBound) {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) close();
+        });
+        modal.dataset.overlayBound = '1';
+    }
+}
+
 const themeToggleBtn = document.getElementById('themeToggle');
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => { initAdvancedSearchModalFallback(); initClientNotesCtrlClickFallback(); }, { once: true }
+} else {
+    initAdvancedSearchModalFallback();
+    initClientNotesCtrlClickFallback();
+}
+
 themeToggleBtn?.addEventListener('click', async () => {
     if (!State.userPreferences) {
         console.error('State.userPreferences не инициализирован. Невозможно переключить тему.');
@@ -3260,7 +3355,7 @@ async function initClientDataSystem() {
     }
 
     if (State.clientNotesCtrlClickHandler) {
-        clientNotes.removeEventListener('mousedown', State.clientNotesCtrlClickHandler);
+        clientNotes.removeEventListener('click', State.clientNotesCtrlClickHandler);
         console.log(`${LOG_PREFIX} Старый обработчик 'click' (Ctrl+Click INN) удален.`);
     }
     if (State.clientNotesBlurHandler) {
@@ -3408,9 +3503,9 @@ async function initClientDataSystem() {
         }
     };
 
-    clientNotes.addEventListener('mousedown', clientNotesCtrlMouseDownHandler);
+    clientNotes.addEventListener('click', clientNotesCtrlMouseDownHandler);
     State.clientNotesCtrlClickHandler = clientNotesCtrlMouseDownHandler;
-    console.log(`${LOG_PREFIX} Обработчик 'mousedown' (Ctrl+Click INN→copy) привязан.`);
+    console.log(`${LOG_PREFIX} Обработчик 'click' (Ctrl+Click INN→copy) привязан.`);
 
     State.clientNotesCtrlKeyDownHandler = (e) => {
         const isClientNotesFocused = document.activeElement === clientNotes;
@@ -3509,6 +3604,16 @@ async function initClientDataSystem() {
     } catch (e) {
         console.warn('[initClientDataSystem] Ошибка при проверке модальных окон:', e);
     }
+}
+
+
+
+let __copyLockUntil = 0;
+function __acquireCopyLock(windowMs = 250) {
+    const now = Date.now();
+    if (now < __copyLockUntil) return false;
+    __copyLockUntil = now + windowMs;
+    return true;
 }
 
 function ensureInnPreviewStyles() {
