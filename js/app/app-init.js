@@ -54,12 +54,19 @@ export async function appInit(context = 'normal') {
         initTimerSystem,
         initSedoTypesSystem,
         initBlacklistSystem,
+        initFNSCertificateRevocationSystem,
+        initAlgorithmsPdfExportSystem,
+        initBackgroundHealthTestsSystem,
         initReloadButton,
         initClearDataFunctionality,
         initUICustomization,
         initHotkeysModal,
         setupHotkeys,
         initFullscreenToggles,
+        initHeaderButtons,
+        initThemeToggle,
+        initModalOverlayHandler,
+        initAlgorithmModalControls,
         applyInitialUISettings,
         initUI,
     } = dependencies;
@@ -426,6 +433,33 @@ export async function appInit(context = 'normal') {
                     critical: false,
                 },
                 {
+                    name: 'initFNSCertificateRevocationSystem',
+                    func:
+                        typeof initFNSCertificateRevocationSystem === 'function'
+                            ? initFNSCertificateRevocationSystem
+                            : () =>
+                                console.warn(
+                                    'initFNSCertificateRevocationSystem not defined',
+                                ),
+                    critical: false,
+                },
+                {
+                    name: 'initAlgorithmsPdfExportSystem',
+                    func:
+                        typeof initAlgorithmsPdfExportSystem === 'function'
+                            ? initAlgorithmsPdfExportSystem
+                            : () => console.warn('initAlgorithmsPdfExportSystem not defined'),
+                    critical: false,
+                },
+                {
+                    name: 'initBackgroundHealthTestsSystem',
+                    func:
+                        typeof initBackgroundHealthTestsSystem === 'function'
+                            ? initBackgroundHealthTestsSystem
+                            : () => console.warn('initBackgroundHealthTestsSystem not defined'),
+                    critical: false,
+                },
+                {
                     name: 'initReloadButton',
                     func:
                         typeof initReloadButton === 'function'
@@ -471,6 +505,38 @@ export async function appInit(context = 'normal') {
                         typeof initFullscreenToggles === 'function'
                             ? initFullscreenToggles
                             : () => console.warn('initFullscreenToggles not defined'),
+                    critical: false,
+                },
+                {
+                    name: 'initHeaderButtons',
+                    func:
+                        typeof initHeaderButtons === 'function'
+                            ? initHeaderButtons
+                            : () => console.warn('initHeaderButtons not defined'),
+                    critical: false,
+                },
+                {
+                    name: 'initThemeToggle',
+                    func:
+                        typeof initThemeToggle === 'function'
+                            ? initThemeToggle
+                            : () => console.warn('initThemeToggle not defined'),
+                    critical: false,
+                },
+                {
+                    name: 'initModalOverlayHandler',
+                    func:
+                        typeof initModalOverlayHandler === 'function'
+                            ? initModalOverlayHandler
+                            : () => console.warn('initModalOverlayHandler not defined'),
+                    critical: false,
+                },
+                {
+                    name: 'initAlgorithmModalControls',
+                    func:
+                        typeof initAlgorithmModalControls === 'function'
+                            ? initAlgorithmModalControls
+                            : () => console.warn('initAlgorithmModalControls not defined'),
                     critical: false,
                 },
             ];

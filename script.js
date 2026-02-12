@@ -113,6 +113,11 @@ import {
 } from './js/app/app-init.js';
 
 import {
+    setOnloadHandlerDependencies,
+    registerOnloadHandler,
+} from './js/app/onload-handler.js';
+
+import {
     setDataLoaderDependencies,
     loadFromIndexedDB as loadFromIndexedDBModule,
     saveDataToIndexedDB as saveDataToIndexedDBModule,
@@ -170,6 +175,45 @@ import {
     handleShablonySearch,
     parseShablonyContent
 } from './js/features/google-docs.js';
+
+// Background Health Tests
+import {
+    setBackgroundHealthTestsDependencies,
+    initBackgroundHealthTestsSystem
+} from './js/features/background-health-tests.js';
+
+// Algorithms PDF Export (PR11)
+import {
+    setAlgorithmsPdfExportDependencies,
+    initAlgorithmsPdfExportSystem
+} from './js/features/algorithms-pdf-export.js';
+
+// FNS Certificate Revocation (PR11)
+import { initFNSCertificateRevocationSystem } from './js/features/fns-cert-revocation.js';
+
+// UI Customization (PR11)
+import {
+    setUICustomizationDependencies,
+    initUICustomization as initUICustomizationModule
+} from './js/ui/ui-customization.js';
+
+// UI Settings Modal Init (PR11)
+import {
+    setUISettingsModalInitDependencies,
+    initUISettingsModalHandlers as initUISettingsModalHandlersModule
+} from './js/ui/ui-settings-modal-init.js';
+
+// Background Status HUD
+import {
+    initBackgroundStatusHUD
+} from './js/ui/background-status-hud.js';
+
+// UI modules from PR11
+import { setEscapeHandlerDependencies, addEscapeHandler as addEscapeHandlerModule, removeEscapeHandler as removeEscapeHandlerModule } from './js/ui/escape-handler.js';
+import { setHeaderButtonsDependencies, initHeaderButtons as initHeaderButtonsModule } from './js/ui/header-buttons.js';
+import { setThemeToggleDependencies, initThemeToggle as initThemeToggleModule } from './js/ui/theme-toggle.js';
+import { setModalOverlayHandlerDependencies, initModalOverlayHandler as initModalOverlayHandlerModule } from './js/ui/modal-overlay-handler.js';
+import { setAlgorithmModalControlDependencies, initAlgorithmModalControls as initAlgorithmModalControlsModule } from './js/ui/algorithm-modal-controls.js';
 
 // SEDO System
 import {
@@ -478,6 +522,7 @@ import {
     ensureTabPresent as ensureTabPresentModule,
     setActiveTab as setActiveTabModule,
     applyPanelOrderAndVisibility as applyPanelOrderAndVisibilityModule,
+    initTabClickDelegation,
 } from './js/components/tabs.js';
 
 // Раннее определение setActiveTab для передачи в setUIInitDependencies и initUI
@@ -572,6 +617,7 @@ import {
 import {
     setSystemsInitDependencies,
     initClearDataFunctionality as initClearDataFunctionalityModule,
+    initBackgroundSystems as initBackgroundSystemsModule,
 } from './js/ui/systems-init.js';
 
 // UI Settings Modal (extracted from script.js)
@@ -1015,6 +1061,10 @@ const initReloadButton = initReloadButtonModule;
 
 // setActiveTab уже определена выше (после импорта tabs.js)
 const initFullscreenToggles = initFullscreenTogglesModule;
+const initHeaderButtons = initHeaderButtonsModule;
+const initThemeToggle = initThemeToggleModule;
+const initModalOverlayHandler = initModalOverlayHandlerModule;
+const initAlgorithmModalControls = initAlgorithmModalControlsModule;
 const setupHotkeys = setupHotkeysModule;
 const initUI = initUIModule;
 const initHotkeysModal = initHotkeysModalModule;
@@ -1025,12 +1075,8 @@ const applyInitialUISettings = applyInitialUISettingsModule;
 const initViewToggles = initViewTogglesModule;
 
 // initClientDataSystem определяется ниже на строке 3123 как function declaration (hoisting работает)
-// initUICustomization не найдена - возможно, была удалена или переименована
-// Определяем как пустую функцию для совместимости
-function initUICustomization() {
-    // Функция не определена - возможно, функционал был перенесен в другой модуль
-    console.warn('initUICustomization: функция не реализована');
-}
+// initUICustomization из PR11 модуля ui-customization.js
+const initUICustomization = initUICustomizationModule;
 
 // showNotification и showBookmarkDetailModal определены ниже как function declarations
 // Благодаря hoisting они доступны здесь, но мы не можем их переопределить
@@ -1068,12 +1114,19 @@ setAppInitDependencies({
     initTimerSystem,
     initSedoTypesSystem,
     initBlacklistSystem,
+    initFNSCertificateRevocationSystem,
+    initAlgorithmsPdfExportSystem,
+    initBackgroundHealthTestsSystem,
     initReloadButton,
     initClearDataFunctionality,
     initUICustomization,
     initHotkeysModal,
     setupHotkeys,
     initFullscreenToggles,
+    initHeaderButtons,
+    initThemeToggle,
+    initModalOverlayHandler,
+    initAlgorithmModalControls,
     applyInitialUISettings,
     initUI,
 });
@@ -1126,6 +1179,8 @@ setBookmarksDependencies({
     deleteBookmark: deleteBookmarkModule,
     showBookmarkDetailModal,
     handleViewBookmarkScreenshots: handleViewBookmarkScreenshotsModule,
+    NotificationService,
+    showScreenshotViewerModal,
 });
 console.log('[script.js] Зависимости модуля Bookmarks установлены');
 
@@ -1144,278 +1199,38 @@ setUIInitDependencies({
 });
 console.log('[script.js] Зависимости модуля UI Init установлены');
 
-window.onload = async () => {
-    console.log('window.onload: Страница полностью загружена.');
-    const appContent = document.getElementById('appContent');
-
-    const tempHideStyle = document.getElementById('temp-hide-appcontent-style');
-    if (tempHideStyle) {
-        tempHideStyle.remove();
-        console.log('[window.onload] Removed temporary appContent hiding style.');
+// Initialize BackgroundStatusHUD early so it's available for app-init
+if (typeof initBackgroundStatusHUD === 'function' && !window.BackgroundStatusHUD) {
+    try {
+        window.BackgroundStatusHUD = initBackgroundStatusHUD();
+        console.log('[script.js] BackgroundStatusHUD инициализирован до window.onload');
+    } catch (e) {
+        console.error('[script.js] Ошибка ранней инициализации BackgroundStatusHUD:', e);
     }
+}
 
-    if (typeof NotificationService !== 'undefined' && NotificationService.init) {
-        NotificationService.init();
-    } else {
-        console.error('NotificationService не определен в window.onload!');
-    }
-
-    if (typeof loadingOverlayManager !== 'undefined' && loadingOverlayManager.createAndShow) {
-        if (!loadingOverlayManager.overlayElement) {
-            console.log('[window.onload] Overlay not shown by earlyAppSetup, creating it now.');
-            loadingOverlayManager.createAndShow();
-        } else {
-            console.log('[window.onload] Overlay already exists (presumably shown by earlyAppSetup).');
-        }
-    }
-
-    const minDisplayTime = 3000;
-    const minDisplayTimePromise = new Promise((resolve) => setTimeout(resolve, minDisplayTime));
-    let appInitSuccessfully = false;
-
-    const appLoadPromise = appInit()
-        .then((dbReady) => {
-            appInitSuccessfully = dbReady;
-            console.log(`[window.onload] appInit завершен. Статус готовности БД: ${dbReady}`);
-        })
-        .catch((err) => {
-            console.error('appInit rejected in window.onload wrapper:', err);
-            appInitSuccessfully = false;
-        });
-
-    Promise.all([minDisplayTimePromise, appLoadPromise])
-        .then(async () => {
-            console.log('[window.onload Promise.all.then] appInit и минимальное время отображения оверлея завершены.');
-
-            if (
-                loadingOverlayManager &&
-                typeof loadingOverlayManager.updateProgress === 'function' &&
-                loadingOverlayManager.overlayElement
-            ) {
-                if (loadingOverlayManager.currentProgressValue < 100) {
-                    loadingOverlayManager.updateProgress(100);
-                }
-            }
-            // Небольшая задержка перед началом затемнения
-            await new Promise((r) => setTimeout(r, 100));
-
-            if (
-                loadingOverlayManager &&
-                typeof loadingOverlayManager.hideAndDestroy === 'function'
-            ) {
-                await loadingOverlayManager.hideAndDestroy();
-                console.log('[window.onload Promise.all.then] Оверлей плавно скрыт.');
-            }
-
-            // Убираем inline background style с body
-            document.body.style.backgroundColor = '';
-
-            if (appContent) {
-                appContent.classList.remove('hidden');
-                appContent.classList.add('content-fading-in');
-                console.log(
-                    '[window.onload Promise.all.then] appContent показан с fade-in эффектом.',
-                );
-
-                await new Promise((resolve) => requestAnimationFrame(resolve));
-
-                if (appInitSuccessfully) {
-                    if (typeof initGoogleDocSections === 'function') {
-                        initGoogleDocSections();
-                    } else {
-                        console.error('Функция initGoogleDocSections не найдена в window.onload!');
-                    }
-                    // Завершаем задачу «Фоновая инициализация» только после скрытия оверлея и запуска загрузки документов.
-                    // Тогда maybeFinishAll сработает лишь когда загрузка документов (и индекс, если был) закончатся.
-                    if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.finishTask === 'function') {
-                        window.BackgroundStatusHUD.finishTask('app-init', true);
-                    }
-                }
-
-                requestAnimationFrame(() => {
-                    if (typeof setupTabsOverflow === 'function') {
-                        console.log(
-                            'window.onload (FIXED): Вызов setupTabsOverflow для инициализации обработчиков.',
-                        );
-                        setupTabsOverflow();
-                    } else {
-                        console.warn(
-                            'window.onload (FIXED): Функция setupTabsOverflow не найдена.',
-                        );
-                    }
-
-                    if (typeof updateVisibleTabs === 'function') {
-                        console.log(
-                            'window.onload (FIXED): Вызов updateVisibleTabs для первоначального расчета.',
-                        );
-                        updateVisibleTabs();
-                    } else {
-                        console.warn(
-                            'window.onload (FIXED): Функция updateVisibleTabs не найдена.',
-                        );
-                    }
-
-                    // Открытие модального окна настроек по клику на кнопку
-                    const customizeUIBtn = document.getElementById('customizeUIBtn');
-                    const customizeUIModal = document.getElementById('customizeUIModal');
-                    if (customizeUIBtn && customizeUIModal && !customizeUIBtn.dataset.settingsListenerAttached) {
-                        customizeUIBtn.addEventListener('click', async () => {
-                            if (customizeUIModal.classList.contains('hidden')) {
-                                if (typeof loadUISettings === 'function') await loadUISettings();
-                                if (typeof populateModalControls === 'function') {
-                                    populateModalControls(State?.currentPreviewSettings || State?.userPreferences);
-                                }
-                                if (typeof setColorPickerStateFromHexModule === 'function') {
-                                    const hex = State?.currentPreviewSettings?.primaryColor || State?.userPreferences?.primaryColor;
-                                    setColorPickerStateFromHexModule(hex || '#9933FF');
-                                }
-                                customizeUIModal.classList.remove('hidden');
-                                document.body.classList.add('modal-open');
-                                if (typeof addEscapeHandler === 'function') addEscapeHandler(customizeUIModal);
-                                if (typeof openAnimatedModal === 'function') openAnimatedModal(customizeUIModal);
-                            }
-                        });
-                        customizeUIBtn.dataset.settingsListenerAttached = 'true';
-                        console.log('[window.onload] Обработчик открытия модального окна настроек установлен.');
-                    }
-
-                    // Обработчики элементов внутри модального окна настроек (кнопки, слайдеры, радио)
-                    if (customizeUIModal && !customizeUIModal.dataset.settingsInnerListenersAttached) {
-                        const closeModal = () => {
-                            if (typeof closeAnimatedModal === 'function') closeAnimatedModal(customizeUIModal);
-                            document.body.classList.remove('modal-open');
-                        };
-
-                        const saveUISettingsBtn = document.getElementById('saveUISettingsBtn');
-                        const cancelUISettingsBtn = document.getElementById('cancelUISettingsBtn');
-                        const resetUiBtn = document.getElementById('resetUiBtn');
-                        const closeCustomizeUIModalBtn = document.getElementById('closeCustomizeUIModalBtn');
-                        const decreaseFontBtn = document.getElementById('decreaseFontBtn');
-                        const increaseFontBtn = document.getElementById('increaseFontBtn');
-                        const resetFontBtn = document.getElementById('resetFontBtn');
-                        const fontSizeLabel = customizeUIModal.querySelector('#fontSizeLabel');
-                        const borderRadiusSlider = customizeUIModal.querySelector('#borderRadiusSlider');
-                        const densitySlider = customizeUIModal.querySelector('#densitySlider');
-
-                        if (saveUISettingsBtn) {
-                            saveUISettingsBtn.addEventListener('click', async () => {
-                                if (typeof saveUISettings === 'function') {
-                                    const ok = await saveUISettings();
-                                    if (ok) closeModal();
-                                }
-                            });
-                        }
-                        if (cancelUISettingsBtn) cancelUISettingsBtn.addEventListener('click', closeModal);
-                        if (closeCustomizeUIModalBtn) closeCustomizeUIModalBtn.addEventListener('click', closeModal);
-                        if (resetUiBtn) {
-                            resetUiBtn.addEventListener('click', async () => {
-                                if (typeof resetUISettingsInModal === 'function') await resetUISettingsInModal();
-                            });
-                        }
-
-                        const FONT_MIN = 80;
-                        const FONT_MAX = 150;
-                        const FONT_STEP = 10;
-                        const updateFontLabelAndPreview = () => {
-                            if (fontSizeLabel && typeof updatePreviewSettingsFromModal === 'function') {
-                                updatePreviewSettingsFromModal();
-                                if (State && typeof applyPreviewSettings === 'function') {
-                                    applyPreviewSettings(State.currentPreviewSettings);
-                                }
-                                State.isUISettingsDirty = true;
-                            }
-                        };
-                        if (decreaseFontBtn && fontSizeLabel) {
-                            decreaseFontBtn.addEventListener('click', () => {
-                                const v = Math.max(FONT_MIN, (parseInt(fontSizeLabel.textContent, 10) || 100) - FONT_STEP);
-                                fontSizeLabel.textContent = v + '%';
-                                updateFontLabelAndPreview();
-                            });
-                        }
-                        if (increaseFontBtn && fontSizeLabel) {
-                            increaseFontBtn.addEventListener('click', () => {
-                                const v = Math.min(FONT_MAX, (parseInt(fontSizeLabel.textContent, 10) || 100) + FONT_STEP);
-                                fontSizeLabel.textContent = v + '%';
-                                updateFontLabelAndPreview();
-                            });
-                        }
-                        if (resetFontBtn && fontSizeLabel) {
-                            resetFontBtn.addEventListener('click', () => {
-                                fontSizeLabel.textContent = '100%';
-                                updateFontLabelAndPreview();
-                            });
-                        }
-
-                        if (borderRadiusSlider) {
-                            borderRadiusSlider.addEventListener('input', () => {
-                                if (typeof updatePreviewSettingsFromModal === 'function') {
-                                    updatePreviewSettingsFromModal();
-                                    if (State && typeof applyPreviewSettings === 'function') {
-                                        applyPreviewSettings(State.currentPreviewSettings);
-                                    }
-                                    State.isUISettingsDirty = true;
-                                }
-                            });
-                        }
-                        if (densitySlider) {
-                            densitySlider.addEventListener('input', () => {
-                                if (typeof updatePreviewSettingsFromModal === 'function') {
-                                    updatePreviewSettingsFromModal();
-                                    if (State && typeof applyPreviewSettings === 'function') {
-                                        applyPreviewSettings(State.currentPreviewSettings);
-                                    }
-                                    State.isUISettingsDirty = true;
-                                }
-                            });
-                        }
-
-                        customizeUIModal.addEventListener('change', (e) => {
-                            if (e.target.matches('input[name="mainLayout"], input[name="themeMode"]')) {
-                                if (typeof updatePreviewSettingsFromModal === 'function') {
-                                    updatePreviewSettingsFromModal();
-                                    if (State && typeof applyPreviewSettings === 'function') {
-                                        applyPreviewSettings(State.currentPreviewSettings);
-                                    }
-                                    State.isUISettingsDirty = true;
-                                }
-                            }
-                        });
-
-                        if (typeof initColorPickerModule === 'function') initColorPickerModule();
-
-                        customizeUIModal.dataset.settingsInnerListenersAttached = 'true';
-                        console.log('[window.onload] Обработчики элементов модального окна настроек установлены.');
-                    }
-                });
-            } else {
-                console.warn(
-                    '[window.onload Promise.all.then] appContent не найден после appInit. UI может быть сломан.',
-                );
-            }
-        })
-        .catch(async (error) => {
-            console.error('Критическая ошибка в Promise.all (window.onload):', error);
-            if (
-                loadingOverlayManager &&
-                typeof loadingOverlayManager.hideAndDestroy === 'function'
-            ) {
-                await loadingOverlayManager.hideAndDestroy();
-            }
-            // Убираем inline background style с body
-            document.body.style.backgroundColor = '';
-            if (appContent) {
-                appContent.classList.remove('hidden');
-            }
-            const errorMessageText = error instanceof Error ? error.message : String(error);
-            if (typeof NotificationService !== 'undefined' && NotificationService.add) {
-                NotificationService.add(
-                    `Произошла ошибка при загрузке приложения: ${errorMessageText}.`,
-                    'error',
-                    { important: true, duration: 10000 },
-                );
-            }
-        });
-};
+// PR11: window.onload вынесен в js/app/onload-handler.js
+setOnloadHandlerDependencies({
+    NotificationService,
+    loadingOverlayManager,
+    appInit,
+    initGoogleDocSections,
+    setupTabsOverflow,
+    initTabClickDelegation,
+    updateVisibleTabs,
+    initUISettingsModalHandlers: typeof initUISettingsModalHandlersModule === 'function' ? initUISettingsModalHandlersModule : null,
+    backgroundStatusHUD: window.BackgroundStatusHUD || null,
+    afterInitCallbacks: [
+        () => {
+            setAlgorithmsPdfExportDependencies({ algorithms, ExportService, showNotification });
+            if (typeof initAlgorithmsPdfExportSystem === 'function') initAlgorithmsPdfExportSystem();
+        },
+        () => {
+            if (typeof initFNSCertificateRevocationSystem === 'function') initFNSCertificateRevocationSystem();
+        },
+    ],
+});
+registerOnloadHandler();
 
 // loadUserPreferences и saveUserPreferences теперь импортируются из js/app/user-preferences.js
 async function loadUserPreferences() {
@@ -4608,6 +4423,7 @@ setUIInitDependencies({
     updateVisibleTabs,
     showBlacklistWarning,
     hotkeysModalConfig,
+    initBackgroundSystems: initBackgroundSystemsModule,
 });
 console.log('[script.js] Зависимости модуля UI Init установлены');
 
@@ -4628,8 +4444,20 @@ setSystemsInitDependencies({
     loadingOverlayManager,
     NotificationService,
     showNotification,
+    initBackgroundHealthTestsSystem,
+    setBackgroundHealthTestsDependencies,
+    BackgroundStatusHUDFactory: initBackgroundStatusHUD,
 });
 console.log('[script.js] Зависимости модуля Systems Init установлены');
+
+// Background Health Tests Dependencies (IndexedDB API)
+setBackgroundHealthTestsDependencies({
+    saveToIndexedDB,
+    getFromIndexedDB,
+    deleteFromIndexedDB,
+    performDBOperation,
+});
+console.log('[script.js] Зависимости фоновых health-тестов установлены');
 
 // Hotkeys Handler Dependencies
 setHotkeysDependencies({
@@ -4659,6 +4487,67 @@ setHotkeysDependencies({
     toggleActiveSectionView: toggleActiveSectionViewModule,
 });
 console.log('[script.js] Зависимости модуля Hotkeys Handler установлены');
+
+// Escape Handler Dependencies (PR11)
+setEscapeHandlerDependencies({ getVisibleModals, getTopmostModal });
+
+// Header Buttons Dependencies (PR11)
+setHeaderButtonsDependencies({ setActiveTab });
+
+// Theme Toggle Dependencies (PR11)
+setThemeToggleDependencies({
+    State,
+    DEFAULT_UI_SETTINGS,
+    setTheme,
+    showNotification,
+    saveUserPreferences,
+    getSettingsFromModal: getSettingsFromModalModule,
+    deepEqual: deepEqualModule,
+});
+
+// Modal Overlay Handler Dependencies (PR11)
+setModalOverlayHandlerDependencies({
+    getVisibleModals,
+    getTopmostModal,
+    requestCloseModal: typeof requestCloseModal !== 'undefined' ? requestCloseModal : null,
+    removeEscapeHandler,
+});
+
+// Algorithm Modal Controls Dependencies (PR11)
+setAlgorithmModalControlDependencies({
+    deleteAlgorithm: deleteAlgorithmModule,
+    showNotification,
+    editAlgorithm: editAlgorithmModule,
+    ExportService,
+    closeAnimatedModal: closeAnimatedModalModule,
+});
+
+// Algorithms PDF Export Dependencies (PR11) — algorithms, ExportService, showNotification задаются после загрузки данных
+// setAlgorithmsPdfExportDependencies вызывается в onload-handler (afterInitCallbacks) после appInit
+
+// UI Customization Dependencies (PR11)
+setUICustomizationDependencies({
+    getFromIndexedDB,
+    applyCustomBackgroundImage,
+    setupBackgroundImageControls,
+    showNotification,
+});
+
+// UI Settings Modal Init Dependencies (PR11) — часть полей задаётся ниже (applyPreviewSettings и др.)
+setUISettingsModalInitDependencies({
+    State,
+    loadUISettings: typeof loadUISettings !== 'undefined' ? loadUISettings : null,
+    populateModalControls: populateModalControlsModule,
+    setColorPickerStateFromHex: setColorPickerStateFromHexModule,
+    addEscapeHandler,
+    openAnimatedModal: openAnimatedModalModule,
+    closeAnimatedModal: closeAnimatedModalModule,
+    saveUISettings: typeof saveUISettings !== 'undefined' ? saveUISettings : null,
+    resetUISettingsInModal: resetUISettingsInModalModule,
+    updatePreviewSettingsFromModal: updatePreviewSettingsFromModalModule,
+    applyPreviewSettings: typeof applyPreviewSettings !== 'undefined' ? applyPreviewSettings : null,
+    initColorPicker: initColorPickerModule,
+});
 
 // UI Settings Modal Dependencies (applyPreviewSettings определена ниже, но доступна благодаря hoisting)
 // setUISettingsModalDependencies вызывается после определения applyPreviewSettings - см. после функции applyPreviewSettings
