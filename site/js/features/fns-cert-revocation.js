@@ -2,7 +2,10 @@
 
 import { REVOCATION_API_BASE_URL } from '../config.js';
 
-const STORAGE_KEY_CRL_URLS = 'fnsCrlUrls';
+const DEFAULT_FNS_CRL_URLS = [
+    'https://crl.nalog.ru/cdp/guc2024.crl',
+    'https://crl.nalog.ru/cdp/guc2025.crl',
+];
 
 const OID_LABELS = {
     '2.5.4.3': 'CN',
@@ -285,219 +288,103 @@ function createStatusElement(text, tone = 'neutral') {
 export function initFNSCertificateRevocationSystem() {
     const certInput = document.getElementById('fnsCertFileInput');
     const certInfo = document.getElementById('fnsCertInfo');
-    const crlUrls = document.getElementById('fnsCrlUrls');
-    const crlFilesInput = document.getElementById('fnsCrlFileInput');
-    const checkBtn = document.getElementById('fnsCertCheckBtn');
+    const dropZone = document.getElementById('fnsCertDropZone');
     const resetBtn = document.getElementById('fnsCertResetBtn');
-    const statusEl = document.getElementById('fnsCrlStatus');
-    const detailsEl = document.getElementById('fnsCrlDetails');
 
-    if (!certInput || !certInfo || !crlUrls || !crlFilesInput || !checkBtn || !resetBtn) {
+    if (!certInput || !certInfo || !resetBtn) {
         console.warn('[FNS Cert Revocation] Не найдены элементы интерфейса.');
         return;
     }
 
-    const savedUrls = localStorage.getItem(STORAGE_KEY_CRL_URLS);
-    if (savedUrls && !crlUrls.value.trim()) {
-        crlUrls.value = savedUrls;
-    }
-
-    const resetOutput = () => {
-        if (statusEl) {
-            statusEl.textContent = 'Ожидание данных для проверки.';
-            statusEl.className =
-                'rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-3 text-sm text-gray-700 dark:text-gray-200';
-        }
-        if (detailsEl) detailsEl.textContent = '';
+    const setInfo = (text, tone = 'neutral') => {
+        certInfo.textContent = text;
+        certInfo.className = 'mt-2 block text-xs';
+        if (tone === 'success') certInfo.classList.add('text-green-600', 'dark:text-green-400');
+        else if (tone === 'warn') certInfo.classList.add('text-yellow-600', 'dark:text-yellow-400');
+        else if (tone === 'danger') certInfo.classList.add('text-red-600', 'dark:text-red-400');
+        else certInfo.classList.add('text-gray-500', 'dark:text-gray-400');
     };
 
-    resetOutput();
-
-    crlUrls.addEventListener('input', () => {
-        localStorage.setItem(STORAGE_KEY_CRL_URLS, crlUrls.value);
-    });
-
-    certInput.addEventListener('change', () => {
-        const file = certInput.files?.[0];
-        certInfo.textContent = file ? `Выбран файл: ${file.name}` : 'Сертификат не выбран.';
-        resetOutput();
-    });
-
-    resetBtn.addEventListener('click', () => {
-        certInput.value = '';
-        crlFilesInput.value = '';
-        certInfo.textContent = 'Сертификат не выбран.';
-        resetOutput();
-    });
-
-    checkBtn.addEventListener('click', async () => {
-        resetOutput();
-        const file = certInput.files?.[0];
+    const validateFile = async (file) => {
         if (!file) {
-            const warning = createStatusElement(
-                'Загрузите сертификат .cer для проверки.',
-                'warn',
-            );
-            statusEl.replaceWith(warning);
-            warning.id = 'fnsCrlStatus';
+            setInfo('Сертификат не выбран.', 'neutral');
             return;
         }
 
         try {
-            statusEl.textContent = 'Чтение сертификата...';
+            setInfo(`Проверка ${file.name}...`, 'neutral');
             const certBuffer = await file.arrayBuffer();
             const certInfoData = parseCertificate(certBuffer);
+            const apiBase =
+                typeof REVOCATION_API_BASE_URL === 'string' && REVOCATION_API_BASE_URL.trim()
+                    ? REVOCATION_API_BASE_URL.trim().replace(/\/$/, '')
+                    : '';
 
-            const infoLines = [
-                `Серийный номер: ${certInfoData.serialHex}`,
-                `Издатель: ${certInfoData.issuer}`,
-                `Владелец: ${certInfoData.subject}`,
-                `Действителен с: ${certInfoData.notBefore}`,
-                `Действителен до: ${certInfoData.notAfter}`,
-            ];
-            certInfo.textContent = infoLines.join(' | ');
-
-            const urlList = crlUrls.value
-                .split('\n')
-                .map((line) => line.trim())
-                .filter(Boolean);
-            const fileList = Array.from(crlFilesInput.files || []);
-
-            if (!urlList.length && !fileList.length) {
-                const warning = createStatusElement(
-                    'Добавьте URL или загрузите CRL ФНС для проверки.',
-                    'warn',
-                );
-                statusEl.replaceWith(warning);
-                warning.id = 'fnsCrlStatus';
+            if (!apiBase) {
+                setInfo('Сервис проверки недоступен: не настроен API.', 'danger');
                 return;
             }
 
-            statusEl.textContent = 'Загрузка списков отзыва...';
-
-            const crlSources = [];
-            const apiBase = (typeof REVOCATION_API_BASE_URL === 'string' && REVOCATION_API_BASE_URL.trim()) ? REVOCATION_API_BASE_URL.trim().replace(/\/$/, '') : '';
-
-            for (const url of urlList) {
-                if (apiBase) {
-                    try {
-                        const response = await fetch(`${apiBase}/api/revocation/check`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ serial: certInfoData.serialNormalized, listUrl: url }),
-                        });
-                        const result = await response.json().catch(() => ({}));
-                        if (!response.ok) {
-                            crlSources.push({ label: url, error: result.error || `HTTP ${response.status}` });
-                        } else if (result.error) {
-                            crlSources.push({ label: url, error: result.error });
-                        } else {
-                            const revokedSerials = result.revoked
-                                ? new Map([[certInfoData.serialNormalized, '—']])
-                                : new Map();
-                            crlSources.push({
-                                label: url,
-                                data: {
-                                    revokedSerials,
-                                    issuer: '—',
-                                    thisUpdate: '—',
-                                    nextUpdate: '—',
-                                },
-                            });
-                        }
-                    } catch (error) {
-                        crlSources.push({
-                            label: url,
-                            error: `Бэкенд проверки отзыва: ${error.message}.`,
-                        });
-                    }
-                } else {
-                    try {
-                        const response = await fetch(url);
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}`);
-                        }
-                        const buffer = await response.arrayBuffer();
-                        const crlData = parseCrl(buffer);
-                        crlSources.push({
-                            label: url,
-                            data: crlData,
-                        });
-                    } catch (error) {
-                        crlSources.push({
-                            label: url,
-                            error: `Не удалось загрузить CRL (${error.message}).`,
-                        });
-                    }
-                }
-            }
-
-            for (const crlFile of fileList) {
+            let revoked = false;
+            let checked = 0;
+            for (const url of DEFAULT_FNS_CRL_URLS) {
                 try {
-                    const buffer = await crlFile.arrayBuffer();
-                    const crlData = parseCrl(buffer);
-                    crlSources.push({
-                        label: crlFile.name,
-                        data: crlData,
+                    const response = await fetch(`${apiBase}/api/revocation/check`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ serial: certInfoData.serialNormalized, listUrl: url }),
                     });
-                } catch (error) {
-                    crlSources.push({
-                        label: crlFile.name,
-                        error: `Не удалось прочитать файл CRL (${error.message}).`,
-                    });
-                }
+                    const result = await response.json().catch(() => ({}));
+                    if (response.ok && !result.error) {
+                        checked += 1;
+                        if (result.revoked) revoked = true;
+                    }
+                } catch (_) {}
             }
 
-            let revokedAt = null;
-            let revokedSource = null;
-            const detailList = document.createElement('ul');
-            detailList.className = 'space-y-2';
+            if (!checked) {
+                setInfo('Не удалось проверить сертификат по CRL ФНС.', 'warn');
+                return;
+            }
 
-            crlSources.forEach((source) => {
-                const item = document.createElement('li');
-                item.className =
-                    'rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-700 dark:text-gray-200';
-                if (source.error) {
-                    item.textContent = `${source.label}: ${source.error}`;
-                } else {
-                    const { revokedSerials, issuer, thisUpdate, nextUpdate } = source.data;
-                    const revokedDate = revokedSerials.get(certInfoData.serialNormalized);
-                    if (revokedDate && !revokedAt) {
-                        revokedAt = revokedDate;
-                        revokedSource = source.label;
-                    }
-                    item.textContent = `${source.label} | Издатель CRL: ${issuer} | Обновлено: ${thisUpdate} | Следующее обновление: ${nextUpdate}`;
-                }
-                detailList.appendChild(item);
-            });
-
-            detailsEl.innerHTML = '';
-            detailsEl.appendChild(detailList);
-
-            if (revokedAt) {
-                const danger = createStatusElement(
-                    `Сертификат ОТОЗВАН. Источник: ${revokedSource}. Дата отзыва: ${revokedAt}.`,
-                    'danger',
-                );
-                statusEl.replaceWith(danger);
-                danger.id = 'fnsCrlStatus';
+            if (revoked) {
+                setInfo(`Сертификат ${file.name} отозван.`, 'danger');
             } else {
-                const success = createStatusElement(
-                    'Сертификат не найден в загруженных списках отзыва ФНС.',
-                    'success',
-                );
-                statusEl.replaceWith(success);
-                success.id = 'fnsCrlStatus';
+                setInfo(`Сертификат ${file.name} не найден в списках отзыва.`, 'success');
             }
         } catch (error) {
-            const danger = createStatusElement(
-                `Ошибка проверки сертификата: ${error.message}`,
-                'danger',
-            );
-            statusEl.replaceWith(danger);
-            danger.id = 'fnsCrlStatus';
+            setInfo(`Ошибка проверки: ${error.message}`, 'danger');
         }
+    };
+
+    certInput.addEventListener('change', () => validateFile(certInput.files?.[0]));
+
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.classList.add('border-primary');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-primary');
+        });
+        dropZone.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('border-primary');
+            const file = event.dataTransfer?.files?.[0];
+            if (!file) return;
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            certInput.files = dt.files;
+            await validateFile(file);
+        });
+    }
+
+    resetBtn.addEventListener('click', () => {
+        certInput.value = '';
+        setInfo('Сертификат не выбран.', 'neutral');
     });
+
+    setInfo('Сертификат не выбран.', 'neutral');
 }
 
 window.initFNSCertificateRevocationSystem = initFNSCertificateRevocationSystem;

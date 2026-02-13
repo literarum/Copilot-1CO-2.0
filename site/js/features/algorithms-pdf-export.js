@@ -20,7 +20,14 @@ function formatMultiline(text) {
 }
 
 function buildAlgorithmSectionExport(sectionId) {
-    const sectionAlgorithms = algorithms?.[sectionId];
+    const sectionAlias = {
+        programAlgorithms: 'program',
+        skziAlgorithms: 'skzi',
+        lk1cAlgorithms: 'lk1c',
+        webRegAlgorithms: 'webReg',
+    };
+    const normalizedSectionId = sectionAlias[sectionId] || sectionId;
+    const sectionAlgorithms = algorithms?.[normalizedSectionId];
     if (!Array.isArray(sectionAlgorithms) || sectionAlgorithms.length === 0) {
         return null;
     }
@@ -30,7 +37,7 @@ function buildAlgorithmSectionExport(sectionId) {
 
     const title = document.createElement('h1');
     title.className = 'text-2xl font-bold';
-    title.textContent = `Алгоритмы: ${getSectionName(sectionId)}`;
+    title.textContent = `Алгоритмы: ${getSectionName(normalizedSectionId)}`;
     wrapper.appendChild(title);
 
     sectionAlgorithms.forEach((algorithm, index) => {
@@ -124,10 +131,17 @@ export function initAlgorithmsPdfExportSystem() {
                 showNotification?.('В разделе нет алгоритмов для экспорта.', 'warning');
                 return;
             }
-            const filename = `Алгоритмы_${getSectionName(sectionId)}`;
+            const exportSectionAlias = {
+                programAlgorithms: 'program',
+                skziAlgorithms: 'skzi',
+                lk1cAlgorithms: 'lk1c',
+                webRegAlgorithms: 'webReg',
+            };
+            const normalizedSectionId = exportSectionAlias[sectionId] || sectionId;
+            const filename = `Алгоритмы_${getSectionName(normalizedSectionId)}`;
             ExportService.exportElementToPdf(content, filename, {
                 type: 'algorithm-section',
-                section: sectionId,
+                section: normalizedSectionId,
             });
         };
         button.addEventListener('click', button._pdfExportHandler);

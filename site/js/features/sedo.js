@@ -116,21 +116,21 @@ export function renderSedoTypesContent(data, isEditing, searchQuery = '') {
         return;
     }
 
-    mainContentContainer.className = 'bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-lg flex flex-col h-full';
+    mainContentContainer.className = 'bg-white dark:bg-slate-800 p-content rounded-lg shadow-lg flex flex-col h-full';
     mainContentContainer.classList.toggle('sedo-is-editing', isEditing);
 
     console.log(`[SedoRender V.Fixed] Начало полного рендеринга. Режим редактирования: ${isEditing}.`);
 
     // Create header
     const headerContainer = document.createElement('div');
-    headerContainer.className = 'flex flex-wrap gap-y-2 justify-between items-center mb-4 flex-shrink-0';
+    headerContainer.className = 'flex flex-wrap gap-content-sm justify-between items-start mb-content flex-shrink-0';
     
     const titleHeader = document.createElement('h2');
     titleHeader.className = 'text-2xl font-bold text-gray-800 dark:text-gray-200';
     titleHeader.textContent = 'Типы сообщений СЭДО';
     
     const buttonsContainer = document.createElement('div');
-    buttonsContainer.className = 'flex items-center gap-2';
+    buttonsContainer.className = 'flex items-center gap-content-sm';
 
     // Create buttons based on editing mode
     if (isEditing) {
@@ -164,7 +164,7 @@ export function renderSedoTypesContent(data, isEditing, searchQuery = '') {
     // Create search input (only in view mode)
     if (!isEditing) {
         const searchContainer = document.createElement('div');
-        searchContainer.className = 'relative mb-4 flex-shrink-0';
+        searchContainer.className = 'relative mb-content-sm flex-shrink-0';
         searchContainer.innerHTML = `
             <input type="text" id="sedoSearchInput" placeholder="Поиск по разделу СЭДО..." 
                    class="w-full pl-4 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-gray-100">
@@ -398,10 +398,10 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
 
     // Render article links section
     const linksSectionContainer = document.createElement('div');
-    linksSectionContainer.className = 'mb-6';
+    linksSectionContainer.className = 'mb-content';
     
     const linksTitleHeader = document.createElement('div');
-    linksTitleHeader.className = 'flex items-center justify-between mb-2';
+    linksTitleHeader.className = 'flex items-center justify-between mb-content-sm';
     
     const linksTitleStatic = document.createElement('h3');
     linksTitleStatic.className = 'text-lg font-semibold text-gray-900 dark:text-gray-100';
@@ -411,7 +411,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
 
     const articles = data && Array.isArray(data.articleLinks) ? data.articleLinks : [];
     const linksDisplayArea = document.createElement('div');
-    linksDisplayArea.className = 'bg-white dark:bg-gray-700 p-3 rounded-lg shadow mb-3';
+    linksDisplayArea.className = 'bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow mb-content-sm';
 
     if (isEditing) {
         const textarea = document.createElement('textarea');
@@ -428,7 +428,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
     } else {
         if (articles.length > 0) {
             const ul = document.createElement('ul');
-            ul.className = 'space-y-2';
+            ul.className = 'space-y-content-sm';
             articles.forEach((item) => {
                 if (!item) return;
                 const li = document.createElement('li');
@@ -477,12 +477,12 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
 
         data.tables.forEach((tableData, tableIndex) => {
             const tableContainerDiv = document.createElement('div');
-            tableContainerDiv.className = 'sedo-table-container mb-6';
+            tableContainerDiv.className = 'sedo-table-container mb-content';
             tableContainerDiv.dataset.tableIndex = tableIndex;
 
             // Table title
             const titleHeaderDiv = document.createElement('div');
-            titleHeaderDiv.className = 'flex items-center justify-between mb-2';
+            titleHeaderDiv.className = 'flex items-center justify-between mb-content-sm';
             
             if (isEditing) {
                 const titleInput = document.createElement('input');
@@ -518,7 +518,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                 const columns = tableData.columns || Object.keys(tableData.items[0] || {});
                 columns.forEach((col) => {
                     const th = document.createElement('th');
-                    th.className = 'px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-300 border-b dark:border-gray-600';
+                    th.className = 'px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 border-b dark:border-gray-600';
                     th.textContent = col;
                     headerRow.appendChild(th);
                 });
@@ -538,7 +538,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                     fields.forEach((field, colIndex) => {
                         if (colIndex >= columns.length) return;
                         const td = document.createElement('td');
-                        td.className = 'px-4 py-2 border-b dark:border-gray-600';
+                        td.className = 'px-4 py-3 border-b dark:border-gray-600';
                         const cellValue = item[field] || '';
 
                         if (isEditing) {
