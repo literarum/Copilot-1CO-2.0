@@ -1936,77 +1936,7 @@ function clearClientData() {
     return clearClientDataModule();
 }
 
-const themeToggleBtn = document.getElementById('themeToggle');
-themeToggleBtn?.addEventListener('click', async () => {
-    if (!State.userPreferences) {
-        console.error('State.userPreferences не инициализирован. Невозможно переключить тему.');
-        showNotification('Ошибка: Не удалось загрузить настройки пользователя.', 'error');
-        return;
-    }
-
-    const currentAppTheme =
-        document.documentElement.dataset.theme ||
-        State.userPreferences.theme ||
-        DEFAULT_UI_SETTINGS.themeMode;
-    let nextTheme;
-
-    if (currentAppTheme === 'dark') {
-        nextTheme = 'light';
-    } else if (currentAppTheme === 'light') {
-        nextTheme = 'auto';
-    } else {
-        nextTheme = 'dark';
-    }
-
-    if (typeof setTheme === 'function') {
-        setTheme(nextTheme);
-    } else {
-        console.error('Функция setTheme не найдена!');
-        showNotification('Ошибка: Не удалось применить тему.', 'error');
-        return;
-    }
-
-    let prefsSaved = false;
-    if (typeof saveUserPreferences === 'function') {
-        prefsSaved = await saveUserPreferences();
-    } else {
-        console.error('Функция saveUserPreferences не найдена!');
-        showNotification('Ошибка: Не удалось сохранить настройки пользователя.', 'error');
-        if (typeof setTheme === 'function') setTheme(currentAppTheme);
-        return;
-    }
-
-    if (prefsSaved) {
-        const themeName =
-            nextTheme === 'dark' ? 'темная' : nextTheme === 'light' ? 'светлая' : 'автоматическая';
-
-        const customizeUIModal = document.getElementById('customizeUIModal');
-        if (customizeUIModal && !customizeUIModal.classList.contains('hidden')) {
-            const nextThemeRadio = customizeUIModal.querySelector(
-                `input[name="themeMode"][value="${nextTheme}"]`,
-            );
-            if (nextThemeRadio) {
-                nextThemeRadio.checked = true;
-            }
-
-            if (typeof State.currentPreviewSettings === 'object' && State.currentPreviewSettings !== null) {
-                State.currentPreviewSettings.themeMode = nextTheme;
-            }
-            if (typeof State.originalUISettings === 'object' && State.originalUISettings !== null) {
-                State.originalUISettings.themeMode = nextTheme;
-            }
-
-            if (typeof getSettingsFromModal === 'function' && typeof deepEqual === 'function') {
-                State.isUISettingsDirty = !deepEqual(State.originalUISettings, getSettingsFromModal());
-            }
-        }
-    } else {
-        showNotification('Ошибка сохранения темы', 'error');
-        if (typeof setTheme === 'function') {
-            setTheme(currentAppTheme);
-        }
-    }
-});
+// Обработчик переключения темы вынесен в модуль js/ui/theme-toggle.js
 
 // Wrapper для модуля theme.js
 function migrateLegacyThemeVars() {
@@ -3260,7 +3190,7 @@ async function initClientDataSystem() {
     }
 
     if (State.clientNotesCtrlClickHandler) {
-        clientNotes.removeEventListener('mousedown', State.clientNotesCtrlClickHandler);
+        clientNotes.removeEventListener('click', State.clientNotesCtrlClickHandler);
         console.log(`${LOG_PREFIX} Старый обработчик 'click' (Ctrl+Click INN) удален.`);
     }
     if (State.clientNotesBlurHandler) {
@@ -3385,8 +3315,6 @@ async function initClientDataSystem() {
         if (typeof event.button === 'number' && event.button !== 0) return;
         if (!__acquireCopyLock(250)) return;
 
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
         console.log(
             `[ClientNotes Handler] Before getInnAtCursor: selectionStart=${clientNotes.selectionStart}, selectionEnd=${clientNotes.selectionEnd}`,
         );
@@ -3408,9 +3336,9 @@ async function initClientDataSystem() {
         }
     };
 
-    clientNotes.addEventListener('mousedown', clientNotesCtrlMouseDownHandler);
+    clientNotes.addEventListener('click', clientNotesCtrlMouseDownHandler);
     State.clientNotesCtrlClickHandler = clientNotesCtrlMouseDownHandler;
-    console.log(`${LOG_PREFIX} Обработчик 'mousedown' (Ctrl+Click INN→copy) привязан.`);
+    console.log(`${LOG_PREFIX} Обработчик 'click' (Ctrl+Click INN→copy) привязан.`);
 
     State.clientNotesCtrlKeyDownHandler = (e) => {
         const isClientNotesFocused = document.activeElement === clientNotes;
@@ -4774,4 +4702,3 @@ if (typeof initCollapseAllButtons === 'function') window.initCollapseAllButtons 
 if (typeof initHotkeysModal === 'function') window.initHotkeysModal = initHotkeysModal;
 if (typeof initClearDataFunctionality === 'function') window.initClearDataFunctionality = initClearDataFunctionality;
 if (typeof showNoInnModal === 'function') window.showNoInnModal = showNoInnModal;
-

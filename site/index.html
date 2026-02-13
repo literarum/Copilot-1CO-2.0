@@ -548,11 +548,19 @@
                                 type="text"
                                 id="searchInput"
                                 placeholder="Поиск..."
-                                class="w-full pl-10 pr-10 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
+                                class="w-full pl-10 pr-20 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
                             />
                             <i
                                 class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                             ></i>
+                            <button
+                                id="toggleAdvancedSearch"
+                                type="button"
+                                class="absolute top-1/2 right-9 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                title="Настройки поисковой системы"
+                            >
+                                <i class="fas fa-sliders-h"></i>
+                            </button>
                             <button
                                 id="clearSearchInputBtn"
                                 type="button"
@@ -568,18 +576,18 @@
                         </div>
                         <div class="flex gap-2 flex-shrink-0">
                             <button
-                                id="customizeUIBtn"
-                                class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-colors"
-                                title="Настройки"
-                            >
-                                <i class="fas fa-cog"></i>
-                            </button>
-                            <button
                                 id="exportDataBtn"
                                 class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-colors"
                                 title="Экспорт базы данных"
                             >
                                 <i class="fas fa-upload"></i>
+                            </button>
+                            <button
+                                id="customizeUIBtn"
+                                class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-colors"
+                                title="Настройки приложения и интерфейса"
+                            >
+                                <i class="fas fa-cog"></i>
                             </button>
                             <button
                                 id="importDataBtn"
@@ -651,21 +659,14 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="flex justify-end items-end md:col-start-3">
-                            <button
-                                id="toggleAdvancedSearch"
-                                class="px-3 py-1.5 text-sm bg-primary hover:bg-secondary text-white rounded-md transition"
-                            >
-                                <i class="fas fa-cog mr-1"></i>Параметры поиска
-                            </button>
-                        </div>
+                        <div class="hidden justify-end items-end md:col-start-3"></div>
                     </div>
                 </div>
             </header>
 
             <!-- Навигация по вкладкам -->
             <div class="mb-3 border-b border-gray-200 dark:border-gray-700">
-                <nav class="flex flex-wrap -mb-px text-sm font-medium text-center">
+                <nav class="flex flex-nowrap items-end -mb-px text-sm font-medium text-center overflow-hidden">
                     <button
                         id="mainTab"
                         class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
@@ -741,7 +742,7 @@
                         <i class="fas fa-certificate mr-1"></i>
                         <span class="hidden sm:inline">Проверка сертификата ФНС</span>
                     </button>
-                    <div class="relative group ml-auto md:ml-1 shrink-0">
+                    <div class="relative group ml-1 shrink-0">
                         <button
                             id="moreTabsBtn"
                             class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
@@ -1450,36 +1451,33 @@
             </div>
 
             <!-- Проверка сертификатов ФНС (отзыв по CRL) -->
-            <div id="fnsCertContent" class="tab-content hidden p-4" aria-labelledby="fnsCertTab">
-                <div class="max-w-4xl space-y-6">
-                    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-                        Проверка сертификата ФНС по спискам отзыва (CRL)
-                    </h2>
-                    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg space-y-4">
-                        <div>
-                            <label for="fnsCertFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сертификат (PEM или DER)</label>
-                            <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
-                            <div id="fnsCertInfo" class="mt-2 text-sm text-gray-600 dark:text-gray-400 min-h-[2rem]"></div>
-                        </div>
-                        <div>
-                            <label for="fnsCrlUrls" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL списков отзыва (CRL), по одному на строку</label>
-                            <textarea id="fnsCrlUrls" rows="3" class="block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 text-sm" placeholder="https://..."></textarea>
-                        </div>
-                        <div>
-                            <label for="fnsCrlFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Или загрузить CRL-файлы</label>
-                            <input type="file" id="fnsCrlFileInput" accept=".crl,.der" multiple class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <button type="button" id="fnsCertCheckBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md text-sm">
-                                <i class="fas fa-check-circle mr-2"></i>Проверить
-                            </button>
-                            <button type="button" id="fnsCertResetBtn" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 text-white rounded-md text-sm">
-                                <i class="fas fa-undo mr-2"></i>Сбросить
-                            </button>
-                        </div>
-                        <div id="fnsCrlStatus" class="text-sm"></div>
-                        <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-400"></div>
-                    </div>
+            <div id="fnsCertContent" class="tab-content hidden" aria-labelledby="fnsCertTab">
+                <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md space-y-content-sm w-full">
+                    <label
+                        for="fnsCertFileInput"
+                        id="fnsCertDropZone"
+                        class="block w-full rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-6 text-center cursor-pointer hover:border-primary transition-colors"
+                    >
+                        <span class="block text-sm text-gray-700 dark:text-gray-200">
+                            Перетащите сертификат сюда или нажмите для загрузки
+                        </span>
+                        <span id="fnsCertInfo" class="mt-2 block text-xs text-gray-500 dark:text-gray-400">
+                            Сертификат не выбран.
+                        </span>
+                    </label>
+                    <input
+                        type="file"
+                        id="fnsCertFileInput"
+                        accept=".pem,.cer,.crt,.der"
+                        class="hidden"
+                    />
+                    <button
+                        type="button"
+                        id="fnsCertResetBtn"
+                        class="px-4 py-2 bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 text-white rounded-md text-sm"
+                    >
+                        <i class="fas fa-undo mr-2"></i>Сбросить
+                    </button>
                 </div>
             </div>
 
