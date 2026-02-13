@@ -53,7 +53,17 @@ export function initUISettingsModalHandlers() {
     }
 
     if (customizeUIModal && !customizeUIModal.dataset.settingsInnerListenersAttached) {
-        const closeModal = () => {
+        const closeModal = async () => {
+            if (deps.State?.originalUISettings && typeof deps.applyPreviewSettings === 'function') {
+                deps.State.currentPreviewSettings = JSON.parse(
+                    JSON.stringify(deps.State.originalUISettings),
+                );
+                await deps.applyPreviewSettings(deps.State.originalUISettings);
+                deps.State.isUISettingsDirty = false;
+                if (typeof deps.populateModalControls === 'function') {
+                    deps.populateModalControls(deps.State.originalUISettings);
+                }
+            }
             if (typeof deps.closeAnimatedModal === 'function') {
                 deps.closeAnimatedModal(customizeUIModal);
             }

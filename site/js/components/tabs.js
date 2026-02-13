@@ -96,7 +96,7 @@ export function ensureTabPresent(panelId, visible = true) {
  * Обновляет видимость вкладок с учетом переполнения
  */
 export function updateVisibleTabs() {
-    const tabsNav = document.querySelector('nav.flex.flex-wrap');
+    const tabsNav = document.getElementById('tabsNav') || document.querySelector('nav.flex');
     const moreTabsBtn = document.getElementById('moreTabsBtn');
     const moreTabsDropdown = document.getElementById('moreTabsDropdown');
     const moreTabsContainer = moreTabsBtn ? moreTabsBtn.parentNode : null;
@@ -110,9 +110,12 @@ export function updateVisibleTabs() {
         !moreTabsContainer ||
         (moreTabsContainer && moreTabsContainer.nodeName === 'NAV')
     ) {
-        console.warn(
-            '[updateVisibleTabs v8_FIXED] Aborted: Required DOM elements not found or invalid parent for moreTabsBtn.',
-        );
+        if (!updateVisibleTabs._missingDomWarned) {
+            console.warn(
+                '[updateVisibleTabs] Aborted: required DOM elements for tabs overflow are not ready.',
+            );
+            updateVisibleTabs._missingDomWarned = true;
+        }
         if (moreTabsContainer && document.body.contains(moreTabsContainer)) {
             moreTabsContainer.classList.add('hidden');
         }
@@ -254,9 +257,12 @@ export function initTabClickDelegation() {
  * Настраивает обработчики событий для переполнения вкладок
  */
 export function setupTabsOverflow() {
-    const tabsNav = document.querySelector('nav.flex.flex-wrap');
+    const tabsNav = document.getElementById('tabsNav') || document.querySelector('nav.flex');
     if (!tabsNav) {
-        console.warn('[setupTabsOverflow v15_FIXED] Setup skipped: tabsNav not found.');
+        if (!setupTabsOverflow._missingNavWarned) {
+            console.warn('[setupTabsOverflow] Setup skipped: tabsNav not found.');
+            setupTabsOverflow._missingNavWarned = true;
+        }
         return;
     }
 

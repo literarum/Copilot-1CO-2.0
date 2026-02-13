@@ -317,10 +317,10 @@ export function renderBlacklistTable(entries) {
 
     const table = document.createElement('table');
 
-    table.className = 'w-full divide-y divide-gray-200 dark:divide-gray-600 table-fixed';
+    table.className = 'w-full divide-y divide-slate-200/90 dark:divide-slate-700/80 table-fixed rounded-xl overflow-hidden';
 
     table.innerHTML = `
-        <thead class="bg-gray-50 dark:bg-gray-700/50">
+        <thead class="bg-slate-50/95 dark:bg-slate-800/85 backdrop-blur-sm">
             <tr>
                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[25%]">Организация</th>
                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[12%]">ИНН</th>
@@ -331,7 +331,7 @@ export function renderBlacklistTable(entries) {
                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[10%]">Действия</th>
             </tr>
         </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody class="bg-white/95 dark:bg-slate-900/70 divide-y divide-slate-200/80 dark:divide-slate-700/70">
         </tbody>
     `;
 
@@ -353,7 +353,7 @@ export function renderBlacklistTable(entries) {
         const tr = document.createElement('tr');
         tr.dataset.entryId = entry.id;
         tr.className =
-            'hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer';
+            'hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-colors duration-200 cursor-pointer';
 
         const level = entry.level || 1;
         let levelHtml = '',
@@ -409,9 +409,9 @@ export function renderBlacklistTable(entries) {
         `;
 
         if (level === 3) {
-            tr.classList.add('bg-red-50/50', 'dark:bg-red-900/40');
+            tr.classList.add('bg-rose-50/40', 'dark:bg-rose-900/20');
         } else if (level === 2) {
-            tr.classList.add('bg-yellow-50/50', 'dark:bg-yellow-900/30');
+            tr.classList.add('bg-amber-50/40', 'dark:bg-amber-900/15');
         }
 
         tbody.appendChild(tr);

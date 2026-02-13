@@ -17,10 +17,8 @@ export function setThemeToggleDependencies(dependencies) {
 export function initThemeToggle() {
     const themeToggleBtn = document.getElementById('themeToggle');
     themeToggleBtn?.addEventListener('click', async () => {
-        if (!deps.State?.userPreferences) {
-            console.error('State.userPreferences не инициализирован. Невозможно переключить тему.');
-            deps.showNotification?.('Ошибка: Не удалось загрузить настройки пользователя.', 'error');
-            return;
+        if (!deps.State.userPreferences) {
+            deps.State.userPreferences = {};
         }
 
         const currentAppTheme =
