@@ -127,11 +127,7 @@ export function initBackgroundHealthTestsSystem() {
                     }
                     const count = await runWithTimeout(
                         deps.performDBOperation('searchIndex', 'readonly', (store) => {
-                            return new Promise((resolve, reject) => {
-                                const req = store.count();
-                                req.onsuccess = () => resolve(req.result || 0);
-                                req.onerror = () => reject(req.error || new Error('Ошибка подсчета'));
-                            });
+                            return store.count();
                         }),
                         5000,
                     );
@@ -173,11 +169,7 @@ export function initBackgroundHealthTestsSystem() {
                 try {
                     const blacklistCount = await runWithTimeout(
                         deps.performDBOperation?.('blacklistedClients', 'readonly', (store) => {
-                            return new Promise((resolve, reject) => {
-                                const req = store.count();
-                                req.onsuccess = () => resolve(req.result || 0);
-                                req.onerror = () => reject(req.error || new Error('Ошибка подсчета'));
-                            });
+                            return store.count();
                         }),
                         5000,
                     );
@@ -228,4 +220,3 @@ export function initBackgroundHealthTestsSystem() {
 }
 
 window.initBackgroundHealthTestsSystem = initBackgroundHealthTestsSystem;
-

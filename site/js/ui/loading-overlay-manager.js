@@ -14,6 +14,8 @@ export const loadingOverlayManager = {
     spawnStartTime: 0,
     fadeOutDuration: 500,
     currentProgressValue: 0,
+    displayedProgressValue: 0,
+    progressAnimationFrame: null,
 
     createAndShow() {
         // Пытаемся использовать существующий оверлей из HTML
@@ -385,6 +387,11 @@ export const loadingOverlayManager = {
         this.isSpawning = false;
         this.spawnProgress = 0;
         this.currentProgressValue = 0;
+        this.displayedProgressValue = 0;
+        if (this.progressAnimationFrame) {
+            cancelAnimationFrame(this.progressAnimationFrame);
+            this.progressAnimationFrame = null;
+        }
 
         await overlayPromise;
         console.log('[loadingOverlayManager.hideAndDestroy ASYNC V3] Процесс полностью завершен.');
@@ -402,12 +409,37 @@ export const loadingOverlayManager = {
         const p = Math.max(0, Math.min(100, parseFloat(percentage) || 0));
         this.currentProgressValue = p;
 
-        if (progressBarLine) {
-            progressBarLine.style.width = `${p}%`;
+        if (this.progressAnimationFrame) {
+            cancelAnimationFrame(this.progressAnimationFrame);
+            this.progressAnimationFrame = null;
         }
-        if (progressPercentageText) {
-            progressPercentageText.textContent = `${Math.round(p)}%`;
-        }
+
+        const startValue = this.displayedProgressValue || 0;
+        const delta = p - startValue;
+        const duration = Math.max(180, Math.abs(delta) * 24);
+        const startTs = performance.now();
+
+        const animateProgress = (now) => {
+            const t = Math.min(1, (now - startTs) / duration);
+            const eased = 1 - Math.pow(1 - t, 3);
+            const nextValue = startValue + delta * eased;
+            this.displayedProgressValue = nextValue;
+
+            if (progressBarLine) {
+                progressBarLine.style.width = `${nextValue}%`;
+            }
+            if (progressPercentageText) {
+                progressPercentageText.textContent = `${Math.round(nextValue)}%`;
+            }
+
+            if (t < 1) {
+                this.progressAnimationFrame = requestAnimationFrame(animateProgress);
+            } else {
+                this.progressAnimationFrame = null;
+            }
+        };
+
+        this.progressAnimationFrame = requestAnimationFrame(animateProgress);
 
         if (message && loadingTextElement) {
             const animatedDotsSpan = loadingTextElement.querySelector('#animated-dots');
