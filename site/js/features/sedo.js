@@ -411,7 +411,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
 
     const articles = data && Array.isArray(data.articleLinks) ? data.articleLinks : [];
     const linksDisplayArea = document.createElement('div');
-    linksDisplayArea.className = 'bg-white dark:bg-gray-700 p-3 rounded-lg shadow mb-3';
+    linksDisplayArea.className = 'bg-white/95 dark:bg-gray-800/85 p-4 rounded-xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm mb-4';
 
     if (isEditing) {
         const textarea = document.createElement('textarea');
@@ -477,7 +477,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
 
         data.tables.forEach((tableData, tableIndex) => {
             const tableContainerDiv = document.createElement('div');
-            tableContainerDiv.className = 'sedo-table-container mb-6';
+            tableContainerDiv.className = 'sedo-table-container mb-6 rounded-xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm overflow-hidden bg-white/95 dark:bg-gray-800/75';
             tableContainerDiv.dataset.tableIndex = tableIndex;
 
             // Table title
@@ -503,7 +503,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
 
             // Table wrapper
             const tableWrapper = document.createElement('div');
-            tableWrapper.className = 'overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700';
+            tableWrapper.className = 'overflow-x-auto';
 
             if (!tableData.items || tableData.items.length === 0) {
                 tableWrapper.innerHTML = '<p class="p-4 text-center text-gray-500 dark:text-gray-400">Нет данных в таблице.</p>';
@@ -513,7 +513,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
 
                 // Table header
                 const thead = document.createElement('thead');
-                thead.className = 'bg-gray-100 dark:bg-gray-700';
+                thead.className = 'bg-gray-100/80 dark:bg-gray-700/55 backdrop-blur-sm';
                 const headerRow = document.createElement('tr');
                 const columns = tableData.columns || Object.keys(tableData.items[0] || {});
                 columns.forEach((col) => {
@@ -531,9 +531,9 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                 tableData.items.forEach((item, rowIndex) => {
                     const row = document.createElement('tr');
                     row.className = rowIndex % 2 === 0 
-                        ? 'bg-white dark:bg-gray-800' 
-                        : 'bg-gray-50 dark:bg-gray-750';
-                    row.classList.add('hover:bg-blue-50', 'dark:hover:bg-gray-700');
+                        ? 'bg-white/95 dark:bg-gray-800/70' 
+                        : 'bg-gray-50/80 dark:bg-gray-800/45';
+                    row.classList.add('hover:bg-indigo-50/60', 'dark:hover:bg-indigo-900/20');
 
                     fields.forEach((field, colIndex) => {
                         if (colIndex >= columns.length) return;
@@ -575,10 +575,10 @@ function injectSedoEditStyles() {
             min-width: 100px;
         }
         .sedo-is-editing .editing-cell:focus {
-            background-color: rgba(255, 255, 0, 0.2);
+            background-color: rgba(129, 140, 248, 0.18);
         }
         .dark .sedo-is-editing .editing-cell:focus {
-            background-color: rgba(255, 200, 0, 0.15);
+            background-color: rgba(99, 102, 241, 0.22);
         }
     `;
     document.head.appendChild(style);

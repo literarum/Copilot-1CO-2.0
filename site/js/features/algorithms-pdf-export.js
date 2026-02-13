@@ -102,6 +102,29 @@ function buildAlgorithmSectionExport(sectionId) {
     return wrapper;
 }
 
+function buildAllNonMainSectionsExport() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'space-y-8';
+
+    const title = document.createElement('h1');
+    title.className = 'text-3xl font-bold';
+    title.textContent = 'Все алгоритмы (кроме Главного)';
+    wrapper.appendChild(title);
+
+    const sectionKeys = Object.keys(algorithms || {}).filter(
+        (key) => key.endsWith('Algorithms') && key !== 'mainAlgorithms',
+    );
+
+    sectionKeys.forEach((sectionId) => {
+        const sectionNode = buildAlgorithmSectionExport(sectionId);
+        if (sectionNode) {
+            wrapper.appendChild(sectionNode);
+        }
+    });
+
+    return wrapper.childElementCount > 1 ? wrapper : null;
+}
+
 export function initAlgorithmsPdfExportSystem() {
     const buttons = document.querySelectorAll('[data-algorithm-export]');
     if (!buttons.length) {
@@ -119,12 +142,18 @@ export function initAlgorithmsPdfExportSystem() {
                 showNotification?.('Сервис экспорта PDF недоступен.', 'error');
                 return;
             }
-            const content = buildAlgorithmSectionExport(sectionId);
+            const content =
+                sectionId === 'mainAlgorithms'
+                    ? buildAlgorithmSectionExport(sectionId)
+                    : buildAllNonMainSectionsExport();
             if (!content) {
                 showNotification?.('В разделе нет алгоритмов для экспорта.', 'warning');
                 return;
             }
-            const filename = `Алгоритмы_${getSectionName(sectionId)}`;
+            const filename =
+                sectionId === 'mainAlgorithms'
+                    ? `Алгоритмы_${getSectionName(sectionId)}`
+                    : 'Алгоритмы_Все_разделы_кроме_Главного';
             ExportService.exportElementToPdf(content, filename, {
                 type: 'algorithm-section',
                 section: sectionId,
