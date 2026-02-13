@@ -174,15 +174,15 @@ function parseName(node, bytes) {
 
 function parseCertificate(buffer) {
     let bytes = new Uint8Array(buffer);
-    const maybeText = new TextDecoder('utf-8').decode(bytes);
+    const maybeText = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
     if (maybeText.includes('BEGIN CERTIFICATE')) {
         bytes = decodePemToDer(maybeText);
     }
 
     const root = parseDerNode(bytes);
-    const tbs = root.children[0];
+    const tbs = root.children?.[0];
     if (!tbs || tbs.tag !== 0x30) {
-        throw new Error('Не удалось прочитать сертификат.');
+        throw new Error('Не удалось прочитать сертификат. Проверьте, что файл в формате X.509 (.cer/.crt).');
     }
 
     const tbsChildren = tbs.children;
@@ -196,6 +196,10 @@ function parseCertificate(buffer) {
     const issuerNode = tbsChildren[cursor + 2];
     const validityNode = tbsChildren[cursor + 3];
     const subjectNode = tbsChildren[cursor + 4];
+
+    if (!serialNode || !validityNode) {
+        throw new Error('Структура сертификата не распознана. Возможно, выбран неподдерживаемый формат.');
+    }
 
     const serialHex = bytesToHex(bytes.slice(serialNode.valueStart, serialNode.valueEnd));
     const validityChildren = validityNode?.children || [];
