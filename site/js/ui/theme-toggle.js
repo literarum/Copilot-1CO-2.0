@@ -17,21 +17,21 @@ export function setThemeToggleDependencies(dependencies) {
 export function initThemeToggle() {
     const themeToggleBtn = document.getElementById('themeToggle');
     themeToggleBtn?.addEventListener('click', async () => {
-        if (!deps.State?.userPreferences) {
-            console.error('State.userPreferences не инициализирован. Невозможно переключить тему.');
-            deps.showNotification?.('Ошибка: Не удалось загрузить настройки пользователя.', 'error');
-            return;
+        if (!deps.State?.userPreferences || typeof deps.State.userPreferences !== 'object') {
+            deps.State.userPreferences = {
+                theme: deps.DEFAULT_UI_SETTINGS?.themeMode || 'dark',
+            };
         }
 
-        const currentAppTheme =
-            document.documentElement.dataset.theme ||
+        const currentMode =
             deps.State.userPreferences.theme ||
-            deps.DEFAULT_UI_SETTINGS?.themeMode;
+            deps.DEFAULT_UI_SETTINGS?.themeMode ||
+            'dark';
         let nextTheme;
 
-        if (currentAppTheme === 'dark') {
+        if (currentMode === 'dark') {
             nextTheme = 'light';
-        } else if (currentAppTheme === 'light') {
+        } else if (currentMode === 'light') {
             nextTheme = 'auto';
         } else {
             nextTheme = 'dark';
@@ -51,7 +51,7 @@ export function initThemeToggle() {
         } else {
             console.error('Функция saveUserPreferences не найдена!');
             deps.showNotification?.('Ошибка: Не удалось сохранить настройки пользователя.', 'error');
-            if (typeof deps.setTheme === 'function') deps.setTheme(currentAppTheme);
+            if (typeof deps.setTheme === 'function') deps.setTheme(currentMode);
             return;
         }
 
@@ -83,7 +83,7 @@ export function initThemeToggle() {
         } else {
             deps.showNotification?.('Ошибка сохранения темы', 'error');
             if (typeof deps.setTheme === 'function') {
-                deps.setTheme(currentAppTheme);
+                deps.setTheme(currentMode);
             }
         }
     });

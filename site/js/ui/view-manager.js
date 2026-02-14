@@ -32,7 +32,9 @@ export async function loadViewPreferences() {
         document.querySelectorAll('[data-section-id]').forEach((container) => {
             const sectionId = container.dataset.sectionId;
             const defaultView = container.dataset.defaultView || 'cards';
-            applyView(container, State.viewPreferences[sectionId] || defaultView);
+            const savedView = State.viewPreferences[sectionId];
+            const effectiveView = savedView === 'cards' || savedView === 'list' ? savedView : defaultView;
+            applyView(container, effectiveView);
         });
     } catch (error) {
         console.error('Error loading view preferences:', error);

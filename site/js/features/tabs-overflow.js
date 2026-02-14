@@ -29,7 +29,7 @@ export function setTabsOverflowDependencies(dependencies) {
 // ============================================================================
 
 const MAX_UPDATE_VISIBLE_TABS_RETRIES = 5;
-const LAYOUT_ERROR_MARGIN = 5;
+const LAYOUT_ERROR_MARGIN = 1;
 
 // ============================================================================
 // ОСНОВНЫЕ ФУНКЦИИ
@@ -39,7 +39,7 @@ const LAYOUT_ERROR_MARGIN = 5;
  * Обновляет видимость вкладок на основе доступной ширины
  */
 export function updateVisibleTabs() {
-    const tabsNav = document.querySelector('nav.flex.flex-wrap');
+    const tabsNav = document.getElementById('topTabsNav');
     const moreTabsBtn = document.getElementById('moreTabsBtn');
     const moreTabsDropdown = document.getElementById('moreTabsDropdown');
     const moreTabsContainer = moreTabsBtn ? moreTabsBtn.parentNode : null;
@@ -111,7 +111,6 @@ export function updateVisibleTabs() {
     }
 
     const navWidth = tabsNav.offsetWidth;
-    let totalWidth = 0;
     let firstOverflowIndex = -1;
 
     let moreTabsWidth = 0;
@@ -122,6 +121,7 @@ export function updateVisibleTabs() {
         if (wasMoreButtonHidden) moreTabsContainer.classList.add('hidden');
     }
 
+    let totalWidthWithoutMoreBtn = 0;
     for (let i = 0; i < visibleTabs.length; i++) {
         const tab = visibleTabs[i];
         const currentTabWidth = tab.offsetWidth;
@@ -135,11 +135,25 @@ export function updateVisibleTabs() {
             continue;
         }
 
-        if (totalWidth + currentTabWidth + moreTabsWidth + LAYOUT_ERROR_MARGIN > navWidth) {
+        if (totalWidthWithoutMoreBtn + currentTabWidth + LAYOUT_ERROR_MARGIN > navWidth) {
             firstOverflowIndex = i;
             break;
         }
-        totalWidth += currentTabWidth;
+        totalWidthWithoutMoreBtn += currentTabWidth;
+    }
+
+    if (firstOverflowIndex !== -1) {
+        let totalWidth = 0;
+        firstOverflowIndex = -1;
+        for (let i = 0; i < visibleTabs.length; i++) {
+            const tab = visibleTabs[i];
+            const currentTabWidth = tab.offsetWidth;
+            if (totalWidth + currentTabWidth + moreTabsWidth + LAYOUT_ERROR_MARGIN > navWidth) {
+                firstOverflowIndex = i;
+                break;
+            }
+            totalWidth += currentTabWidth;
+        }
     }
 
     if (firstOverflowIndex !== -1) {
@@ -156,7 +170,7 @@ export function updateVisibleTabs() {
             const dropdownItem = document.createElement('a');
             dropdownItem.href = '#';
             dropdownItem.className =
-                'block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 overflow-dropdown-item';
+                'overflow-dropdown-item block px-3 py-2 text-sm rounded-md border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700';
             const icon = tab.querySelector('i');
             const text = tab.textContent.trim();
             dropdownItem.innerHTML = `${icon ? icon.outerHTML + ' ' : ''}${text}`;
@@ -178,7 +192,7 @@ export function updateVisibleTabs() {
  * Настраивает обработчики событий для системы переполнения вкладок
  */
 export function setupTabsOverflow() {
-    const tabsNav = document.querySelector('nav.flex.flex-wrap');
+    const tabsNav = document.getElementById('topTabsNav');
     if (!tabsNav) {
         console.warn('[setupTabsOverflow v15_FIXED] Setup skipped: tabsNav not found.');
         return;
@@ -195,9 +209,12 @@ export function setupTabsOverflow() {
     if (moreTabsBtn) {
         if (moreTabsBtn._clickHandler) {
             moreTabsBtn.removeEventListener('click', moreTabsBtn._clickHandler, true);
+            moreTabsBtn.removeEventListener('click', moreTabsBtn._clickHandler);
         }
-        moreTabsBtn.addEventListener('click', handleMoreTabsBtnClick, true);
+        moreTabsBtn.addEventListener('click', handleMoreTabsBtnClick);
         moreTabsBtn._clickHandler = handleMoreTabsBtnClick;
+        moreTabsBtn.setAttribute('aria-haspopup', 'menu');
+        moreTabsBtn.setAttribute('aria-expanded', 'false');
     }
 
     if (document._clickOutsideTabsHandler) {
@@ -233,8 +250,18 @@ export function handleMoreTabsBtnClick(e) {
     e.stopPropagation();
     e.preventDefault();
     const currentDropdown = document.getElementById('moreTabsDropdown');
+    const moreTabsBtn = document.getElementById('moreTabsBtn');
     if (currentDropdown) {
+        if (!currentDropdown.children.length) {
+            updateVisibleTabs();
+        }
         currentDropdown.classList.toggle('hidden');
+        if (moreTabsBtn) {
+            moreTabsBtn.setAttribute(
+                'aria-expanded',
+                currentDropdown.classList.contains('hidden') ? 'false' : 'true',
+            );
+        }
     } else {
         console.error('[handleMoreTabsBtnClick v10.1 - FINAL] Не удалось найти #moreTabsDropdown.');
     }
@@ -271,6 +298,9 @@ export function clickOutsideTabsHandler(e) {
             e.target,
         );
         currentDropdown.classList.add('hidden');
+        if (currentMoreBtn) {
+            currentMoreBtn.setAttribute('aria-expanded', 'false');
+        }
     } else {
         console.log(
             `[DEBUG clickOutsideHandler v10.1 - FINAL] Click INSIDE dropdown. Not hiding via this handler. Target:`,
