@@ -345,32 +345,50 @@ export function performDBOperation(storeName, mode, operation) {
             };
 
             const store = transaction.objectStore(storeName);
-            const request = operation(store);
 
-            if (!(request instanceof IDBRequest)) {
-                console.error(
-                    `performDBOperation: Колбэк 'operation' не вернул IDBRequest для ${storeName}. Вернул:`,
-                    request,
-                );
-                return reject(
-                    new Error(`Внутренняя ошибка: операция для ${storeName} не вернула запрос.`),
-                );
+            const resolveRequest = (request) => {
+                if (!(request instanceof IDBRequest)) {
+                    console.error(
+                        `performDBOperation: Колбэк 'operation' не вернул IDBRequest для ${storeName}. Вернул:`,
+                        request,
+                    );
+                    reject(
+                        new Error(`Внутренняя ошибка: операция для ${storeName} не вернула запрос.`),
+                    );
+                    return;
+                }
+
+                request.onsuccess = (e) => {
+                    resolve(e.target.result);
+                };
+                request.onerror = (e) => {
+                    const error = e.target.error;
+                    const errorDetails = error
+                        ? `${error.name}: ${error.message}`
+                        : 'Неизвестная ошибка запроса';
+                    console.error(
+                        `performDBOperation: Ошибка запроса к хранилищу '${storeName}' (mode: ${mode}). Детали: ${errorDetails}`,
+                        error,
+                    );
+                    reject(error || new Error(`Ошибка запроса к ${storeName}: ${errorDetails}`));
+                };
+            };
+
+            const requestOrPromise = operation(store);
+            if (requestOrPromise && typeof requestOrPromise.then === 'function') {
+                requestOrPromise
+                    .then(resolveRequest)
+                    .catch((error) => {
+                        console.error(
+                            `performDBOperation: Promise-операция для '${storeName}' завершилась с ошибкой.`,
+                            error,
+                        );
+                        reject(error);
+                    });
+                return;
             }
 
-            request.onsuccess = (e) => {
-                resolve(e.target.result);
-            };
-            request.onerror = (e) => {
-                const error = e.target.error;
-                const errorDetails = error
-                    ? `${error.name}: ${error.message}`
-                    : 'Неизвестная ошибка запроса';
-                console.error(
-                    `performDBOperation: Ошибка запроса к хранилищу '${storeName}' (mode: ${mode}). Детали: ${errorDetails}`,
-                    error,
-                );
-                reject(error || new Error(`Ошибка запроса к ${storeName}: ${errorDetails}`));
-            };
+            resolveRequest(requestOrPromise);
         } catch (error) {
             console.error(
                 `performDBOperation: Исключение при попытке выполнить операцию для '${storeName}' (mode: ${mode}).`,
