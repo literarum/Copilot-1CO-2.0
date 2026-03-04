@@ -1402,6 +1402,30 @@ export async function cleanAndRebuildSearchIndex() {
 }
 
 /**
+ * Проверяет и при необходимости строит поисковый индекс (обёртка для app-init и др.).
+ */
+export async function ensureSearchIndexIsBuilt() {
+    console.log('Вызов ensureSearchIndexIsBuilt для проверки и построения поискового индекса.');
+    if (!State.db) {
+        console.warn(
+            'ensureSearchIndexIsBuilt: База данных не инициализирована. Проверка индекса невозможна.',
+        );
+        return;
+    }
+    try {
+        await checkAndBuildIndex();
+        console.log(
+            'ensureSearchIndexIsBuilt: Проверка и построение индекса завершены (или не требовались).',
+        );
+    } catch (error) {
+        console.error(
+            'ensureSearchIndexIsBuilt: Ошибка во время проверки/построения поискового индекса:',
+            error,
+        );
+    }
+}
+
+/**
  * Проверяет и при необходимости строит поисковый индекс
  */
 export async function checkAndBuildIndex(

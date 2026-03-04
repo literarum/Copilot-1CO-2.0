@@ -22,6 +22,9 @@ import {
 
 const FNS_DEBUG_TAG = '[FNS Revocation]';
 
+/** Fallback URL for install scripts when origin (e.g. GitHub Pages) returns 404. */
+const RAW_INSTALL_SCRIPT_BASE = 'https://raw.githubusercontent.com/literarum/Copilot-1CO-2.0/main/site';
+
 const CERT_BASE64_MIN_LENGTH = 100;
 const CLIENT_POLICY_VALUES = new Set([
     'backend_first',
@@ -621,21 +624,26 @@ export function initFNSCertificateRevocationSystem() {
      */
     function renderInstallGateContent(installGateEl, platform, origin) {
         let installCmd = '';
+        let installCmdFallback = '';
         let terminalHint = '';
         if (platform === 'macos') {
             installCmd = `curl -fsSL "${origin}/install-mac.sh" | bash -s -- "${origin}"`;
+            installCmdFallback = `curl -fsSL "${RAW_INSTALL_SCRIPT_BASE}/install-mac.sh" | bash -s -- "${origin}"`;
             terminalHint = 'Терминал (Cmd + Пробел → «Терминал»)';
         } else if (platform === 'linux') {
             installCmd = `curl -fsSL "${origin}/install-linux.sh" | bash -s -- "${origin}"`;
+            installCmdFallback = `curl -fsSL "${RAW_INSTALL_SCRIPT_BASE}/install-linux.sh" | bash -s -- "${origin}"`;
             terminalHint = 'Терминал';
         } else if (platform === 'windows') {
             installCmd = `$env:CRL_INSTALL_BASE='${origin}'; irm '${origin}/install-windows.ps1' | iex`;
+            installCmdFallback = `$env:CRL_INSTALL_BASE='${origin}'; irm '${RAW_INSTALL_SCRIPT_BASE}/install-windows.ps1' | iex`;
             terminalHint = 'PowerShell (Win + X → «Терминал» или Win + R → powershell)';
         }
         if (!installCmd) return;
         installGateEl.className =
             'w-full mb-4 p-6 md:p-8 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 shadow-sm';
         const cmdEscaped = escapeHtml(installCmd);
+        const cmdFallbackEscaped = installCmdFallback ? escapeHtml(installCmdFallback) : '';
         const runCmd = getHelperRunCommand(platform);
         const unloadCmd = getHelperUnloadCommand(platform);
         const runCmdEscaped = runCmd ? escapeHtml(runCmd) : '';
@@ -666,6 +674,14 @@ export function initFNSCertificateRevocationSystem() {
                         <i class="fas fa-copy"></i><span>Скопировать команду</span>
                     </button>
                 </div>
+                ${cmdFallbackEscaped ? `
+                <p class="text-sm text-amber-700 dark:text-amber-400 mb-2 mt-4">Если команда выше выдаёт ошибку 404, используйте (скрипт с GitHub):</p>
+                <div class="flex flex-col sm:flex-row gap-3 mb-4">
+                    <code data-fns-install-cmd-fallback class="flex-1 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl font-mono text-sm border border-gray-300 dark:border-gray-600 cursor-copy overflow-x-auto select-all hover:border-primary/50 transition-colors" title="Нажмите, чтобы скопировать">${cmdFallbackEscaped}</code>
+                    <button type="button" data-fns-copy-cmd-fallback class="shrink-0 px-4 py-3 rounded-xl border border-amber-500/50 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-copy"></i><span>Скопировать запасную команду</span>
+                    </button>
+                </div>` : ''}
                 <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
                     После запуска команды в Терминале страница обновится автоматически или нажмите «Проверить снова».
                 </p>
@@ -704,7 +720,9 @@ export function initFNSCertificateRevocationSystem() {
             </div>
         `;
         const codeEl = installGateEl.querySelector('[data-fns-install-cmd]');
+        const codeFallbackEl = installGateEl.querySelector('[data-fns-install-cmd-fallback]');
         const copyBtn = installGateEl.querySelector('[data-fns-copy-cmd]');
+        const copyFallbackBtn = installGateEl.querySelector('[data-fns-copy-cmd-fallback]');
         const runCmdEl = installGateEl.querySelector('[data-fns-run-cmd]');
         const copyRunBtn = installGateEl.querySelector('[data-fns-copy-run-cmd]');
         const unloadCmdEl = installGateEl.querySelector('[data-fns-unload-cmd]');
@@ -794,8 +812,32 @@ export function initFNSCertificateRevocationSystem() {
                 }
             }
         };
+        const doCopyFallback = async () => {
+            if (!installCmdFallback) return;
+            try {
+                await navigator.clipboard.writeText(installCmdFallback);
+                showToast();
+            } catch {
+                if (codeFallbackEl) {
+                    const range = document.createRange();
+                    range.selectNodeContents(codeFallbackEl);
+                    const sel = window.getSelection();
+                    sel?.removeAllRanges();
+                    sel?.addRange(range);
+                    try {
+                        document.execCommand('copy');
+                        showToast();
+                    } catch {
+                        /* copy failed */
+                    }
+                    sel?.removeAllRanges();
+                }
+            }
+        };
         if (copyBtn) copyBtn.addEventListener('click', doCopy);
         if (codeEl) codeEl.addEventListener('click', doCopy);
+        if (copyFallbackBtn) copyFallbackBtn.addEventListener('click', doCopyFallback);
+        if (codeFallbackEl) codeFallbackEl.addEventListener('click', doCopyFallback);
         if (copyRunBtn) copyRunBtn.addEventListener('click', doCopyRun);
         if (runCmdEl) runCmdEl.addEventListener('click', doCopyRun);
         if (copyUnloadBtn) copyUnloadBtn.addEventListener('click', doCopyUnload);

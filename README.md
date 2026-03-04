@@ -88,15 +88,19 @@ export const REVOCATION_API_BASE_URL = 'https://functions.yandexcloud.net/<FUNCT
 2. Скрипт при необходимости клонирует `literarum/Copilot-1CO-2.0` в подпапку `Copilot-1CO-2.0`, синхронизирует файлы, спросит подтверждение и сделает коммит и пуш ветки `feat/yandex-cloud-migration`.
 3. В конце скрипт выведет ссылку на сравнение веток — откройте её в браузере и нажмите **Create pull request** (base: `main`, compare: `feat/yandex-cloud-migration`).
 
-### Проверка отзыва сертификатов ФНС (локальный helper)
+### Проверка отзыва сертификатов ФНС
 
-Чтобы проверка по спискам отзыва работала в любой сети (в т. ч. с доступа к ФНС только с вашего ПК), запустите на этом компьютере **локальный CRL-helper**:
+Если в `site/js/config.js` задан **REVOCATION_API_BASE_URL** (например, Yandex Cloud Function), проверка отзыва выполняется через облако: CRL загружает сама функция, локальный helper не нужен.
+
+**Локальный helper** (опционально): чтобы загрузка CRL шла с вашего ПК (удобно, если доступ к ФНС только с вашей сети), запустите на этом компьютере **локальный CRL-helper**:
 
 ```bash
 npm run helper:crl
 ```
 
 Требуется Node.js 18+. Подробнее: [helper/README.md](helper/README.md).
+
+**Если приложение открыто с GitHub Pages** (`literarum.github.io`): команда установки хелпера в разделе «Проверка сертификата» берёт URL с текущего origin. Если она возвращает 404, в интерфейсе есть запасная команда (скрипт с raw GitHub). После push в `main` workflow «Deploy Pages» публикует папку `site/` в корень gh-pages (включая `install-mac.sh`, `install-linux.sh`, `install-windows.ps1` и `files/`).
 
 ### Тестирование модулей
 

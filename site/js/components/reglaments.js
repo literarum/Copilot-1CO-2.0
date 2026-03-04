@@ -29,6 +29,7 @@ let reglamentDetailModalConfig = null;
 let reglamentModalConfigGlobal = null;
 let handleViewToggleClick = null;
 let showAppConfirm = null;
+let CATEGORY_INFO_KEY = null;
 
 /**
  * Устанавливает зависимости модуля регламентов
@@ -58,6 +59,43 @@ export function setReglamentsDependencies(deps) {
         reglamentModalConfigGlobal = deps.reglamentModalConfigGlobal;
     if (deps.handleViewToggleClick) handleViewToggleClick = deps.handleViewToggleClick;
     if (deps.showAppConfirm) showAppConfirm = deps.showAppConfirm;
+    if (deps.CATEGORY_INFO_KEY !== undefined) CATEGORY_INFO_KEY = deps.CATEGORY_INFO_KEY;
+}
+
+// ========== loadCategoryInfo / saveCategoryInfo (для настроек категорий) ==========
+
+export async function loadCategoryInfo() {
+    if (!State?.db) {
+        console.warn('DB not ready, using default categories.');
+        return;
+    }
+    try {
+        const savedInfo = await getFromIndexedDB?.('preferences', CATEGORY_INFO_KEY);
+        if (savedInfo && typeof savedInfo.data === 'object' && categoryDisplayInfo) {
+            Object.assign(categoryDisplayInfo, savedInfo.data);
+        }
+    } catch (error) {
+        console.error('Error loading reglament category info:', error);
+    }
+}
+
+export async function saveCategoryInfo() {
+    if (!State?.db) {
+        console.error('Cannot save category info: DB not ready.');
+        showNotification?.('Ошибка сохранения настроек категорий: База данных недоступна', 'error');
+        return false;
+    }
+    try {
+        await saveToIndexedDB('preferences', { id: CATEGORY_INFO_KEY, data: categoryDisplayInfo });
+        populateReglamentCategoryDropdowns();
+        console.log('Reglament category info saved successfully.');
+        showNotification?.('Настройки категорий регламентов сохранены.', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error saving reglament category info:', error);
+        showNotification?.('Ошибка сохранения настроек категорий', 'error');
+        return false;
+    }
 }
 
 // ========== Utility Functions ==========

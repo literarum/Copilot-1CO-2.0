@@ -6,6 +6,7 @@
  */
 
 import { probeHelperAvailability } from '../features/revocation-helper-probe.js';
+import { REVOCATION_API_BASE_URL } from '../config.js';
 import {
     REVOCATION_LOCAL_HELPER_BASE_URL,
     REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER,
@@ -171,6 +172,15 @@ export async function appInit(context = 'normal') {
 
     if (REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER && REVOCATION_LOCAL_HELPER_BASE_URL) {
         probeHelperAvailability(REVOCATION_LOCAL_HELPER_BASE_URL).then((ok) => {
+            if (typeof window !== 'undefined') window.__revocationHelperAvailable = ok;
+        });
+    } else if (
+        !REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER &&
+        typeof REVOCATION_API_BASE_URL === 'string' &&
+        REVOCATION_API_BASE_URL.trim()
+    ) {
+        const apiBase = REVOCATION_API_BASE_URL.trim().replace(/\/$/, '');
+        probeHelperAvailability(apiBase).then((ok) => {
             if (typeof window !== 'undefined') window.__revocationHelperAvailable = ok;
         });
     }
