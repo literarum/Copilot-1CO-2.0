@@ -32,4 +32,5 @@ jobs:
           umbrella-dir: pr-preview
           wait-for-pages-deployment: true
           comment: "true"
-          pages-base-url: ${{ format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+          # Action prepends "https://" and "/" itself; pass host+path only to avoid "https://https://..."
+          pages-base-url: ${{ format('{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}

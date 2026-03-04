@@ -65,15 +65,12 @@ auto_commit_if_needed() {
   if working_tree_dirty; then
     info "Обнаружены незакоммиченные изменения. Автоматически коммичу..."
     git add -A
-    # Не коммитить изменения в .github/workflows/ — они могут сломать автодеплой Pages
-    if git diff --cached --name-only -- .github/workflows/ | grep -q .; then
-      info "Предупреждение: изменения в .github/workflows/ не включены в автокоммит (защита автодеплоя). Закоммитьте их вручную при необходимости."
-      git reset -- .github/workflows/
-    fi
+    # Включаем .github/workflows/ в коммит, чтобы исправленная ссылка PR preview попала в деплой
+    # (pages-base-url без схемы — иначе в комментарии будет https://https://...)
 
-    # Вдруг после add (из-за .gitignore или после reset) коммитить нечего
+    # Вдруг после add коммитить нечего
     if git diff --cached --quiet 2>/dev/null; then
-      info "Нет изменений для автокоммита (только .github/workflows/ или пусто)."
+      info "Нет изменений для автокоммита."
       return 0
     fi
 
@@ -150,8 +147,25 @@ create_pr_via_gh() {
   printf '%s\n' "$output"
 }
 
+# Открывает в браузере указанный URL PR (иначе gh pr view откроет PR текущей ветки, а не только что созданный).
 open_pr_in_browser_if_possible() {
+  local pr_url="$1"
+  if [[ -n "$pr_url" ]]; then
+    if command -v open >/dev/null 2>&1; then
+      open "$pr_url" 2>/dev/null || true
+    elif command -v xdg-open >/dev/null 2>&1; then
+      xdg-open "$pr_url" 2>/dev/null || true
+    else
+      gh pr view "$pr_url" --web 2>/dev/null || true
+    fi
+    return
+  fi
   gh pr view --web >/dev/null 2>&1 || true
+}
+
+# Из вывода gh pr create извлекает URL созданного PR.
+extract_pr_url_from_output() {
+  printf '%s' "$1" | grep -oE 'https://github\.com/[^/]+/[^/]+/pull/[0-9]+' | head -1
 }
 
 # ===== Основная логика =====
@@ -223,7 +237,8 @@ if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; the
   printf '%s\n' "$PR_CREATE_OUTPUT"
   info "Готово. Новый PR создан."
   info "На GitHub автоматически запустится деплой preview; в PR появится комментарий со ссылкой на сайт (Pages)."
-  open_pr_in_browser_if_possible
+  NEW_PR_URL="$(extract_pr_url_from_output "$PR_CREATE_OUTPUT")"
+  open_pr_in_browser_if_possible "$NEW_PR_URL"
 else
   info "Не удалось создать PR через gh."
   info "Откройте вручную:"
