@@ -4,13 +4,18 @@
  */
 
 const PROBE_TIMEOUT_MS = 2000;
+
+let ingestUnavailable = false;
 function sendAgentDebugLog(payload) {
+    if (ingestUnavailable) return;
     // #region agent log
     fetch('http://127.0.0.1:7520/ingest/374fe693-b6e8-47c0-81cf-9d56349887e0', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '979877' },
         body: JSON.stringify({ sessionId: '979877', ...payload, timestamp: Date.now() }),
-    }).catch(() => {});
+    }).catch(() => {
+        ingestUnavailable = true;
+    });
     // #endregion
 }
 
