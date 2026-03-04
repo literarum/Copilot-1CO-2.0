@@ -115,7 +115,10 @@ export async function deleteBookmark(id) {
                     resolve();
                 };
                 req.onerror = (e) => {
-                    console.error(`Ошибка запроса на удаление закладки ${numericId}:`, e.target.error);
+                    console.error(
+                        `Ошибка запроса на удаление закладки ${numericId}:`,
+                        e.target.error,
+                    );
                     reject(e.target.error);
                 };
             }),
@@ -153,7 +156,10 @@ export async function deleteBookmark(id) {
                 resolve();
             };
             transaction.onerror = (e) => {
-                console.error(`Ошибка ТРАНЗАКЦИИ при удалении закладки ${numericId}:`, e.target.error);
+                console.error(
+                    `Ошибка ТРАНЗАКЦИИ при удалении закладки ${numericId}:`,
+                    e.target.error,
+                );
                 reject(e.target.error || new Error('Неизвестная ошибка транзакции'));
             };
             transaction.onabort = (e) => {
@@ -208,4 +214,3 @@ export async function deleteBookmark(id) {
         await loadBookmarks?.();
     }
 }
-

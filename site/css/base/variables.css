@@ -41,10 +41,7 @@
 
 @media (prefers-color-scheme: dark) {
     :root:not(.dark) {
-        --scrollbar-thumb-bg: var(
-            --override-scrollbar-thumb-dark,
-            rgba(255, 255, 255, 0.35)
-        );
+        --scrollbar-thumb-bg: var(--override-scrollbar-thumb-dark, rgba(255, 255, 255, 0.35));
         --scrollbar-thumb-hover-bg: var(--color-hover-subtle, rgba(255, 255, 255, 0.5));
         --scrollbar-track-color-light: var(
             --override-scrollbar-track-dark,
@@ -54,12 +51,6 @@
 }
 
 html.dark {
-    --scrollbar-thumb-bg: var(
-        --override-scrollbar-thumb-dark,
-        var(--color-border-interactive)
-    );
-    --scrollbar-thumb-hover-bg: var(
-        --color-hover-subtle,
-        var(--color-border-interactive)
-    );
+    --scrollbar-thumb-bg: var(--override-scrollbar-thumb-dark, var(--color-border-interactive));
+    --scrollbar-thumb-hover-bg: var(--color-hover-subtle, var(--color-border-interactive));
 }

@@ -93,7 +93,7 @@ export async function getBlacklistEntriesByInn(inn) {
     try {
         const entries = await getAllFromIndex('blacklistedClients', 'inn', inn);
         console.log(
-            `${LOG_PREFIX} Результат getAllFromIndex для ИНН ${inn}: найдено ${entries.length} записей.`
+            `${LOG_PREFIX} Результат getAllFromIndex для ИНН ${inn}: найдено ${entries.length} записей.`,
         );
         return entries || [];
     } catch (error) {
@@ -127,7 +127,7 @@ export async function isInnBlacklisted(inn) {
     } catch (error) {
         console.error(
             `${LOG_PREFIX} Ошибка при выполнении performDBOperation для ИНН ${inn}:`,
-            error
+            error,
         );
         return false;
     }
@@ -140,7 +140,7 @@ export async function checkForBlacklistedInn(text) {
     const LOG_PREFIX = '[CheckINN_V8_Final_DismissAndReadd]';
     const lastLine = text.trim().split('\n').pop() || '';
     console.log(
-        `${LOG_PREFIX} Начало проверки. Анализируется только последняя строка: "${lastLine}"`
+        `${LOG_PREFIX} Начало проверки. Анализируется только последняя строка: "${lastLine}"`,
     );
 
     if (!State.db) {
@@ -190,7 +190,7 @@ export async function checkForBlacklistedInn(text) {
                     if (State.activeToadNotifications.has(inn)) {
                         const existingId = State.activeToadNotifications.get(inn);
                         console.log(
-                            `${LOG_PREFIX} Повторное срабатывание для ИНН ${inn}. Принудительное скрытие старого уведомления (ID: ${existingId}).`
+                            `${LOG_PREFIX} Повторное срабатывание для ИНН ${inn}. Принудительное скрытие старого уведомления (ID: ${existingId}).`,
                         );
                         deps.NotificationService?.dismissImportant(existingId);
                         await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -198,7 +198,7 @@ export async function checkForBlacklistedInn(text) {
 
                     console.log(
                         `%c${LOG_PREFIX} ОБНАРУЖЕНА ЖАБА! Показ/обновление уведомления для ИНН: ${inn}, Уровень: ${level}`,
-                        'color: red; font-weight: bold; font-size: 16px;'
+                        'color: red; font-weight: bold; font-size: 16px;',
                     );
 
                     deps.NotificationService?.add(message, type, {
@@ -224,7 +224,7 @@ export async function checkForBlacklistedInn(text) {
             if (State.activeToadNotifications.has(inn)) {
                 const notificationId = State.activeToadNotifications.get(inn);
                 console.log(
-                    `${LOG_PREFIX} ИНН ${inn} удален из текста, скрываем уведомление с ID: ${notificationId}.`
+                    `${LOG_PREFIX} ИНН ${inn} удален из текста, скрываем уведомление с ID: ${notificationId}.`,
                 );
                 deps.NotificationService?.dismissImportant(notificationId);
                 State.activeToadNotifications.delete(inn);
@@ -305,9 +305,9 @@ export function renderBlacklistTable(entries) {
     if (!entries || entries.length === 0) {
         const query = document.getElementById('blacklistSearchInput')?.value || '';
         if (query.trim()) {
-            container.innerHTML = `<p class="text-gray-500 dark:text-gray-400 text-center py-4">По запросу "${deps.escapeHtml?.(
-                query
-            ) || query}" ничего не найдено.</p>`;
+            container.innerHTML = `<p class="text-gray-500 dark:text-gray-400 text-center py-4">По запросу "${
+                deps.escapeHtml?.(query) || query
+            }" ничего не найдено.</p>`;
         } else {
             container.innerHTML =
                 '<p class="text-gray-500 dark:text-gray-400 text-center py-4">Черный список пуст.</p>';
@@ -345,7 +345,7 @@ export function renderBlacklistTable(entries) {
         const regex = new RegExp(`(${deps.escapeRegExp?.(lowerQuery) || lowerQuery})`, 'gi');
         return (deps.escapeHtml?.(text) || text).replace(
             regex,
-            '<mark class="bg-yellow-200 dark:bg-yellow-600 rounded-sm px-0.5">$1</mark>'
+            '<mark class="bg-yellow-200 dark:bg-yellow-600 rounded-sm px-0.5">$1</mark>',
         );
     };
 
@@ -382,25 +382,25 @@ export function renderBlacklistTable(entries) {
         tr.innerHTML = `
             <td class="px-4 py-4 text-sm font-medium text-gray-800 dark:text-gray-100">
                 <div class="truncate" title="${escHtml(entry.organizationName)}">${highlight(
-            entry.organizationName
-        )}</div>
+                    entry.organizationName,
+                )}</div>
             </td>
             <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 font-mono">
                 <div class="truncate" title="${escHtml(entry.inn || '-')}">${highlight(
-            entry.inn || '-'
-        )}</div>
+                    entry.inn || '-',
+                )}</div>
             </td>
             <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 font-mono">
                 <div class="truncate" title="${escHtml(entry.phone || '-')}">${highlight(
-            entry.phone || '-'
-        )}</div>
+                    entry.phone || '-',
+                )}</div>
             </td>
             <td class="px-4 py-4 text-sm text-center">${levelHtml}</td>
             <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">${dateAddedStr}</td>
             <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
                 <div class="truncate" title="${escHtml(entry.notes || '')}">${highlight(
-            entry.notes || ''
-        )}</div>
+                    entry.notes || '',
+                )}</div>
             </td>
             <td class="px-4 py-4 text-right text-sm font-medium">
                 <button class="text-primary hover:text-secondary p-1" data-action="edit" title="Редактировать"><i class="fas fa-edit"></i></button>
@@ -468,7 +468,10 @@ export async function handleBlacklistSearchInput() {
     State.currentBlacklistSearchQuery = searchInput.value;
 
     if (clearSearchBtn) {
-        clearSearchBtn.classList.toggle('hidden', State.currentBlacklistSearchQuery.trim().length === 0);
+        clearSearchBtn.classList.toggle(
+            'hidden',
+            State.currentBlacklistSearchQuery.trim().length === 0,
+        );
     }
 
     sortAndRenderBlacklist();
@@ -487,7 +490,7 @@ export async function exportBlacklistToExcel() {
         if (typeof XLSX === 'undefined') {
             deps.showNotification?.(
                 'Библиотека XLSX не загружена. Проверьте подключение в index.html.',
-                'error'
+                'error',
             );
             return;
         }
@@ -509,7 +512,7 @@ export async function exportBlacklistToExcel() {
             if (Number.isNaN(d.getTime())) return '';
             const pad = (x) => String(x).padStart(2, '0');
             return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
-                d.getHours()
+                d.getHours(),
             )}-${pad(d.getMinutes())}`;
         };
 
@@ -540,7 +543,7 @@ export async function exportBlacklistToExcel() {
             const colWidths = headers.map((h) => {
                 const maxLen = Math.max(
                     h.length,
-                    ...rows.map((r) => (r[h] ? String(r[h]).length : 0))
+                    ...rows.map((r) => (r[h] ? String(r[h]).length : 0)),
                 );
                 return { wch: Math.min(Math.max(maxLen + 2, 10), 60) };
             });
@@ -559,7 +562,7 @@ export async function exportBlacklistToExcel() {
         console.error('[exportBlacklistToExcel] Ошибка экспорта:', err);
         deps.showNotification?.(
             `Ошибка экспорта в Excel: ${err?.message || 'Неизвестная ошибка'}`,
-            'error'
+            'error',
         );
     }
 }
@@ -571,7 +574,7 @@ export async function exportBlacklistToExcel() {
 /**
  * Обработчик кликов по действиям в таблице черного списка
  */
-export function handleBlacklistActionClick(event) {
+export async function handleBlacklistActionClick(event) {
     const button = event.target.closest('button[data-action]');
     const tr = event.target.closest('tr[data-entry-id]');
 
@@ -584,7 +587,16 @@ export function handleBlacklistActionClick(event) {
         showBlacklistEntryModal(entryId);
     } else if (action === 'delete') {
         const orgName = tr.querySelector('td:first-child').textContent;
-        if (confirm(`Вы уверены, что хотите удалить "${orgName}" из черного списка?`)) {
+        const canDelete = deps.showAppConfirm
+            ? await deps.showAppConfirm({
+                  title: 'Удаление из черного списка',
+                  message: `Вы уверены, что хотите удалить "${orgName}" из черного списка?`,
+                  confirmText: 'Удалить',
+                  cancelText: 'Отмена',
+                  confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+              })
+            : confirm(`Вы уверены, что хотите удалить "${orgName}" из черного списка?`);
+        if (canDelete) {
             deleteBlacklistEntry(entryId);
         }
     } else if (!action) {
@@ -605,7 +617,7 @@ export async function showBlacklistDetailModal(entryId) {
         modal = document.createElement('div');
         modal.id = modalId;
         modal.className =
-            'fixed inset-0 bg-black bg-opacity-50 hidden z-60 p-4 flex items-center justify-center';
+            'fixed inset-0 bg-black bg-opacity-50 hidden z-[60] p-4 flex items-center justify-center';
         modal.innerHTML = `
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
                 <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -632,15 +644,14 @@ export async function showBlacklistDetailModal(entryId) {
                 e.stopPropagation();
             }
             modal.classList.add('hidden');
-            if (deps.getVisibleModals?.().length === 0) document.body.classList.remove('modal-open');
+            if (deps.getVisibleModals?.().length === 0)
+                document.body.classList.remove('modal-open');
         };
 
-        modal
-            .querySelectorAll('.close-modal-btn')
-            .forEach((btn) => {
-                btn.removeEventListener('click', closeModal);
-                btn.addEventListener('click', closeModal);
-            });
+        modal.querySelectorAll('.close-modal-btn').forEach((btn) => {
+            btn.removeEventListener('click', closeModal);
+            btn.addEventListener('click', closeModal);
+        });
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
@@ -657,12 +668,20 @@ export async function showBlacklistDetailModal(entryId) {
         modal.querySelector('#blacklistDetailDeleteBtn').addEventListener('click', async () => {
             const currentId = parseInt(modal.dataset.currentId, 10);
             const entry = await getBlacklistEntryDB(currentId);
-            if (
+            const canDeleteFromDetail =
                 entry &&
-                confirm(
-                    `Вы уверены, что хотите удалить "${entry.organizationName}" из черного списка?`
-                )
-            ) {
+                (deps.showAppConfirm
+                    ? await deps.showAppConfirm({
+                          title: 'Удаление из черного списка',
+                          message: `Вы уверены, что хотите удалить "${entry.organizationName}" из черного списка?`,
+                          confirmText: 'Удалить',
+                          cancelText: 'Отмена',
+                          confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+                      })
+                    : confirm(
+                          `Вы уверены, что хотите удалить "${entry.organizationName}" из черного списка?`,
+                      ));
+            if (canDeleteFromDetail) {
                 closeModal();
                 deleteBlacklistEntry(currentId);
             }
@@ -713,25 +732,25 @@ export async function showBlacklistDetailModal(entryId) {
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">ИНН</dt>
                     <dd class="mt-1 text-base text-gray-900 dark:text-gray-200 font-mono">${escHtml(
-                        entry.inn || 'Не указан'
+                        entry.inn || 'Не указан',
                     )}</dd>
                 </div>
                  <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Телефон</dt>
                     <dd class="mt-1 text-base text-gray-900 dark:text-gray-200 font-mono">${escHtml(
-                        entry.phone || 'Не указан'
+                        entry.phone || 'Не указан',
                     )}</dd>
                 </div>
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Примечание</dt>
                     <dd class="mt-1 text-base text-gray-900 dark:text-gray-200 bg-gray-50 dark:bg-gray-700/60 p-3 rounded-md whitespace-pre-wrap">${escHtml(
-                        entry.notes || 'Нет'
+                        entry.notes || 'Нет',
                     )}</dd>
                 </div>
                  <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Дата добавления</dt>
                     <dd class="mt-1 text-base text-gray-900 dark:text-gray-200">${new Date(
-                        entry.dateAdded
+                        entry.dateAdded,
                     ).toLocaleString()}</dd>
                 </div>
             </dl>
@@ -814,9 +833,12 @@ export async function showBlacklistEntryModal(entryId = null) {
         document.body.appendChild(modal);
         State.blacklistEntryModalInstance.modal = modal;
         State.blacklistEntryModalInstance.form = modal.querySelector('#blacklistEntryForm');
-        State.blacklistEntryModalInstance.titleEl = modal.querySelector('#blacklistEntryModalTitle');
+        State.blacklistEntryModalInstance.titleEl = modal.querySelector(
+            '#blacklistEntryModalTitle',
+        );
         State.blacklistEntryModalInstance.idInput = modal.querySelector('#blacklistEntryId');
-        State.blacklistEntryModalInstance.orgNameInput = modal.querySelector('#blacklistEntryOrgName');
+        State.blacklistEntryModalInstance.orgNameInput =
+            modal.querySelector('#blacklistEntryOrgName');
         State.blacklistEntryModalInstance.innInput = modal.querySelector('#blacklistEntryInn');
         State.blacklistEntryModalInstance.phoneInput = modal.querySelector('#blacklistEntryPhone');
         State.blacklistEntryModalInstance.notesInput = modal.querySelector('#blacklistEntryNotes');
@@ -874,7 +896,7 @@ export async function showBlacklistEntryModal(entryId = null) {
 
                 const level = entry.level || 1;
                 const levelRadio = form.querySelector(
-                    `input[name="blacklistLevel"][value="${level}"]`
+                    `input[name="blacklistLevel"][value="${level}"]`,
                 );
                 if (levelRadio) {
                     levelRadio.checked = true;
@@ -885,7 +907,7 @@ export async function showBlacklistEntryModal(entryId = null) {
                 deps.showNotification?.('Запись для редактирования не найдена', 'error');
                 return;
             }
-        } catch (error) {
+        } catch {
             deps.showNotification?.('Ошибка загрузки записи для редактирования', 'error');
             return;
         }
@@ -915,7 +937,7 @@ export async function handleSaveBlacklistEntry(event) {
     const notes = notesInput.value.trim();
     const level = parseInt(
         form.querySelector('input[name="blacklistLevel"]:checked')?.value || '1',
-        10
+        10,
     );
     const id = idInput.value ? parseInt(idInput.value, 10) : null;
 
@@ -971,7 +993,7 @@ export async function handleSaveBlacklistEntry(event) {
                 entryData.id,
                 entryData,
                 id ? 'update' : 'add',
-                oldData
+                oldData,
             );
         }
         modal.classList.add('hidden');
@@ -1024,7 +1046,7 @@ export function showBlacklistWarning() {
     const overlay = document.createElement('div');
     overlay.id = 'blacklistWarningOverlay';
     overlay.className =
-        'fixed inset-0 bg-red-700 dark:bg-red-800 text-white p-8 flex flex-col items-center justify-center text-center z-[10000]';
+        'fixed inset-0 bg-red-700 dark:bg-red-800 text-white p-8 flex flex-col items-center justify-center text-center z-[100]';
     overlay.innerHTML = `
         <div class="max-w-2xl">
             <i class="fas fa-exclamation-triangle fa-3x mb-6 text-yellow-300"></i>
@@ -1084,7 +1106,7 @@ export function initBlacklistSystem() {
             'gap-2',
             'whitespace-nowrap',
             'border',
-            'border-transparent'
+            'border-transparent',
         );
     } else {
         console.warn('Кнопка #addBlacklistEntryBtn не найдена в секции blacklist.');
@@ -1094,7 +1116,7 @@ export function initBlacklistSystem() {
         if (blacklistTableContainer._clickHandler) {
             blacklistTableContainer.removeEventListener(
                 'click',
-                blacklistTableContainer._clickHandler
+                blacklistTableContainer._clickHandler,
             );
         }
         blacklistTableContainer._clickHandler = (e) => handleBlacklistActionClick(e);
@@ -1105,7 +1127,8 @@ export function initBlacklistSystem() {
         if (searchInput._debouncedSearchHandler) {
             searchInput.removeEventListener('input', searchInput._debouncedSearchHandler);
         }
-        searchInput._debouncedSearchHandler = deps.debounce?.(handleBlacklistSearchInput, 300) || handleBlacklistSearchInput;
+        searchInput._debouncedSearchHandler =
+            deps.debounce?.(handleBlacklistSearchInput, 300) || handleBlacklistSearchInput;
         searchInput.addEventListener('input', searchInput._debouncedSearchHandler);
         if (clearSearchBtn)
             clearSearchBtn.classList.toggle('hidden', searchInput.value.length === 0);
@@ -1211,7 +1234,9 @@ export function initBlacklistSystem() {
             const activeIcon = activeBtn.querySelector('.sort-icon');
             if (activeIcon) {
                 activeIcon.className = `sort-icon fas ${
-                    State.currentBlacklistSort.direction === 'desc' ? 'fa-arrow-down' : 'fa-arrow-up'
+                    State.currentBlacklistSort.direction === 'desc'
+                        ? 'fa-arrow-down'
+                        : 'fa-arrow-up'
                 } ml-1 w-3 opacity-100`;
             }
         };

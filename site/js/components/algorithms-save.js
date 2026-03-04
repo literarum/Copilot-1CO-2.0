@@ -26,16 +26,19 @@ let getSectionName = null;
 export function setAlgorithmsSaveDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
     if (deps.algorithms !== undefined) algorithms = deps.algorithms;
-    if (deps.extractStepsDataFromEditForm !== undefined) extractStepsDataFromEditForm = deps.extractStepsDataFromEditForm;
+    if (deps.extractStepsDataFromEditForm !== undefined)
+        extractStepsDataFromEditForm = deps.extractStepsDataFromEditForm;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
     if (deps.updateSearchIndex !== undefined) updateSearchIndex = deps.updateSearchIndex;
     if (deps.renderAlgorithmCards !== undefined) renderAlgorithmCards = deps.renderAlgorithmCards;
     if (deps.renderMainAlgorithm !== undefined) renderMainAlgorithm = deps.renderMainAlgorithm;
-    if (deps.clearTemporaryThumbnailsFromContainer !== undefined) clearTemporaryThumbnailsFromContainer = deps.clearTemporaryThumbnailsFromContainer;
+    if (deps.clearTemporaryThumbnailsFromContainer !== undefined)
+        clearTemporaryThumbnailsFromContainer = deps.clearTemporaryThumbnailsFromContainer;
     if (deps.getVisibleModals !== undefined) getVisibleModals = deps.getVisibleModals;
     if (deps.addPdfRecords !== undefined) addPdfRecords = deps.addPdfRecords;
     if (deps.resetInitialAddState !== undefined) resetInitialAddState = deps.resetInitialAddState;
-    if (deps.resetInitialEditState !== undefined) resetInitialEditState = deps.resetInitialEditState;
+    if (deps.resetInitialEditState !== undefined)
+        resetInitialEditState = deps.resetInitialEditState;
     if (deps.getSectionName !== undefined) getSectionName = deps.getSectionName;
 }
 

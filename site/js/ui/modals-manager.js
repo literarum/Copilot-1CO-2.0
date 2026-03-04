@@ -22,6 +22,83 @@ const UNIFIED_FULLSCREEN_MODAL_CLASSES = {
     contentArea: ['h-full', 'max-h-full', 'p-6'],
 };
 
+const FOCUSABLE_SELECTOR =
+    'a[href], area[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusableElements(modal) {
+    return Array.from(modal.querySelectorAll(FOCUSABLE_SELECTOR)).filter((el) => {
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+}
+
+export function enhanceModalAccessibility(modal, options = {}) {
+    if (!modal) return;
+    const { labelledBy, describedBy } = options;
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    if (labelledBy) modal.setAttribute('aria-labelledby', labelledBy);
+    if (describedBy) modal.setAttribute('aria-describedby', describedBy);
+    if (!modal.hasAttribute('tabindex')) {
+        modal.setAttribute('tabindex', '-1');
+    }
+}
+
+export function activateModalFocus(modal) {
+    if (!modal || modal._focusTrapActive) return;
+
+    modal._focusTrapActive = true;
+    modal._previouslyFocusedElement = document.activeElement;
+
+    const onKeydown = (event) => {
+        if (event.key !== 'Tab') return;
+        const focusable = getFocusableElements(modal);
+        if (!focusable.length) {
+            event.preventDefault();
+            modal.focus();
+            return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+
+        if (event.shiftKey && (active === first || !modal.contains(active))) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && active === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    };
+
+    modal._focusTrapHandler = onKeydown;
+    modal.addEventListener('keydown', onKeydown);
+
+    const focusable = getFocusableElements(modal);
+    if (focusable.length) {
+        focusable[0].focus();
+    } else {
+        modal.focus();
+    }
+}
+
+export function deactivateModalFocus(modal) {
+    if (!modal) return;
+
+    if (modal._focusTrapHandler) {
+        modal.removeEventListener('keydown', modal._focusTrapHandler);
+        delete modal._focusTrapHandler;
+    }
+
+    modal._focusTrapActive = false;
+    const target = modal._previouslyFocusedElement;
+    delete modal._previouslyFocusedElement;
+
+    if (target && typeof target.focus === 'function' && document.contains(target)) {
+        target.focus();
+    }
+}
+
 // ============================================================================
 // УТИЛИТЫ ДЛЯ РАБОТЫ С МОДАЛЬНЫМИ ОКНАМИ
 // ============================================================================
@@ -61,7 +138,7 @@ export function hasBlockingModalsOpen() {
     const modals = getVisibleModals();
     const SAVE_BUTTON_SELECTORS =
         'button[type="submit"], #saveAlgorithmBtn, #createAlgorithmBtn, #saveCibLinkBtn, #saveBookmarkBtn, #saveExtLinkBtn';
-    
+
     return modals.some((modal) => {
         try {
             if (modal.classList.contains('hidden')) return false;
@@ -177,7 +254,7 @@ export function toggleModalFullscreen(
  */
 export function initFullscreenToggles(modalConfigs) {
     if (!Array.isArray(modalConfigs) || modalConfigs.length === 0) {
-        console.warn('[initFullscreenToggles] No modal configs provided.');
+        console.debug('[initFullscreenToggles] No modal configs provided, skipping.');
         return;
     }
 
@@ -203,17 +280,20 @@ export function initFullscreenToggles(modalConfigs) {
                     config.contentAreaSelector,
                 );
             };
-            
+
             button.addEventListener('click', button._fullscreenToggleHandler);
             console.log(
                 `Fullscreen toggle handler attached to #${config.buttonId} for #${config.modalId}.`,
             );
         } else {
+            // Модалки/кнопки создаются динамически (bookmarkModal, reglamentModal и т.д.) — не логируем как ошибку
             if (!button)
-                console.warn(`[initFullscreenToggles] Button #${config.buttonId} not found.`);
+                console.debug(
+                    `[initFullscreenToggles] Button #${config.buttonId} not found (may be created later).`,
+                );
             if (!modal)
-                console.warn(
-                    `[initFullscreenToggles] Modal #${config.modalId} not found for button #${config.buttonId}.`,
+                console.debug(
+                    `[initFullscreenToggles] Modal #${config.modalId} not found for #${config.buttonId}.`,
                 );
         }
     };
@@ -282,7 +362,8 @@ export function showNoInnModal(addEscapeHandler, removeEscapeHandler, getVisible
                 if (typeof removeEscapeHandler === 'function') {
                     removeEscapeHandler(modal);
                 }
-                const visibleModals = typeof getVisibleModals === 'function' ? getVisibleModals() : [];
+                const visibleModals =
+                    typeof getVisibleModals === 'function' ? getVisibleModals() : [];
                 if (visibleModals.length === 0) {
                     document.body.classList.remove('overflow-hidden');
                 }

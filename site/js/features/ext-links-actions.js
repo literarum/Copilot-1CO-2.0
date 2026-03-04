@@ -17,6 +17,7 @@ let showEditExtLinkModal = null;
 let deleteFromIndexedDB = null;
 let updateSearchIndex = null;
 let escapeHtml = null;
+let showAppConfirm = null;
 
 export function setExtLinksActionsDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
@@ -27,6 +28,7 @@ export function setExtLinksActionsDependencies(deps) {
     if (deps.deleteFromIndexedDB !== undefined) deleteFromIndexedDB = deps.deleteFromIndexedDB;
     if (deps.updateSearchIndex !== undefined) updateSearchIndex = deps.updateSearchIndex;
     if (deps.escapeHtml !== undefined) escapeHtml = deps.escapeHtml;
+    if (deps.showAppConfirm !== undefined) showAppConfirm = deps.showAppConfirm;
 }
 
 /**
@@ -150,51 +152,70 @@ export async function handleExtLinkAction(event) {
             break;
 
         case 'delete':
-            if (
-                confirm(
-                    `Вы уверены, что хотите удалить внешнюю ссылку "${escapeHtml(linkItem.querySelector('h3')?.textContent || 'ID ' + linkId)}"? Это действие необратимо.`,
-                )
-            ) {
-                try {
-                    await deleteFromIndexedDB('extLinks', numericLinkId);
+            {
+                const deleteMessage = `Вы уверены, что хотите удалить внешнюю ссылку "${escapeHtml(
+                    linkItem.querySelector('h3')?.textContent || 'ID ' + linkId,
+                )}"? Это действие необратимо.`;
+                const confirmed = showAppConfirm
+                    ? await showAppConfirm({
+                          title: 'Удаление внешнего ресурса',
+                          message: deleteMessage,
+                          confirmText: 'Удалить',
+                          cancelText: 'Отмена',
+                          confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+                      })
+                    : confirm(deleteMessage);
+                if (confirmed) {
+                    try {
+                        await deleteFromIndexedDB('extLinks', numericLinkId);
 
-                    if (typeof updateSearchIndex === 'function') {
-                        await updateSearchIndex('extLinks', numericLinkId, null, 'delete').catch(
-                            (err) =>
+                        if (typeof updateSearchIndex === 'function') {
+                            await updateSearchIndex(
+                                'extLinks',
+                                numericLinkId,
+                                null,
+                                'delete',
+                            ).catch((err) =>
                                 console.error(
                                     `Ошибка обновления индекса при удалении ссылки ${numericLinkId}:`,
                                     err,
                                 ),
-                        );
-                    }
+                            );
+                        }
 
-                    linkItem.remove();
+                        linkItem.remove();
 
-                    // Перерисовываем список
-                    if (typeof getAllExtLinks === 'function' && typeof renderExtLinks === 'function') {
-                        const allLinks = await getAllExtLinks();
-                        renderExtLinks(allLinks, State?.extLinkCategoryInfo || {});
-                    }
+                        // Перерисовываем список
+                        if (
+                            typeof getAllExtLinks === 'function' &&
+                            typeof renderExtLinks === 'function'
+                        ) {
+                            const allLinks = await getAllExtLinks();
+                            renderExtLinks(allLinks, State?.extLinkCategoryInfo || {});
+                        }
 
-                    if (typeof showNotification === 'function') {
-                        showNotification('Внешняя ссылка удалена');
-                    }
-                } catch (error) {
-                    console.error('Ошибка при удалении внешней ссылки:', error);
-                    if (typeof showNotification === 'function') {
-                        showNotification('Ошибка при удалении внешней ссылки', 'error');
+                        if (typeof showNotification === 'function') {
+                            showNotification('Внешняя ссылка удалена');
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при удалении внешней ссылки:', error);
+                        if (typeof showNotification === 'function') {
+                            showNotification('Ошибка при удалении внешней ссылки', 'error');
+                        }
                     }
                 }
             }
             break;
 
         case 'open-link':
-            // Открываем ссылку в новой вкладке
-            const url = linkItem.dataset.url;
-            if (url && url !== '#') {
-                window.open(url, '_blank', 'noopener,noreferrer');
-            } else {
-                console.warn('handleExtLinkAction: URL не найден или некорректен');
+            {
+                // Открываем ссылку в новой вкладке
+                const url = linkItem.dataset.url;
+                if (url && url !== '#') {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                } else {
+                    console.warn('handleExtLinkAction: URL не найден или некорректен');
+                }
             }
             break;
 

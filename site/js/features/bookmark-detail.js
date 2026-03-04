@@ -96,9 +96,8 @@ export async function showBookmarkDetailModal(bookmarkId) {
                 });
 
                 requestAnimationFrame(() => {
-                    const otherVisibleModals = deps
-                        .getVisibleModals?.()
-                        .filter((m) => m.id !== modalId) || [];
+                    const otherVisibleModals =
+                        deps.getVisibleModals?.().filter((m) => m.id !== modalId) || [];
                     if (otherVisibleModals.length === 0) {
                         document.body.classList.remove('overflow-hidden');
                         document.body.classList.remove('modal-open');
@@ -110,9 +109,8 @@ export async function showBookmarkDetailModal(bookmarkId) {
                     currentModal.classList.add('hidden');
 
                     requestAnimationFrame(() => {
-                        const otherVisibleModals = deps
-                            .getVisibleModals?.()
-                            .filter((m) => m.id !== modalId) || [];
+                        const otherVisibleModals =
+                            deps.getVisibleModals?.().filter((m) => m.id !== modalId) || [];
                         if (otherVisibleModals.length === 0) {
                             document.body.classList.remove('overflow-hidden');
                             document.body.classList.remove('modal-open');
@@ -123,7 +121,10 @@ export async function showBookmarkDetailModal(bookmarkId) {
                         deps.showEditBookmarkModal(currentId);
                     } else {
                         console.error('Функция showEditBookmarkModal не определена!');
-                        deps.showNotification?.('Ошибка: функция редактирования недоступна.', 'error');
+                        deps.showNotification?.(
+                            'Ошибка: функция редактирования недоступна.',
+                            'error',
+                        );
                     }
                 } else {
                     console.error('Не удалось получить ID закладки для редактирования из dataset');
@@ -245,7 +246,10 @@ export async function showBookmarkDetailModal(bookmarkId) {
                         (s) => s.parentType === 'bookmark',
                     );
 
-                    if (bookmarkScreenshots.length > 0 && typeof deps.renderScreenshotThumbnails === 'function') {
+                    if (
+                        bookmarkScreenshots.length > 0 &&
+                        typeof deps.renderScreenshotThumbnails === 'function'
+                    ) {
                         deps.renderScreenshotThumbnails(
                             screenshotsGridEl,
                             bookmarkScreenshots,
@@ -256,7 +260,10 @@ export async function showBookmarkDetailModal(bookmarkId) {
                         screenshotsContainer.classList.add('hidden');
                     }
                 } catch (screenshotError) {
-                    console.error('Ошибка загрузки скриншотов для деталей закладки:', screenshotError);
+                    console.error(
+                        'Ошибка загрузки скриншотов для деталей закладки:',
+                        screenshotError,
+                    );
                     screenshotsGridEl.innerHTML =
                         '<p class="col-span-full text-red-500 text-xs">Ошибка загрузки скриншотов.</p>';
                     screenshotsContainer.classList.remove('hidden');

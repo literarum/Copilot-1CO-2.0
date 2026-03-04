@@ -13,6 +13,7 @@ let deps = {
     updatePreviewSettingsFromModal: null,
     applyPreviewSettings: null,
     initColorPicker: null,
+    showUnsavedConfirmModal: null,
 };
 
 export function setUISettingsModalInitDependencies(dependencies) {
@@ -60,6 +61,17 @@ export function initUISettingsModalHandlers() {
             document.body.classList.remove('modal-open');
         };
 
+        const requestClose = async () => {
+            if (
+                deps.State?.isUISettingsDirty &&
+                typeof deps.showUnsavedConfirmModal === 'function'
+            ) {
+                const leave = await deps.showUnsavedConfirmModal();
+                if (!leave) return;
+            }
+            closeModal();
+        };
+
         const saveUISettingsBtn = document.getElementById('saveUISettingsBtn');
         const cancelUISettingsBtn = document.getElementById('cancelUISettingsBtn');
         const resetUiBtn = document.getElementById('resetUiBtn');
@@ -79,9 +91,10 @@ export function initUISettingsModalHandlers() {
                 }
             });
         }
-        if (cancelUISettingsBtn) cancelUISettingsBtn.addEventListener('click', closeModal);
+        if (cancelUISettingsBtn)
+            cancelUISettingsBtn.addEventListener('click', () => void requestClose());
         if (closeCustomizeUIModalBtn)
-            closeCustomizeUIModalBtn.addEventListener('click', closeModal);
+            closeCustomizeUIModalBtn.addEventListener('click', () => void requestClose());
         if (resetUiBtn) {
             resetUiBtn.addEventListener('click', async () => {
                 if (typeof deps.resetUISettingsInModal === 'function') {
@@ -167,6 +180,8 @@ export function initUISettingsModalHandlers() {
         if (typeof deps.initColorPicker === 'function') deps.initColorPicker();
 
         customizeUIModal.dataset.settingsInnerListenersAttached = 'true';
-        console.log('[UISettingsModal] Обработчики элементов модального окна настроек установлены.');
+        console.log(
+            '[UISettingsModal] Обработчики элементов модального окна настроек установлены.',
+        );
     }
 }

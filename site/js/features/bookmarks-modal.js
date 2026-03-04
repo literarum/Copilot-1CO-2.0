@@ -4,6 +4,12 @@
 // BOOKMARKS MODAL (вынос из script.js)
 // ============================================================================
 
+import {
+    activateModalFocus,
+    deactivateModalFocus,
+    enhanceModalAccessibility,
+} from '../ui/modals-manager.js';
+
 let bookmarkModalConfigGlobal = null;
 let State = null;
 let getCurrentBookmarkFormState = null;
@@ -20,6 +26,7 @@ let handleBookmarkFormSubmit = null;
 let populateBookmarkFolders = null;
 let getFromIndexedDB = null;
 let renderExistingThumbnail = null;
+let showUnsavedConfirmModal = null;
 
 export function setBookmarksModalDependencies(deps) {
     bookmarkModalConfigGlobal = deps.bookmarkModalConfigGlobal;
@@ -38,6 +45,8 @@ export function setBookmarksModalDependencies(deps) {
     populateBookmarkFolders = deps.populateBookmarkFolders;
     getFromIndexedDB = deps.getFromIndexedDB;
     renderExistingThumbnail = deps.renderExistingThumbnail;
+    if (deps.showUnsavedConfirmModal !== undefined)
+        showUnsavedConfirmModal = deps.showUnsavedConfirmModal;
 }
 
 export async function ensureBookmarkModal() {
@@ -113,8 +122,8 @@ export async function ensureBookmarkModal() {
                         </div>
                         <div class="mb-4">
                             <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300" for="bookmarkDescription">Описание <span class="text-red-500" id="bookmarkDescriptionRequiredIndicator" style="display:none;">*</span></label>
-                            <textarea id="bookmarkDescription" name="bookmarkDescription" rows="4"
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base"
+                            <textarea id="bookmarkDescription" name="bookmarkDescription" rows="8"
+                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base modal-description-field min-h-[10rem]"
                                 placeholder="Краткое описание закладки или текст заметки"></textarea>
                         </div>
                         <div class="mb-4">
@@ -151,6 +160,9 @@ export async function ensureBookmarkModal() {
             </div>
         `;
         console.log(`${LOG_PREFIX} HTML-структура для #${modalId} создана/пересоздана.`);
+        enhanceModalAccessibility(modal, {
+            labelledBy: 'bookmarkModalTitle',
+        });
 
         const innerContainer = modal.querySelector(
             bookmarkModalConfigGlobal.innerContainerSelector,
@@ -166,7 +178,7 @@ export async function ensureBookmarkModal() {
         if (contentArea && normalContentClasses.length > 0)
             contentArea.classList.add(...normalContentClasses);
 
-        const handleCloseActions = (targetModal) => {
+        const handleCloseActions = async (targetModal) => {
             const form = targetModal.querySelector('#bookmarkForm');
             let doClose = true;
             if (
@@ -177,15 +189,18 @@ export async function ensureBookmarkModal() {
                 if (State.initialBookmarkFormState) {
                     const currentState = getCurrentBookmarkFormState(form);
                     if (!deepEqual(State.initialBookmarkFormState, currentState)) {
-                        if (!confirm('Изменения не сохранены. Закрыть без сохранения?')) {
-                            doClose = false;
-                        }
+                        const confirmLeave =
+                            typeof showUnsavedConfirmModal === 'function'
+                                ? await showUnsavedConfirmModal()
+                                : confirm('Изменения не сохранены. Закрыть без сохранения?');
+                        if (!confirmLeave) doClose = false;
                     }
                 }
             }
 
             if (doClose) {
                 targetModal.classList.add('hidden');
+                deactivateModalFocus(targetModal);
                 if (form) {
                     form.reset();
                     const idInput = form.querySelector('#bookmarkId');
@@ -453,6 +468,7 @@ export async function showAddBookmarkModal(bookmarkToEditId = null) {
 
     modal.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
+    activateModalFocus(modal);
 
     if (titleInput) {
         setTimeout(() => {
@@ -508,7 +524,8 @@ export async function showEditBookmarkModal(id) {
 
         const draftList = form.querySelector('.pdf-draft-list');
         if (draftList) {
-            const draftBlock = draftList.closest('.mb-4') || draftList.closest('details') || draftList;
+            const draftBlock =
+                draftList.closest('.mb-4') || draftList.closest('details') || draftList;
             draftBlock.remove();
             form.dataset.pdfDraftWired = '0';
         }
@@ -549,6 +566,7 @@ export async function showEditBookmarkModal(id) {
 
         modal.classList.remove('hidden');
         document.body.classList.add('overflow-hidden');
+        activateModalFocus(modal);
         if (typeof addEscapeHandler === 'function') addEscapeHandler(modal);
 
         if (titleInput) {
@@ -566,4 +584,3 @@ export async function showEditBookmarkModal(id) {
         modal.classList.add('hidden');
     }
 }
-

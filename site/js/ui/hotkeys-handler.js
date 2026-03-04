@@ -7,7 +7,7 @@
 
 let showNoInnModal = null;
 let showNotification = null;
-let handleGlobalHotkeyRef = null;
+let _handleGlobalHotkeyRef = null;
 let forceReloadAppRef = null;
 
 // Dependencies for handleGlobalHotkey
@@ -20,6 +20,7 @@ let saveUserPreferences = null;
 let getTopmostModal = null;
 let getVisibleModals = null;
 let requestCloseModal = null;
+let removeEscapeHandler = null;
 let showAddModal = null;
 let showAddEditCibLinkModal = null;
 let showAddExtLinkModal = null;
@@ -30,6 +31,10 @@ let exportAllData = null;
 let exportClientDataToTxt = null;
 let clearClientData = null;
 let toggleActiveSectionView = null;
+let toggleTimer = null;
+let resetTimer = null;
+let adjustTimerDuration = null;
+let showAppConfirm = null;
 
 let searchEscClearHandler = null;
 let altRReloadHandler = null;
@@ -37,29 +42,42 @@ let altRReloadHandler = null;
 export function setHotkeysDependencies(deps) {
     if (deps.showNoInnModal !== undefined) showNoInnModal = deps.showNoInnModal;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
-    if (deps.handleGlobalHotkey !== undefined) handleGlobalHotkeyRef = deps.handleGlobalHotkey;
+    if (deps.handleGlobalHotkey !== undefined) _handleGlobalHotkeyRef = deps.handleGlobalHotkey;
     if (deps.forceReloadApp !== undefined) forceReloadAppRef = deps.forceReloadApp;
-    
+
     // Dependencies for handleGlobalHotkey
     if (deps.State !== undefined) State = deps.State;
-    if (deps.CLIENT_NOTES_MAX_FONT_SIZE !== undefined) CLIENT_NOTES_MAX_FONT_SIZE = deps.CLIENT_NOTES_MAX_FONT_SIZE;
-    if (deps.CLIENT_NOTES_MIN_FONT_SIZE !== undefined) CLIENT_NOTES_MIN_FONT_SIZE = deps.CLIENT_NOTES_MIN_FONT_SIZE;
-    if (deps.CLIENT_NOTES_FONT_SIZE_STEP !== undefined) CLIENT_NOTES_FONT_SIZE_STEP = deps.CLIENT_NOTES_FONT_SIZE_STEP;
-    if (deps.applyClientNotesFontSize !== undefined) applyClientNotesFontSize = deps.applyClientNotesFontSize;
+    if (deps.CLIENT_NOTES_MAX_FONT_SIZE !== undefined)
+        CLIENT_NOTES_MAX_FONT_SIZE = deps.CLIENT_NOTES_MAX_FONT_SIZE;
+    if (deps.CLIENT_NOTES_MIN_FONT_SIZE !== undefined)
+        CLIENT_NOTES_MIN_FONT_SIZE = deps.CLIENT_NOTES_MIN_FONT_SIZE;
+    if (deps.CLIENT_NOTES_FONT_SIZE_STEP !== undefined)
+        CLIENT_NOTES_FONT_SIZE_STEP = deps.CLIENT_NOTES_FONT_SIZE_STEP;
+    if (deps.applyClientNotesFontSize !== undefined)
+        applyClientNotesFontSize = deps.applyClientNotesFontSize;
     if (deps.saveUserPreferences !== undefined) saveUserPreferences = deps.saveUserPreferences;
     if (deps.getTopmostModal !== undefined) getTopmostModal = deps.getTopmostModal;
     if (deps.getVisibleModals !== undefined) getVisibleModals = deps.getVisibleModals;
     if (deps.requestCloseModal !== undefined) requestCloseModal = deps.requestCloseModal;
+    if (deps.removeEscapeHandler !== undefined) removeEscapeHandler = deps.removeEscapeHandler;
     if (deps.showAddModal !== undefined) showAddModal = deps.showAddModal;
-    if (deps.showAddEditCibLinkModal !== undefined) showAddEditCibLinkModal = deps.showAddEditCibLinkModal;
+    if (deps.showAddEditCibLinkModal !== undefined)
+        showAddEditCibLinkModal = deps.showAddEditCibLinkModal;
     if (deps.showAddExtLinkModal !== undefined) showAddExtLinkModal = deps.showAddExtLinkModal;
-    if (deps.showAddReglamentModal !== undefined) showAddReglamentModal = deps.showAddReglamentModal;
+    if (deps.showAddReglamentModal !== undefined)
+        showAddReglamentModal = deps.showAddReglamentModal;
     if (deps.showAddBookmarkModal !== undefined) showAddBookmarkModal = deps.showAddBookmarkModal;
     if (deps.setActiveTab !== undefined) setActiveTab = deps.setActiveTab;
     if (deps.exportAllData !== undefined) exportAllData = deps.exportAllData;
-    if (deps.exportClientDataToTxt !== undefined) exportClientDataToTxt = deps.exportClientDataToTxt;
+    if (deps.exportClientDataToTxt !== undefined)
+        exportClientDataToTxt = deps.exportClientDataToTxt;
     if (deps.clearClientData !== undefined) clearClientData = deps.clearClientData;
-    if (deps.toggleActiveSectionView !== undefined) toggleActiveSectionView = deps.toggleActiveSectionView;
+    if (deps.toggleActiveSectionView !== undefined)
+        toggleActiveSectionView = deps.toggleActiveSectionView;
+    if (deps.toggleTimer !== undefined) toggleTimer = deps.toggleTimer;
+    if (deps.resetTimer !== undefined) resetTimer = deps.resetTimer;
+    if (deps.adjustTimerDuration !== undefined) adjustTimerDuration = deps.adjustTimerDuration;
+    if (deps.showAppConfirm !== undefined) showAppConfirm = deps.showAppConfirm;
 }
 
 /**
@@ -187,7 +205,7 @@ export function setupHotkeys() {
  * Глобальный обработчик горячих клавиш
  * Обрабатывает множество комбинаций клавиш для различных действий в приложении
  */
-export function handleGlobalHotkey(event) {
+export async function handleGlobalHotkey(event) {
     const code = event.code;
     const ctrlOrMeta = event.ctrlKey || event.metaKey;
     const shift = event.shiftKey;
@@ -202,6 +220,65 @@ export function handleGlobalHotkey(event) {
 
     const clientNotes = document.getElementById('clientNotes');
     const isClientNotesVisible = clientNotes && clientNotes.offsetParent !== null;
+
+    // Горячие клавиши таймера: Ctrl+Alt+T (старт/пауза), Ctrl+Alt+R (сброс), Ctrl+Alt+Plus/Minus (±5, с Shift ±30).
+    // На macOS используем именно Ctrl+Option (не Cmd+Option), чтобы комбинация не перехватывалась системой.
+    const timerToggle =
+        typeof toggleTimer === 'function'
+            ? toggleTimer
+            : typeof window !== 'undefined' && typeof window.toggleTimer === 'function'
+              ? window.toggleTimer
+              : null;
+    const timerReset =
+        typeof resetTimer === 'function'
+            ? resetTimer
+            : typeof window !== 'undefined' && typeof window.resetTimer === 'function'
+              ? window.resetTimer
+              : null;
+    const timerAdjust =
+        typeof adjustTimerDuration === 'function'
+            ? adjustTimerDuration
+            : typeof window !== 'undefined' && typeof window.adjustTimerDuration === 'function'
+              ? window.adjustTimerDuration
+              : null;
+    const timerShortcutActive =
+        !isInputFocused &&
+        event.altKey &&
+        ((event.ctrlKey && !event.metaKey) || (!event.ctrlKey && event.metaKey));
+
+    if (timerShortcutActive) {
+        if (!shift && (event.key === 't' || event.key === 'T' || event.code === 'KeyT')) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (timerToggle) timerToggle();
+            return;
+        }
+        if (!shift && (event.key === 'r' || event.key === 'R' || event.code === 'KeyR')) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (timerReset) timerReset({});
+            return;
+        }
+        if (
+            event.code === 'Equal' ||
+            event.code === 'NumpadAdd' ||
+            event.key === '+' ||
+            event.key === '='
+        ) {
+            event.preventDefault();
+            event.stopPropagation();
+            const amount = shift ? 30 : 5;
+            if (timerAdjust) timerAdjust(amount);
+            return;
+        }
+        if (event.code === 'Minus' || event.code === 'NumpadSubtract' || event.key === '-') {
+            event.preventDefault();
+            event.stopPropagation();
+            const amount = shift ? -30 : -5;
+            if (timerAdjust) timerAdjust(amount);
+            return;
+        }
+    }
 
     if (
         alt &&
@@ -218,7 +295,9 @@ export function handleGlobalHotkey(event) {
         event.stopPropagation();
 
         if (!State || !State.userPreferences) {
-            console.warn('[Hotkey] State.userPreferences не доступны для изменения размера шрифта.');
+            console.warn(
+                '[Hotkey] State.userPreferences не доступны для изменения размера шрифта.',
+            );
             return;
         }
 
@@ -258,7 +337,10 @@ export function handleGlobalHotkey(event) {
                 console.log('[Hotkey] Обнаружена комбинация Alt + S (Сохранить)');
                 event.preventDefault();
                 event.stopPropagation();
-                if (typeof getTopmostModal === 'function' && typeof getVisibleModals === 'function') {
+                if (
+                    typeof getTopmostModal === 'function' &&
+                    typeof getVisibleModals === 'function'
+                ) {
                     const topModalForSave = getTopmostModal(getVisibleModals());
                     if (topModalForSave) {
                         console.log(
@@ -306,7 +388,10 @@ export function handleGlobalHotkey(event) {
                 console.log('[Hotkey] Обнаружена комбинация Alt + K (В избранное)');
                 event.preventDefault();
                 event.stopPropagation();
-                if (typeof getTopmostModal === 'function' && typeof getVisibleModals === 'function') {
+                if (
+                    typeof getTopmostModal === 'function' &&
+                    typeof getVisibleModals === 'function'
+                ) {
                     const topModalForFavorite = getTopmostModal(getVisibleModals());
                     if (topModalForFavorite) {
                         const favButton = topModalForFavorite.querySelector('.toggle-favorite-btn');
@@ -436,7 +521,7 @@ export function handleGlobalHotkey(event) {
                 event.stopPropagation();
                 if (lightbox._navigateImageFunction) lightbox._navigateImageFunction('next');
                 return;
-            case 'Tab':
+            case 'Tab': {
                 const focusableElements = Array.from(
                     lightbox.querySelectorAll('button:not([disabled]), [href]:not([disabled])'),
                 ).filter(
@@ -462,6 +547,7 @@ export function handleGlobalHotkey(event) {
                 }
                 event.stopPropagation();
                 return;
+            }
         }
     }
 
@@ -524,11 +610,13 @@ export function handleGlobalHotkey(event) {
                                 topmost.id === 'customizeUIModal' ||
                                 topmost.id === 'bookmarkModal')
                         ) {
-                            if (!requestCloseModal(topmost)) {
+                            if (requestCloseModal(topmost) === false) {
                                 return;
                             }
-                        } else {
-                            topmost.classList.add('hidden');
+                        }
+                        topmost.classList.add('hidden');
+                        if (typeof removeEscapeHandler === 'function') {
+                            removeEscapeHandler(topmost);
                         }
                     } else {
                         console.log(
@@ -766,7 +854,10 @@ export function handleGlobalHotkey(event) {
                                     exportError,
                                 );
                                 if (typeof showNotification === 'function') {
-                                    showNotification('Произошла ошибка во время экспорта.', 'error');
+                                    showNotification(
+                                        'Произошла ошибка во время экспорта.',
+                                        'error',
+                                    );
                                 }
                             }
                         }, 0);
@@ -926,14 +1017,24 @@ export function handleGlobalHotkey(event) {
                     }
                 }
                 return;
-            case 'Backspace': // Ctrl + Shift + Backspace
+            case 'Backspace': {
+                // Ctrl + Shift + Backspace
                 console.log('[Hotkey] Обнаружена комбинация Ctrl + Shift + Backspace');
                 event.preventDefault();
                 event.stopPropagation();
                 console.log('[Hotkey]   > Выполнение действия: очистка заметок клиента');
                 const clientNotes = document.getElementById('clientNotes');
                 if (clientNotes && clientNotes.value.trim() !== '') {
-                    if (confirm('Вы уверены, что хотите очистить поле данных по обращению?')) {
+                    const confirmed = showAppConfirm
+                        ? await showAppConfirm({
+                              title: 'Очистка данных обращения',
+                              message: 'Вы уверены, что хотите очистить поле данных по обращению?',
+                              confirmText: 'Очистить',
+                              cancelText: 'Отмена',
+                              confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+                          })
+                        : confirm('Вы уверены, что хотите очистить поле данных по обращению?');
+                    if (confirmed) {
                         if (typeof clearClientData === 'function') {
                             clearClientData();
                         } else {
@@ -957,7 +1058,9 @@ export function handleGlobalHotkey(event) {
                     console.warn('Ctrl+Shift+Backspace: Поле #clientNotes не найдено.');
                 }
                 return;
-            case 'KeyH': // Ctrl + Shift + H
+            }
+            case 'KeyH': {
+                // Ctrl + Shift + H
                 console.log('[Hotkey] Обнаружена комбинация Ctrl + Shift + KeyH');
                 event.preventDefault();
                 event.stopPropagation();
@@ -975,6 +1078,7 @@ export function handleGlobalHotkey(event) {
                     }
                 }
                 return;
+            }
         }
     }
 }

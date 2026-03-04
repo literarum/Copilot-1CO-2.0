@@ -17,7 +17,8 @@ const DEFAULT_HEX = '#7E22CE';
 export function setColorPickerDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
     if (deps.applyPreviewSettings !== undefined) applyPreviewSettings = deps.applyPreviewSettings;
-    if (deps.updatePreviewSettingsFromModal !== undefined) updatePreviewSettingsFromModal = deps.updatePreviewSettingsFromModal;
+    if (deps.updatePreviewSettingsFromModal !== undefined)
+        updatePreviewSettingsFromModal = deps.updatePreviewSettingsFromModal;
     if (deps.hexToHsl !== undefined) hexToHsl = deps.hexToHsl;
     if (deps.hslToHex !== undefined) hslToHex = deps.hslToHex;
     if (deps.DEFAULT_UI_SETTINGS !== undefined) DEFAULT_UI_SETTINGS = deps.DEFAULT_UI_SETTINGS;
@@ -26,7 +27,11 @@ export function setColorPickerDependencies(deps) {
 function normalizeHex(hex) {
     if (!hex || typeof hex !== 'string') return null;
     hex = hex.trim().replace(/^#/, '');
-    if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
+    if (hex.length === 3)
+        hex = hex
+            .split('')
+            .map((c) => c + c)
+            .join('');
     if (hex.length !== 6 || !/^[a-fA-F0-9]{6}$/.test(hex)) return null;
     return '#' + hex;
 }
@@ -76,7 +81,7 @@ export function setColorPickerStateFromHex(hex) {
     updateUIFromHsl(h, s, l);
 }
 
-function updateGradients(h, s, l) {
+function updateGradients(h, _s, _l) {
     const satGrad = document.getElementById('saturation-slider-gradient');
     const brightGrad = document.getElementById('brightness-slider-gradient');
     const baseColor = hslToHex(h, 100, 50);
@@ -111,19 +116,22 @@ function applyColorFromSliders() {
     if (target === 'elements' && State.currentPreviewSettings) {
         State.currentPreviewSettings.primaryColor = hex;
         if (typeof updatePreviewSettingsFromModal === 'function') updatePreviewSettingsFromModal();
-        if (typeof applyPreviewSettings === 'function') applyPreviewSettings(State.currentPreviewSettings);
+        if (typeof applyPreviewSettings === 'function')
+            applyPreviewSettings(State.currentPreviewSettings);
     }
     if (target === 'background' && State.currentPreviewSettings) {
         State.currentPreviewSettings.backgroundColor = hex;
         State.currentPreviewSettings.isBackgroundCustom = true;
         if (typeof updatePreviewSettingsFromModal === 'function') updatePreviewSettingsFromModal();
-        if (typeof applyPreviewSettings === 'function') applyPreviewSettings(State.currentPreviewSettings);
+        if (typeof applyPreviewSettings === 'function')
+            applyPreviewSettings(State.currentPreviewSettings);
     }
     if (target === 'text' && State.currentPreviewSettings) {
         State.currentPreviewSettings.customTextColor = hex;
         State.currentPreviewSettings.isTextCustom = true;
         if (typeof updatePreviewSettingsFromModal === 'function') updatePreviewSettingsFromModal();
-        if (typeof applyPreviewSettings === 'function') applyPreviewSettings(State.currentPreviewSettings);
+        if (typeof applyPreviewSettings === 'function')
+            applyPreviewSettings(State.currentPreviewSettings);
     }
     State.isUISettingsDirty = true;
     updateUIFromHsl(h, s, l);
@@ -166,12 +174,16 @@ function makeSliderDrag(sliderId, handleId, maxPercent, getValueFromPercent, set
         document.addEventListener('mouseup', stop);
         move(e);
     });
-    slider.addEventListener('touchstart', (e) => {
-        isDrag = true;
-        document.addEventListener('touchmove', move, { passive: true });
-        document.addEventListener('touchend', stop);
-        move(e);
-    }, { passive: true });
+    slider.addEventListener(
+        'touchstart',
+        (e) => {
+            isDrag = true;
+            document.addEventListener('touchmove', move, { passive: true });
+            document.addEventListener('touchend', stop);
+            move(e);
+        },
+        { passive: true },
+    );
     slider.addEventListener('click', (e) => {
         if (e.target === handle) return;
         const rect = slider.getBoundingClientRect();
@@ -199,18 +211,26 @@ export function initColorPicker() {
     if (hueSlider.dataset.colorPickerInited === 'true') return;
     hueSlider.dataset.colorPickerInited = 'true';
 
-    function setHueFromPercent(percent) {
+    function _setHueFromPercent(percent) {
         const h = percent * 3.6;
-        updateGradients(h, parseFloat(document.getElementById('saturation-handle')?.style.left) || 80, parseFloat(document.getElementById('brightness-handle')?.style.left) || 50);
+        updateGradients(
+            h,
+            parseFloat(document.getElementById('saturation-handle')?.style.left) || 80,
+            parseFloat(document.getElementById('brightness-handle')?.style.left) || 50,
+        );
         return h;
     }
-    function setSatFromPercent(percent) {
+    function _setSatFromPercent(percent) {
         const s = percent;
         const h = parseFloat(document.getElementById('hue-handle')?.style.left) * 3.6 || 0;
-        updateGradients(h, s, parseFloat(document.getElementById('brightness-handle')?.style.left) || 50);
+        updateGradients(
+            h,
+            s,
+            parseFloat(document.getElementById('brightness-handle')?.style.left) || 50,
+        );
         return s;
     }
-    function setBrightFromPercent(percent) {
+    function _setBrightFromPercent(percent) {
         const l = percent;
         const h = parseFloat(document.getElementById('hue-handle')?.style.left) * 3.6 || 0;
         const s = parseFloat(document.getElementById('saturation-handle')?.style.left) || 80;
@@ -218,26 +238,44 @@ export function initColorPicker() {
         return l;
     }
 
-    makeSliderDrag('hue-slider', 'hue-handle', 100, (p) => p * 3.6, (h) => {
-        const handle = document.getElementById('hue-handle');
-        if (handle) handle.style.left = h / 3.6 + '%';
-        const s = parseFloat(document.getElementById('saturation-handle')?.style.left) || 80;
-        const l = parseFloat(document.getElementById('brightness-handle')?.style.left) || 50;
-        updateUIFromHsl(h, s, l);
-        updateGradients(h, s, l);
-    });
-    makeSliderDrag('saturation-slider', 'saturation-handle', 100, (p) => p, (s) => {
-        const h = parseFloat(document.getElementById('hue-handle')?.style.left) * 3.6 || 0;
-        const l = parseFloat(document.getElementById('brightness-handle')?.style.left) || 50;
-        updateUIFromHsl(h, s, l);
-        updateGradients(h, s, l);
-    });
-    makeSliderDrag('brightness-slider', 'brightness-handle', 100, (p) => p, (l) => {
-        const h = parseFloat(document.getElementById('hue-handle')?.style.left) * 3.6 || 0;
-        const s = parseFloat(document.getElementById('saturation-handle')?.style.left) || 80;
-        updateUIFromHsl(h, s, l);
-        updateGradients(h, s, l);
-    });
+    makeSliderDrag(
+        'hue-slider',
+        'hue-handle',
+        100,
+        (p) => p * 3.6,
+        (h) => {
+            const handle = document.getElementById('hue-handle');
+            if (handle) handle.style.left = h / 3.6 + '%';
+            const s = parseFloat(document.getElementById('saturation-handle')?.style.left) || 80;
+            const l = parseFloat(document.getElementById('brightness-handle')?.style.left) || 50;
+            updateUIFromHsl(h, s, l);
+            updateGradients(h, s, l);
+        },
+    );
+    makeSliderDrag(
+        'saturation-slider',
+        'saturation-handle',
+        100,
+        (p) => p,
+        (s) => {
+            const h = parseFloat(document.getElementById('hue-handle')?.style.left) * 3.6 || 0;
+            const l = parseFloat(document.getElementById('brightness-handle')?.style.left) || 50;
+            updateUIFromHsl(h, s, l);
+            updateGradients(h, s, l);
+        },
+    );
+    makeSliderDrag(
+        'brightness-slider',
+        'brightness-handle',
+        100,
+        (p) => p,
+        (l) => {
+            const h = parseFloat(document.getElementById('hue-handle')?.style.left) * 3.6 || 0;
+            const s = parseFloat(document.getElementById('saturation-handle')?.style.left) || 80;
+            updateUIFromHsl(h, s, l);
+            updateGradients(h, s, l);
+        },
+    );
 
     if (colorTargetSelector && State) {
         colorTargetSelector.addEventListener('change', (e) => {
@@ -245,10 +283,15 @@ export function initColorPicker() {
             if (radio.name === 'colorTarget' && radio.value) {
                 State.uiModalState = State.uiModalState || {};
                 State.uiModalState.currentColorTarget = radio.value;
-                const hex = (State.currentPreviewSettings && State.currentPreviewSettings.primaryColor) || (DEFAULT_UI_SETTINGS && DEFAULT_UI_SETTINGS.primaryColor) || DEFAULT_HEX;
+                const hex =
+                    (State.currentPreviewSettings && State.currentPreviewSettings.primaryColor) ||
+                    (DEFAULT_UI_SETTINGS && DEFAULT_UI_SETTINGS.primaryColor) ||
+                    DEFAULT_HEX;
                 if (radio.value === 'elements') setColorPickerStateFromHex(hex);
-                if (radio.value === 'background' && State.currentPreviewSettings?.backgroundColor) setColorPickerStateFromHex(State.currentPreviewSettings.backgroundColor);
-                if (radio.value === 'text' && State.currentPreviewSettings?.customTextColor) setColorPickerStateFromHex(State.currentPreviewSettings.customTextColor);
+                if (radio.value === 'background' && State.currentPreviewSettings?.backgroundColor)
+                    setColorPickerStateFromHex(State.currentPreviewSettings.backgroundColor);
+                if (radio.value === 'text' && State.currentPreviewSettings?.customTextColor)
+                    setColorPickerStateFromHex(State.currentPreviewSettings.customTextColor);
             }
         });
     }

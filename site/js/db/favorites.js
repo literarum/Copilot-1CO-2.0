@@ -2,12 +2,7 @@
 
 import { FAVORITES_STORE_NAME } from '../constants.js';
 import { State } from '../app/state.js';
-import {
-    saveToIndexedDB,
-    getAllFromIndexedDB,
-    clearIndexedDBStore,
-    performDBOperation,
-} from './indexeddb.js';
+import { saveToIndexedDB, getAllFromIndexedDB, clearIndexedDBStore } from './indexeddb.js';
 
 // ============================================================================
 // РАБОТА С ИЗБРАННЫМ
@@ -21,7 +16,8 @@ export async function addToFavoritesDB(favoriteItem) {
         console.error('DB not initialized. Cannot add to favorites.');
         return null;
     }
-    const { id, ...itemData } = favoriteItem;
+    const itemData = { ...favoriteItem };
+    delete itemData.id;
     return await saveToIndexedDB(FAVORITES_STORE_NAME, itemData);
 }
 
@@ -72,7 +68,7 @@ export async function isFavoriteDB(itemType, originalItemId) {
     const index = store.index('unique_favorite');
     const request = index.getKey([itemType, String(originalItemId)]);
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         request.onsuccess = () => {
             resolve(request.result !== undefined);
         };

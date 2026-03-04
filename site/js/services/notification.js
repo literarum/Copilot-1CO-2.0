@@ -19,7 +19,7 @@ function ensureNotificationIconlessStyles() {
 .notification-item > div > i.fas { display: none !important; }
 `;
         document.head.appendChild(style);
-    } catch (e) {
+    } catch {
         /* no-op */
     }
 }
@@ -421,16 +421,16 @@ export const NotificationService = {
         colorIconClasses.forEach((cls) => iconElement.classList.add(cls));
         try {
             iconElement.style.color = 'var(--color-primary)';
-        } catch (e) {}
+        } catch {
+            // non-fatal if CSS variable is unavailable
+        }
 
         contentWrapper.appendChild(iconElement);
 
         const messageSpan = document.createElement('span');
         messageSpan.className = 'notification-message-span flex-1 text-sm break-words';
         messageSpan.innerHTML =
-            typeof window.linkify === 'function'
-                ? window.linkify(message)
-                : escapeHtml(message);
+            typeof window.linkify === 'function' ? window.linkify(message) : escapeHtml(message);
         contentWrapper.appendChild(messageSpan);
 
         notificationElement.appendChild(contentWrapper);

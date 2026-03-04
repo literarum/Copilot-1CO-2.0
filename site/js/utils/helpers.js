@@ -126,7 +126,7 @@ export function getStepContentAsText(step) {
         } else if (typeof step.description === 'object') {
             try {
                 descriptionText = JSON.stringify(step.description);
-            } catch (e) {
+            } catch {
                 descriptionText = '[не удалось преобразовать описание в текст]';
             }
         }
@@ -157,7 +157,7 @@ export function getStepContentAsText(step) {
             try {
                 examplePrefix = 'Пример (данные):';
                 exampleContent = JSON.stringify(step.example, null, 2);
-            } catch (e) {
+            } catch {
                 exampleContent = '[не удалось преобразовать пример в текст]';
             }
         }

@@ -5,6 +5,12 @@
  * Содержит функции для анимированного открытия и закрытия модальных окон
  */
 
+import {
+    activateModalFocus,
+    deactivateModalFocus,
+    enhanceModalAccessibility,
+} from '../ui/modals-manager.js';
+
 let deps = {
     addEscapeHandler: null,
     removeEscapeHandler: null,
@@ -16,7 +22,8 @@ let deps = {
  */
 export function setModalDependencies(dependencies) {
     if (dependencies.addEscapeHandler) deps.addEscapeHandler = dependencies.addEscapeHandler;
-    if (dependencies.removeEscapeHandler) deps.removeEscapeHandler = dependencies.removeEscapeHandler;
+    if (dependencies.removeEscapeHandler)
+        deps.removeEscapeHandler = dependencies.removeEscapeHandler;
     if (dependencies.onModalClose) deps.onModalClose = dependencies.onModalClose;
     console.log('[modal.js] Зависимости установлены');
 }
@@ -28,6 +35,9 @@ export function setModalDependencies(dependencies) {
 export function openAnimatedModal(modalElement) {
     if (!modalElement) return;
 
+    const titleId = modalElement.querySelector('h1[id],h2[id],h3[id]')?.id || null;
+    enhanceModalAccessibility(modalElement, { labelledBy: titleId });
+
     modalElement.classList.add('modal-transition');
     modalElement.classList.remove('modal-visible');
     modalElement.classList.remove('hidden');
@@ -36,11 +46,16 @@ export function openAnimatedModal(modalElement) {
         requestAnimationFrame(() => {
             modalElement.classList.add('modal-visible');
             document.body.classList.add('modal-open');
+            activateModalFocus(modalElement);
             console.log(`[openAnimatedModal] Opened modal #${modalElement.id}`);
         });
     });
 
-    if (deps.addEscapeHandler && typeof deps.addEscapeHandler === 'function' && !modalElement._escapeHandler) {
+    if (
+        deps.addEscapeHandler &&
+        typeof deps.addEscapeHandler === 'function' &&
+        !modalElement._escapeHandler
+    ) {
         deps.addEscapeHandler(modalElement);
     }
 }
@@ -63,6 +78,7 @@ export function closeAnimatedModal(modalElement) {
         if (event.target === modalElement && event.propertyName === 'opacity') {
             modalElement.classList.add('hidden');
             document.body.classList.remove('modal-open');
+            deactivateModalFocus(modalElement);
             modalElement.removeEventListener('transitionend', handleTransitionEnd);
             console.log(`[closeAnimatedModal] Closed modal #${modalElement.id}`);
 
@@ -104,6 +120,7 @@ export function closeAnimatedModal(modalElement) {
             );
             modalElement.classList.add('hidden');
             document.body.classList.remove('modal-open');
+            deactivateModalFocus(modalElement);
             modalElement.removeEventListener('transitionend', handleTransitionEnd);
         }
     }, 300);

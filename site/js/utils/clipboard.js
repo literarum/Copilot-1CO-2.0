@@ -14,7 +14,8 @@ let deps = {
  * Устанавливает зависимости модуля
  */
 export function setClipboardDependencies(dependencies) {
-    if (dependencies.NotificationService) deps.NotificationService = dependencies.NotificationService;
+    if (dependencies.NotificationService)
+        deps.NotificationService = dependencies.NotificationService;
     if (dependencies.showNotification) deps.showNotification = dependencies.showNotification;
     console.log('[clipboard.js] Зависимости установлены');
 }
@@ -69,12 +70,16 @@ export async function copyToClipboard(text, successMessage = 'Скопирова
         if (isTextControl && prevSel && typeof prevActive.setSelectionRange === 'function') {
             try {
                 prevActive.setSelectionRange(prevSel.start, prevSel.end, prevSel.dir || 'none');
-            } catch {}
+            } catch {
+                // selection restore is best-effort
+            }
         }
         if (prevScrollTop !== null) {
             try {
                 prevActive.scrollTop = prevScrollTop;
-            } catch {}
+            } catch {
+                // scroll restore is best-effort
+            }
         }
     };
 

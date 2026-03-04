@@ -1,8 +1,13 @@
 'use strict';
 
 import { State } from '../app/state.js';
-import { escapeHtml, highlightTextInString, normalizeBrokenEntities, decodeBasicEntitiesOnce, linkify } from '../utils/html.js';
-import { NotificationService } from '../services/notification.js';
+import {
+    escapeHtml,
+    highlightTextInString,
+    normalizeBrokenEntities,
+    decodeBasicEntitiesOnce,
+    linkify,
+} from '../utils/html.js';
 import { SHABLONY_DOC_ID } from '../constants.js';
 
 // ============================================================================
@@ -25,17 +30,6 @@ function debounce(func, wait, immediate) {
     };
 }
 
-// Helper function to show notification
-function showNotification(message, type = 'success', duration = 5000) {
-    if (typeof NotificationService !== 'undefined' && NotificationService.add) {
-        NotificationService.add(message, type, { duration });
-    } else if (typeof window.showNotification === 'function') {
-        window.showNotification(message, type, duration);
-    } else {
-        console.log(`[Notification] ${type}: ${message}`);
-    }
-}
-
 // Store original data for search
 let originalShablonyData = [];
 
@@ -46,10 +40,10 @@ export function getOriginalShablonyData() {
 
 // Section configurations
 const GOOGLE_DOC_SECTIONS = [
-    { 
-        id: 'shablony', 
-        docId: '1YIAViw2kOVh4UzLw8VjNns0PHD29lHLr_QaQs3jCGX4', 
-        title: 'Шаблоны' 
+    {
+        id: 'shablony',
+        docId: '1YIAViw2kOVh4UzLw8VjNns0PHD29lHLr_QaQs3jCGX4',
+        title: 'Шаблоны',
     },
 ];
 
@@ -116,16 +110,47 @@ export async function fetchGoogleDocs(docIds, force = false) {
     }
 
     const requestUrl = `${BASE_URL}?${params.toString()}`;
-    console.log('URL для запроса:', requestUrl);
+    console.debug('[fetchGoogleDocs] URL для запроса:', requestUrl);
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        console.debug('[fetchGoogleDocs] Офлайн: navigator.onLine === false');
+        throw new Error('Нет подключения к интернету. Включите сеть и повторите попытку.');
+    }
 
     try {
-        const response = await fetch(requestUrl);
+        let response;
+        try {
+            response = await fetch(requestUrl);
+        } catch (networkError) {
+            const msg =
+                networkError && networkError.message ? networkError.message : 'Сеть недоступна';
+            console.debug('[fetchGoogleDocs] Ошибка сети:', msg);
+            const isOfflineOrFailed =
+                !navigator.onLine ||
+                msg.includes('fetch') ||
+                msg.includes('Failed') ||
+                msg.includes('network') ||
+                msg.includes('SOCKET') ||
+                msg.includes('ERR_');
+            throw new Error(
+                isOfflineOrFailed
+                    ? 'Не удалось загрузить документ. Проверьте подключение к интернету и повторите попытку.'
+                    : msg,
+            );
+        }
         if (!response.ok) {
             throw new Error(`Ошибка загрузки: статус ${response.status}`);
         }
 
         const results = await response.json();
-        console.log('[fetchGoogleDocs] Получен ответ от API:', results, 'Тип:', typeof results, 'Является массивом:', Array.isArray(results));
+        console.log(
+            '[fetchGoogleDocs] Получен ответ от API:',
+            results,
+            'Тип:',
+            typeof results,
+            'Является массивом:',
+            Array.isArray(results),
+        );
         if (results.error) {
             throw new Error(`Ошибка от сервера: ${results.message}`);
         }
@@ -151,9 +176,14 @@ export async function fetchGoogleDocs(docIds, force = false) {
                     content: item.content || { type: 'paragraphs', data: [] },
                     message: item.message,
                     data: data,
-                    error: item.status === 'error' ? (item.message || 'Ошибка загрузки') : null,
+                    error: item.status === 'error' ? item.message || 'Ошибка загрузки' : null,
                 };
-                console.log(`[fetchGoogleDocs] Обработан элемент ${index}:`, result, 'Извлечённые данные:', data);
+                console.log(
+                    `[fetchGoogleDocs] Обработан элемент ${index}:`,
+                    result,
+                    'Извлечённые данные:',
+                    data,
+                );
                 return result;
             });
         }
@@ -179,7 +209,7 @@ export async function fetchGoogleDocs(docIds, force = false) {
                     content: item.content || { type: 'paragraphs', data: [] },
                     message: item.message,
                     data: data,
-                    error: item.status === 'error' ? (item.message || 'Ошибка загрузки') : null,
+                    error: item.status === 'error' ? item.message || 'Ошибка загрузки' : null,
                 };
             });
         }
@@ -196,7 +226,11 @@ export async function fetchGoogleDocs(docIds, force = false) {
                 }
                 const data = Array.isArray(docData)
                     ? docData
-                    : docData.content?.data || docData.data || docData.content || docData.paragraphs || [];
+                    : docData.content?.data ||
+                      docData.data ||
+                      docData.content ||
+                      docData.paragraphs ||
+                      [];
                 return { docId, data: Array.isArray(data) ? data : [], error: null };
             });
         }
@@ -234,14 +268,16 @@ export function renderGoogleDocContent(results, container, parentContainerId) {
         }
 
         if (parentContainerId === 'doc-content-shablony') {
-            console.log(
-                '[renderGoogleDocContent] Рендеринг документа "Шаблоны".',
-            );
+            console.log('[renderGoogleDocContent] Рендеринг документа "Шаблоны".');
             // Извлекаем данные: result.data или result.content.data
             const rawData = result.data || result.content?.data || [];
             if (!Array.isArray(rawData) || rawData.length === 0) {
-                console.warn('[renderGoogleDocContent] Шаблоны: данные пусты или неверный формат.', result);
-                container.innerHTML = '<p class="p-4 text-center text-gray-500">Шаблоны не найдены.</p>';
+                console.warn(
+                    '[renderGoogleDocContent] Шаблоны: данные пусты или неверный формат.',
+                    result,
+                );
+                container.innerHTML =
+                    '<p class="p-4 text-center text-gray-500">Шаблоны не найдены.</p>';
                 return;
             }
             // Данные уже должны быть массивом строк параграфов
@@ -336,7 +372,9 @@ function renderStyledParagraphs(container, data, searchQuery = '') {
                   .replace(/<mark[^>]*>/g, '##MARK_START##')
                   .replace(/<\/mark>/g, '##MARK_END##')
             : text;
-        const linked = linkify ? linkify(decodeBasicEntitiesOnce(highlighted)) : escapeHtml(highlighted);
+        const linked = linkify
+            ? linkify(decodeBasicEntitiesOnce(highlighted))
+            : escapeHtml(highlighted);
         return linked
             .replace(/##MARK_START##/g, '<mark class="search-term-highlight">')
             .replace(/##MARK_END##/g, '</mark>');
@@ -454,7 +492,7 @@ export function handleShablonySearch() {
     if (!searchInput || !container) return;
 
     const query = searchInput.value.trim().toLowerCase();
-    
+
     if (clearBtn) {
         clearBtn.classList.toggle('hidden', query.length === 0);
     }
@@ -489,22 +527,22 @@ export async function loadAndRenderGoogleDoc(docId, targetContainerId, force = f
     );
 
     const hudId = `gdoc-${targetContainerId}`;
-    const humanLabel =
-        targetContainerId === 'doc-content-shablony'
-            ? 'Шаблоны'
-            : 'Документ';
-    
+    const humanLabel = targetContainerId === 'doc-content-shablony' ? 'Шаблоны' : 'Документ';
+
     let hudTaskStarted = false;
     if (window.BackgroundStatusHUD && typeof window.BackgroundStatusHUD.startTask === 'function') {
         window.BackgroundStatusHUD.startTask(hudId, humanLabel, { weight: 0.4, total: 4 });
         window.BackgroundStatusHUD.updateTask(hudId, 0, 4);
         hudTaskStarted = true;
     }
-    
+
     try {
         const results = await fetchGoogleDocs([docId], force);
-        
-        if (window.BackgroundStatusHUD && typeof window.BackgroundStatusHUD.updateTask === 'function') {
+
+        if (
+            window.BackgroundStatusHUD &&
+            typeof window.BackgroundStatusHUD.updateTask === 'function'
+        ) {
             window.BackgroundStatusHUD.updateTask(hudId, 2, 4);
         }
 
@@ -516,7 +554,10 @@ export async function loadAndRenderGoogleDoc(docId, targetContainerId, force = f
 
         renderGoogleDocContent(results, docContainer, targetContainerId);
 
-        if (window.BackgroundStatusHUD && typeof window.BackgroundStatusHUD.updateTask === 'function') {
+        if (
+            window.BackgroundStatusHUD &&
+            typeof window.BackgroundStatusHUD.updateTask === 'function'
+        ) {
             window.BackgroundStatusHUD.updateTask(hudId, 4, 4);
         }
 
@@ -527,9 +568,7 @@ export async function loadAndRenderGoogleDoc(docId, targetContainerId, force = f
         // Update search index if available
         if (typeof window.updateSearchIndex === 'function') {
             const sectionId = targetContainerId.replace('doc-content-', '');
-            console.log(
-                `[ИНДЕКСАЦИЯ] Запуск updateSearchIndex для ${sectionId} (ID: ${docId}).`,
-            );
+            console.log(`[ИНДЕКСАЦИЯ] Запуск updateSearchIndex для ${sectionId} (ID: ${docId}).`);
             try {
                 if (docId === SHABLONY_DOC_ID && sectionId === 'shablony') {
                     const rawData = results[0]?.data || results[0]?.content?.data || [];
@@ -540,17 +579,45 @@ export async function loadAndRenderGoogleDoc(docId, targetContainerId, force = f
                 console.error(`Ошибка индексации для ${sectionId}:`, indexError);
             }
         }
-        
+
         // Завершаем задачу после успешной загрузки
-        if (hudTaskStarted && window.BackgroundStatusHUD && typeof window.BackgroundStatusHUD.finishTask === 'function') {
+        if (
+            hudTaskStarted &&
+            window.BackgroundStatusHUD &&
+            typeof window.BackgroundStatusHUD.finishTask === 'function'
+        ) {
             window.BackgroundStatusHUD.finishTask(hudId, true);
         }
     } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         console.error(`ОШИБКА ЗАГРУЗКИ для ${targetContainerId}:`, error);
-        docContainer.innerHTML = `<div class="p-4 bg-red-100 text-red-700 rounded">Ошибка загрузки: ${error.message}</div>`;
-        
+        const isNetwork = /сеть|интернет|fetch|Failed|network|ERR_/i.test(message);
+        const userMessage = isNetwork
+            ? 'Не удалось загрузить документ. Проверьте подключение к интернету.'
+            : message;
+        docContainer.innerHTML =
+            '<div class="p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded">' +
+            '<p>' +
+            escapeHtml(userMessage) +
+            '</p>' +
+            '<button type="button" class="mt-2 px-3 py-1 rounded bg-red-200 dark:bg-red-800 hover:bg-red-300 dark:hover:bg-red-700" data-retry-doc="' +
+            escapeHtml(docId) +
+            '" data-retry-target="' +
+            escapeHtml(targetContainerId) +
+            '">Повторить</button>' +
+            '</div>';
+        docContainer.querySelector('[data-retry-doc]')?.addEventListener('click', function () {
+            const doc = this.getAttribute('data-retry-doc');
+            const target = this.getAttribute('data-retry-target');
+            if (doc && target) loadAndRenderGoogleDoc(doc, target, true);
+        });
+
         // Завершаем задачу при ошибке
-        if (hudTaskStarted && window.BackgroundStatusHUD && typeof window.BackgroundStatusHUD.finishTask === 'function') {
+        if (
+            hudTaskStarted &&
+            window.BackgroundStatusHUD &&
+            typeof window.BackgroundStatusHUD.finishTask === 'function'
+        ) {
             window.BackgroundStatusHUD.finishTask(hudId, false);
         }
     }
@@ -570,8 +637,8 @@ export function initGoogleDocSections() {
 
     let mainContentArea = appContent.querySelector('main');
     if (!mainContentArea) {
-        console.warn(
-            'ПРЕДУПРЕЖДЕНИЕ (initGoogleDocSections): Тег <main> внутри #appContent не найден. Создаю его динамически.',
+        console.debug(
+            '[initGoogleDocSections] Тег <main> внутри #appContent не найден, создаю динамически.',
         );
         mainContentArea = document.createElement('main');
         mainContentArea.className = 'flex-grow p-4 overflow-y-auto custom-scrollbar';
@@ -585,9 +652,8 @@ export function initGoogleDocSections() {
         tabContents.forEach((content) => mainContentArea.appendChild(content));
     }
 
-    const debouncedShablonySearch = typeof debounce === 'function' 
-        ? debounce(handleShablonySearch, 300) 
-        : handleShablonySearch;
+    const debouncedShablonySearch =
+        typeof debounce === 'function' ? debounce(handleShablonySearch, 300) : handleShablonySearch;
 
     GOOGLE_DOC_SECTIONS.forEach((section) => {
         if (!document.getElementById(`${section.id}Content`)) {
@@ -660,12 +726,12 @@ export function initGoogleDocSections() {
             }
 
             console.log(`Инициирую начальную загрузку для раздела '${section.id}'.`);
-            loadAndRenderGoogleDoc(section.docId, `doc-content-${section.id}`, false).catch(
-                (err) => console.error(`Ошибка при начальной загрузке ${section.id}:`, err),
+            loadAndRenderGoogleDoc(section.docId, `doc-content-${section.id}`, false).catch((err) =>
+                console.error(`Ошибка при начальной загрузке ${section.id}:`, err),
             );
         }
     });
-    
+
     startTimestampUpdater();
     console.log(
         '[initGoogleDocSections] Функция завершена, загрузка инициирована, таймер запущен.',

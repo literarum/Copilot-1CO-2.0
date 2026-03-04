@@ -347,9 +347,22 @@ export function performDBOperation(storeName, mode, operation) {
             const store = transaction.objectStore(storeName);
             const request = operation(store);
 
+            if (request != null && typeof request.then === 'function') {
+                Promise.resolve(request)
+                    .then((value) => resolve(value))
+                    .catch((err) => {
+                        console.error(
+                            `performDBOperation: Колбэк вернул Promise с ошибкой для ${storeName}:`,
+                            err,
+                        );
+                        reject(err instanceof Error ? err : new Error(String(err)));
+                    });
+                return;
+            }
+
             if (!(request instanceof IDBRequest)) {
                 console.error(
-                    `performDBOperation: Колбэк 'operation' не вернул IDBRequest для ${storeName}. Вернул:`,
+                    `performDBOperation: Колбэк 'operation' не вернул IDBRequest или Promise для ${storeName}. Вернул:`,
                     request,
                 );
                 return reject(
@@ -381,36 +394,40 @@ export function performDBOperation(storeName, mode, operation) {
     });
 }
 
+const isDbDebug = () => typeof window !== 'undefined' && window.__DEBUG_DB__ === true;
+
 /**
  * Получает все записи из хранилища
  */
 export function getAllFromIndexedDB(storeName) {
-    console.log(`[getAllFromIndexedDB V3] Запрос всех данных из хранилища: ${storeName}`);
+    if (isDbDebug()) {
+        console.log(`[getAllFromIndexedDB] Запрос всех данных из хранилища: ${storeName}`);
+    }
     return performDBOperation(storeName, 'readonly', (store) => store.getAll())
         .then((results) => {
-            console.log(
-                `[getAllFromIndexedDB V3] Успешно получено ${
-                    results?.length ?? 0
-                } записей из ${storeName}.`,
-            );
-            if (results && results.length > 0) {
-                const firstItemPreview = { ...results[0] };
-                if (firstItemPreview.content)
-                    firstItemPreview.content = firstItemPreview.content.substring(0, 50) + '...';
-                if (firstItemPreview.steps && Array.isArray(firstItemPreview.steps))
-                    firstItemPreview.steps = `[${firstItemPreview.steps.length} steps]`;
-                if (firstItemPreview.notes)
-                    firstItemPreview.notes = firstItemPreview.notes.substring(0, 50) + '...';
-                console.log(
-                    `[getAllFromIndexedDB V3 DEBUG] Первый элемент из ${storeName}:`,
-                    JSON.parse(JSON.stringify(firstItemPreview)),
-                );
+            if (isDbDebug()) {
+                const count = results?.length ?? 0;
+                console.log(`[getAllFromIndexedDB] Получено ${count} записей из ${storeName}.`);
+                if (results && results.length > 0) {
+                    const firstItemPreview = { ...results[0] };
+                    if (firstItemPreview.content)
+                        firstItemPreview.content =
+                            firstItemPreview.content.substring(0, 50) + '...';
+                    if (firstItemPreview.steps && Array.isArray(firstItemPreview.steps))
+                        firstItemPreview.steps = `[${firstItemPreview.steps.length} steps]`;
+                    if (firstItemPreview.notes)
+                        firstItemPreview.notes = firstItemPreview.notes.substring(0, 50) + '...';
+                    console.log(
+                        `[getAllFromIndexedDB DEBUG] Первый элемент из ${storeName}:`,
+                        firstItemPreview,
+                    );
+                }
             }
             return results || [];
         })
         .catch((error) => {
             console.error(
-                `[getAllFromIndexedDB V3] Ошибка при получении данных из ${storeName}:`,
+                `[getAllFromIndexedDB] Ошибка при получении данных из ${storeName}:`,
                 error,
             );
             throw error;

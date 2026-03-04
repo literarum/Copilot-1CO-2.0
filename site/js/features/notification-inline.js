@@ -19,7 +19,9 @@ export function showNotification(message, type = 'success', duration = 5000) {
                 .map((line) => line.trim())
                 .join(' -> ');
         }
-    } catch (e) {}
+    } catch {
+        // stack parsing is diagnostic-only
+    }
     console.log(`[SHOW_NOTIFICATION_CALL_STACK_V5.2_INLINE_STYLE] Called from: ${callStackInfo}`);
 
     if (!message || typeof message !== 'string' || message.trim() === '') {

@@ -28,6 +28,7 @@ let ExportService = null;
 let reglamentDetailModalConfig = null;
 let reglamentModalConfigGlobal = null;
 let handleViewToggleClick = null;
+let showAppConfirm = null;
 
 /**
  * Устанавливает зависимости модуля регламентов
@@ -51,9 +52,12 @@ export function setReglamentsDependencies(deps) {
     if (deps.toggleModalFullscreen) toggleModalFullscreen = deps.toggleModalFullscreen;
     if (deps.getVisibleModals) getVisibleModals = deps.getVisibleModals;
     if (deps.ExportService) ExportService = deps.ExportService;
-    if (deps.reglamentDetailModalConfig) reglamentDetailModalConfig = deps.reglamentDetailModalConfig;
-    if (deps.reglamentModalConfigGlobal) reglamentModalConfigGlobal = deps.reglamentModalConfigGlobal;
+    if (deps.reglamentDetailModalConfig)
+        reglamentDetailModalConfig = deps.reglamentDetailModalConfig;
+    if (deps.reglamentModalConfigGlobal)
+        reglamentModalConfigGlobal = deps.reglamentModalConfigGlobal;
     if (deps.handleViewToggleClick) handleViewToggleClick = deps.handleViewToggleClick;
+    if (deps.showAppConfirm) showAppConfirm = deps.showAppConfirm;
 }
 
 // ========== Utility Functions ==========
@@ -70,7 +74,10 @@ export function populateReglamentCategoryDropdowns() {
         select.innerHTML = '<option value="">Выберите категорию</option>';
 
         const fragment = document.createDocumentFragment();
-        const categoriesForSelect = categoryDisplayInfo && typeof categoryDisplayInfo === 'object' ? categoryDisplayInfo : {};
+        const categoriesForSelect =
+            categoryDisplayInfo && typeof categoryDisplayInfo === 'object'
+                ? categoryDisplayInfo
+                : {};
         const sortedCategories = Object.entries(categoriesForSelect).sort(([, a], [, b]) =>
             a.title.localeCompare(b.title),
         );
@@ -218,7 +225,8 @@ export function renderReglamentCategories() {
     }
     categoryGrid.innerHTML = '';
 
-    const categories = categoryDisplayInfo && typeof categoryDisplayInfo === 'object' ? categoryDisplayInfo : {};
+    const categories =
+        categoryDisplayInfo && typeof categoryDisplayInfo === 'object' ? categoryDisplayInfo : {};
     Object.entries(categories).forEach(([categoryId, info]) => {
         const categoryElement = createCategoryElement(
             categoryId,
@@ -334,7 +342,7 @@ export async function showReglamentsForCategory(categoryId) {
  * Обработчик действий с регламентами (просмотр, редактирование, удаление)
  * @param {Event} event - Событие клика
  */
-export function handleReglamentAction(event) {
+export async function handleReglamentAction(event) {
     const target = event.target;
 
     if (target.closest('.toggle-favorite-btn')) {
@@ -365,7 +373,16 @@ export function handleReglamentAction(event) {
             editReglament(reglamentId);
         } else if (action === 'delete') {
             const title = reglamentItem.querySelector('h4')?.title || `ID ${reglamentId}`;
-            if (confirm(`Вы уверены, что хотите удалить регламент "${title}"?`)) {
+            const confirmed = showAppConfirm
+                ? await showAppConfirm({
+                      title: 'Удаление регламента',
+                      message: `Вы уверены, что хотите удалить регламент "${title}"?`,
+                      confirmText: 'Удалить',
+                      cancelText: 'Отмена',
+                      confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+                  })
+                : confirm(`Вы уверены, что хотите удалить регламент "${title}"?`);
+            if (confirmed) {
                 deleteReglamentFromList(reglamentId, reglamentItem);
             }
         }
@@ -522,7 +539,7 @@ export async function showReglamentDetail(reglamentId) {
             </div>
         </div>`;
 
-    const setupDetailModal = (modalElement, isNew) => {
+    const setupDetailModal = (modalElement, _isNew) => {
         const editButton = modalElement.querySelector('#editReglamentFromDetailBtn');
         if (editButton) {
             if (editButton._clickHandler) {

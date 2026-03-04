@@ -6,13 +6,12 @@
  */
 
 import { escapeHtml, linkify } from '../utils/html.js';
-import { State } from '../app/state.js';
+import { getStepContentAsText } from '../utils/helpers.js';
 
 // ============================================================================
 // ЗАВИСИМОСТИ
 // ============================================================================
 
-let algorithms = null;
 let isFavorite = null;
 let getFavoriteButtonHTML = null;
 let showNotification = null;
@@ -20,12 +19,12 @@ let ExportService = null;
 let renderScreenshotIcon = null;
 let handleViewScreenshotClick = null;
 let openAnimatedModal = null;
+let copyToClipboard = null;
 
 /**
  * Устанавливает зависимости для модуля рендеринга
  */
 export function setAlgorithmsRendererDependencies(deps) {
-    algorithms = deps.algorithms;
     isFavorite = deps.isFavorite;
     getFavoriteButtonHTML = deps.getFavoriteButtonHTML;
     showNotification = deps.showNotification;
@@ -33,6 +32,7 @@ export function setAlgorithmsRendererDependencies(deps) {
     renderScreenshotIcon = deps.renderScreenshotIcon;
     handleViewScreenshotClick = deps.handleViewScreenshotClick;
     openAnimatedModal = deps.openAnimatedModal;
+    copyToClipboard = deps.copyToClipboard;
 }
 
 /**
@@ -85,12 +85,6 @@ export async function showAlgorithmDetail(algorithm, section) {
 
     algorithmModal.dataset.currentAlgorithmId = String(currentAlgorithmId);
     algorithmModal.dataset.currentSection = section;
-    if (currentAlgorithmId !== 'main') {
-        const host = algorithmStepsContainer.parentElement || algorithmStepsContainer;
-        if (host && typeof window.renderPdfAttachmentsSection === 'function') {
-            window.renderPdfAttachmentsSection(host, 'algorithm', String(currentAlgorithmId));
-        }
-    }
 
     modalTitleElement.textContent = algorithm.title ?? 'Детали алгоритма';
     algorithmStepsContainer.innerHTML =
@@ -266,7 +260,7 @@ export async function showAlgorithmDetail(algorithm, section) {
                         exampleHtml += `<strong>Пример (данные):</strong><pre class="text-xs bg-gray-200 dark:bg-gray-600 p-2 rounded mt-1 overflow-x-auto font-mono whitespace-pre-wrap"><code>${escapeHtml(
                             JSON.stringify(step.example, null, 2),
                         )}</code></pre>`;
-                    } catch (e) {
+                    } catch {
                         exampleHtml += `<div class="text-xs text-red-500 mt-1">[Ошибка формата примера]</div>`;
                     }
                 }
@@ -282,8 +276,12 @@ export async function showAlgorithmDetail(algorithm, section) {
             }
 
             const stepTitle = escapeHtml(step.title ?? `Шаг ${index + 1}`);
+            const copyableAttr =
+                isMainAlgorithm && step.isCopyable
+                    ? ' data-copyable-step="1" data-step-index="' + index + '"'
+                    : '';
             const stepHTML = `
-                 <div class="algorithm-step bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm border-l-4 border-primary mb-3 relative">
+                 <div class="algorithm-step bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm border-l-4 border-primary mb-3 relative${copyableAttr ? ' copyable-step-active cursor-pointer' : ''}"${copyableAttr} title="${copyableAttr ? 'Нажмите, чтобы скопировать содержимое шага' : ''}">
                      ${additionalInfoTopHTML}
                      <h3 class="font-bold text-lg ${
                          iconContainerHtml ? 'inline' : ''
@@ -299,6 +297,31 @@ export async function showAlgorithmDetail(algorithm, section) {
         const stepsHtmlArray = await Promise.all(stepHtmlPromises);
         algorithmStepsContainer.innerHTML = stepsHtmlArray.join('');
 
+        if (isMainAlgorithm && typeof copyToClipboard === 'function') {
+            algorithmStepsContainer
+                .querySelectorAll('.algorithm-step[data-copyable-step="1"]')
+                .forEach((el) => {
+                    const index = parseInt(el.dataset.stepIndex, 10);
+                    if (Number.isNaN(index) || !algorithm.steps || !algorithm.steps[index]) return;
+                    el.addEventListener('click', (e) => {
+                        if (
+                            e.target.closest('h3') ||
+                            e.target.closest('a') ||
+                            e.target.closest('button') ||
+                            e.target.closest('[role="button"]')
+                        )
+                            return;
+                        const step = algorithm.steps[index];
+                        if (step && step.isCopyable) {
+                            const textToCopy = getStepContentAsText(step);
+                            if (textToCopy && textToCopy.trim()) {
+                                copyToClipboard(textToCopy, 'Содержимое шага скопировано!');
+                            }
+                        }
+                    });
+                });
+        }
+
         if (!isMainAlgorithm && handleViewScreenshotClick) {
             const newButtons = algorithmStepsContainer.querySelectorAll('.view-screenshot-btn');
             if (newButtons.length > 0) {
@@ -311,6 +334,17 @@ export async function showAlgorithmDetail(algorithm, section) {
     } catch (error) {
         console.error('[showAlgorithmDetail v11 Step Render Error]', error);
         algorithmStepsContainer.innerHTML = `<p class="text-red-500 p-4 text-center">Ошибка при отображении шагов: ${error.message}</p>`;
+    }
+
+    if (currentAlgorithmId !== 'main' && typeof window.renderPdfAttachmentsSection === 'function') {
+        algorithmStepsContainer
+            .querySelectorAll('.pdf-attachments-section, .pdf-host-area')
+            .forEach((el) => el.remove());
+        window.renderPdfAttachmentsSection(
+            algorithmStepsContainer,
+            'algorithm',
+            String(currentAlgorithmId),
+        );
     }
 
     if (openAnimatedModal) {

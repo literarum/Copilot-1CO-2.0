@@ -9,13 +9,13 @@
 // ЗАВИСИМОСТИ
 // ============================================================================
 
-let State = null;
-let DB_NAME = null;
-let TIMER_STATE_KEY = null;
-let BLACKLIST_WARNING_ACCEPTED_KEY = null;
-let USER_PREFERENCES_KEY = null;
-let CATEGORY_INFO_KEY = null;
-let SEDO_CONFIG_KEY = null;
+let _State = null;
+let _DB_NAME = null;
+let _TIMER_STATE_KEY = null;
+let _BLACKLIST_WARNING_ACCEPTED_KEY = null;
+let _USER_PREFERENCES_KEY = null;
+let _CATEGORY_INFO_KEY = null;
+let _SEDO_CONFIG_KEY = null;
 let addEscapeHandler = null;
 let removeEscapeHandler = null;
 let getVisibleModals = null;
@@ -25,28 +25,34 @@ let loadingOverlayManager = null;
 let NotificationService = null;
 let showNotification = null;
 let initBackgroundHealthTestsSystem = null;
-let setBackgroundHealthTestsDependencies = null;
+let _setBackgroundHealthTestsDependencies = null;
 let BackgroundStatusHUDFactory = null;
 
 export function setSystemsInitDependencies(deps) {
-    if (deps.State !== undefined) State = deps.State;
-    if (deps.DB_NAME !== undefined) DB_NAME = deps.DB_NAME;
-    if (deps.TIMER_STATE_KEY !== undefined) TIMER_STATE_KEY = deps.TIMER_STATE_KEY;
-    if (deps.BLACKLIST_WARNING_ACCEPTED_KEY !== undefined) BLACKLIST_WARNING_ACCEPTED_KEY = deps.BLACKLIST_WARNING_ACCEPTED_KEY;
-    if (deps.USER_PREFERENCES_KEY !== undefined) USER_PREFERENCES_KEY = deps.USER_PREFERENCES_KEY;
-    if (deps.CATEGORY_INFO_KEY !== undefined) CATEGORY_INFO_KEY = deps.CATEGORY_INFO_KEY;
-    if (deps.SEDO_CONFIG_KEY !== undefined) SEDO_CONFIG_KEY = deps.SEDO_CONFIG_KEY;
+    if (deps.State !== undefined) _State = deps.State;
+    if (deps.DB_NAME !== undefined) _DB_NAME = deps.DB_NAME;
+    if (deps.TIMER_STATE_KEY !== undefined) _TIMER_STATE_KEY = deps.TIMER_STATE_KEY;
+    if (deps.BLACKLIST_WARNING_ACCEPTED_KEY !== undefined)
+        _BLACKLIST_WARNING_ACCEPTED_KEY = deps.BLACKLIST_WARNING_ACCEPTED_KEY;
+    if (deps.USER_PREFERENCES_KEY !== undefined) _USER_PREFERENCES_KEY = deps.USER_PREFERENCES_KEY;
+    if (deps.CATEGORY_INFO_KEY !== undefined) _CATEGORY_INFO_KEY = deps.CATEGORY_INFO_KEY;
+    if (deps.SEDO_CONFIG_KEY !== undefined) _SEDO_CONFIG_KEY = deps.SEDO_CONFIG_KEY;
     if (deps.addEscapeHandler !== undefined) addEscapeHandler = deps.addEscapeHandler;
     if (deps.removeEscapeHandler !== undefined) removeEscapeHandler = deps.removeEscapeHandler;
     if (deps.getVisibleModals !== undefined) getVisibleModals = deps.getVisibleModals;
-    if (deps.clearAllApplicationData !== undefined) clearAllApplicationData = deps.clearAllApplicationData;
+    if (deps.clearAllApplicationData !== undefined)
+        clearAllApplicationData = deps.clearAllApplicationData;
     if (deps.exportAllData !== undefined) exportAllData = deps.exportAllData;
-    if (deps.loadingOverlayManager !== undefined) loadingOverlayManager = deps.loadingOverlayManager;
+    if (deps.loadingOverlayManager !== undefined)
+        loadingOverlayManager = deps.loadingOverlayManager;
     if (deps.NotificationService !== undefined) NotificationService = deps.NotificationService;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
-    if (deps.initBackgroundHealthTestsSystem !== undefined) initBackgroundHealthTestsSystem = deps.initBackgroundHealthTestsSystem;
-    if (deps.setBackgroundHealthTestsDependencies !== undefined) setBackgroundHealthTestsDependencies = deps.setBackgroundHealthTestsDependencies;
-    if (deps.BackgroundStatusHUDFactory !== undefined) BackgroundStatusHUDFactory = deps.BackgroundStatusHUDFactory;
+    if (deps.initBackgroundHealthTestsSystem !== undefined)
+        initBackgroundHealthTestsSystem = deps.initBackgroundHealthTestsSystem;
+    if (deps.setBackgroundHealthTestsDependencies !== undefined)
+        _setBackgroundHealthTestsDependencies = deps.setBackgroundHealthTestsDependencies;
+    if (deps.BackgroundStatusHUDFactory !== undefined)
+        BackgroundStatusHUDFactory = deps.BackgroundStatusHUDFactory;
 }
 
 // ============================================================================
@@ -96,9 +102,7 @@ export function initClearDataFunctionality() {
             removeEscapeHandler(confirmClearDataModal);
         }
         const visibleModals = typeof getVisibleModals === 'function' ? getVisibleModals() : [];
-        if (
-            visibleModals.filter((modal) => modal.id !== confirmClearDataModal.id).length === 0
-        ) {
+        if (visibleModals.filter((modal) => modal.id !== confirmClearDataModal.id).length === 0) {
             document.body.classList.remove('modal-open');
         } else if (typeof getVisibleModals !== 'function') {
             document.body.classList.remove('modal-open');
@@ -132,7 +136,9 @@ export function initClearDataFunctionality() {
             console.log('Data clearing starting...');
             if (typeof clearAllApplicationData === 'function') {
                 await clearAllApplicationData((percentage, message) => {
-                    console.log(`[ClearData Progress (no overlay visible): ${percentage}%] ${message}`);
+                    console.log(
+                        `[ClearData Progress (no overlay visible): ${percentage}%] ${message}`,
+                    );
                 });
             } else {
                 throw new Error('Функция clearAllApplicationData не найдена');
