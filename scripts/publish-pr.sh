@@ -65,10 +65,15 @@ auto_commit_if_needed() {
   if working_tree_dirty; then
     info "Обнаружены незакоммиченные изменения. Автоматически коммичу..."
     git add -A
+    # Не коммитить изменения в .github/workflows/ — они могут сломать автодеплой Pages
+    if git diff --cached --name-only -- .github/workflows/ | grep -q .; then
+      info "Предупреждение: изменения в .github/workflows/ не включены в автокоммит (защита автодеплоя). Закоммитьте их вручную при необходимости."
+      git reset -- .github/workflows/
+    fi
 
-    # Вдруг после add (из-за .gitignore) коммитить нечего
-    if [[ -z "$(git status --porcelain)" ]]; then
-      info "После git add -A изменений для коммита не осталось."
+    # Вдруг после add (из-за .gitignore или после reset) коммитить нечего
+    if git diff --cached --quiet 2>/dev/null; then
+      info "Нет изменений для автокоммита (только .github/workflows/ или пусто)."
       return 0
     fi
 
@@ -217,6 +222,7 @@ info "В origin запушена ветка: $REMOTE_PR_BRANCH"
 if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; then
   printf '%s\n' "$PR_CREATE_OUTPUT"
   info "Готово. Новый PR создан."
+  info "На GitHub автоматически запустится деплой preview; в PR появится комментарий со ссылкой на сайт (Pages)."
   open_pr_in_browser_if_possible
 else
   info "Не удалось создать PR через gh."
