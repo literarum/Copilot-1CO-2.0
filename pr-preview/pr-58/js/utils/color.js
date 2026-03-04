@@ -95,22 +95,22 @@ export function hsbToRgb(h, s, b) {
     const t = b * (1 - (1 - f) * s);
     switch (i % 6) {
         case 0:
-            (r = b), (g = t), (v = p);
+            ((r = b), (g = t), (v = p));
             break;
         case 1:
-            (r = q), (g = b), (v = p);
+            ((r = q), (g = b), (v = p));
             break;
         case 2:
-            (r = p), (g = b), (v = t);
+            ((r = p), (g = b), (v = t));
             break;
         case 3:
-            (r = p), (g = q), (v = b);
+            ((r = p), (g = q), (v = b));
             break;
         case 4:
-            (r = t), (g = p), (v = b);
+            ((r = t), (g = p), (v = b));
             break;
         case 5:
-            (r = b), (g = p), (v = q);
+            ((r = b), (g = p), (v = q));
             break;
     }
     return {

@@ -48,7 +48,10 @@ export async function loadViewPreferences() {
 export async function saveViewPreference(sectionId, view) {
     State.viewPreferences[sectionId] = view;
     try {
-        await saveToIndexedDB('preferences', { id: 'viewPreferences', views: State.viewPreferences });
+        await saveToIndexedDB('preferences', {
+            id: 'viewPreferences',
+            views: State.viewPreferences,
+        });
     } catch (error) {
         console.error('Error saving view preference:', error);
     }
@@ -65,6 +68,7 @@ export function applyView(container, view) {
         return;
     }
 
+    container.dataset.view = view === 'list' ? 'list' : 'cards';
     const sectionId = container.dataset.sectionId;
     let viewControlsContainer = null;
 
@@ -290,7 +294,8 @@ export function applyView(container, view) {
 export function applyCurrentView(sectionId) {
     const container = document.getElementById(sectionId);
     if (container) {
-        const currentView = State.viewPreferences[sectionId] || container.dataset.defaultView || 'cards';
+        const currentView =
+            State.viewPreferences[sectionId] || container.dataset.defaultView || 'cards';
         applyView(container, currentView);
     }
 }
@@ -394,7 +399,10 @@ export function handleViewToggleClick(event) {
 
     if (!targetContainer) {
         if (typeof window.showNotification === 'function') {
-            window.showNotification('Не удалось определить область для переключения вида.', 'error');
+            window.showNotification(
+                'Не удалось определить область для переключения вида.',
+                'error',
+            );
         }
         return;
     }
@@ -440,5 +448,7 @@ export function toggleActiveSectionView() {
     const currentView = container.dataset.view || 'cards';
     const newView = currentView === 'cards' ? 'list' : 'cards';
 
+    const sectionIdForPrefs = container.dataset.sectionId || container.id || sectionId;
     applyView(container, newView);
+    saveViewPreference(sectionIdForPrefs, newView);
 }

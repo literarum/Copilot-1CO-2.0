@@ -4,6 +4,9 @@
  * Менеджер оверлея загрузки приложения.
  * Вынесен из script.js для уменьшения мегафайла и повторного использования.
  */
+const EXIT_EXPAND_DURATION_MS = 700;
+const EXIT_MAX_SCALE = 4;
+
 export const loadingOverlayManager = {
     overlayElement: null,
     styleElement: null,
@@ -14,12 +17,14 @@ export const loadingOverlayManager = {
     spawnStartTime: 0,
     fadeOutDuration: 500,
     currentProgressValue: 0,
+    /** Время начала анимации «расширения сферы» при выходе (0 = не запущена) */
+    exitScaleStartTime: 0,
 
     createAndShow() {
         // Пытаемся использовать существующий оверлей из HTML
         const existingOverlay = document.getElementById('custom-loading-overlay');
         const existingStyles = document.getElementById('custom-loading-overlay-styles');
-        
+
         if (existingOverlay) {
             this.overlayElement = existingOverlay;
             this.styleElement = existingStyles;
@@ -28,53 +33,28 @@ export const loadingOverlayManager = {
             this.updateProgress(1, 'Загрузка');
             this.overlayElement.style.opacity = '1';
             this.overlayElement.style.display = 'flex';
-            
+
             const canvas = this.overlayElement.querySelector('#loadingCanvas');
             if (canvas) {
-                // Плавно перехватываем управление ранней анимацией без остановки
+                // Используем раннюю анимацию без переключения — сфера вращается без остановки до скрытия оверлея
                 if (window._earlySphereAnimation && window._earlySphereAnimation.isRunning) {
-                    console.log('Smoothly taking over early sphere animation.');
-                    // Получаем состояние ранней анимации для плавного перехода
-                    const earlyState = window._earlySphereAnimation.getState ? window._earlySphereAnimation.getState() : null;
-                    const earlyStop = window._earlySphereAnimation.stop;
-                    const earlyResize = window._earlySphereAnimation.resize;
-                    
-                    // Запускаем новую анимацию сразу
-                    this.isSpawning = false; // Не запускаем spawn заново, продолжаем текущую
+                    console.log('Using existing early sphere animation (no handoff, no stop).');
+                    this.isSpawning = false;
                     this.spawnStartTime = performance.now();
-                    this.spawnProgress = 1; // Устанавливаем полный прогресс, так как сфера уже появилась
-                    
-                    // Передаем состояние ранней анимации для плавного перехода
-                    const { startAnimation, stopAnimation, resizeHandler } =
-                        this._encapsulateAnimationScript(canvas, this, earlyState);
+                    this.spawnProgress = 1;
                     this.animationRunner = {
-                        start: startAnimation,
-                        stop: stopAnimation,
-                        resize: resizeHandler,
-                        isRunning: false,
+                        start: function () {},
+                        stop: window._earlySphereAnimation.stop || function () {},
+                        resize: window._earlySphereAnimation.resize || function () {},
+                        isRunning: true,
                     };
-                    
-                    // Запускаем новую анимацию
-                    this.animationRunner.start();
-                    this.animationRunner.isRunning = true;
-                    
-                    // Останавливаем раннюю анимацию после небольшой задержки для плавного перехода
-                    requestAnimationFrame(() => {
-                        if (earlyStop) earlyStop();
-                        if (earlyResize) {
-                            window.removeEventListener('resize', earlyResize);
-                        }
-                        window._earlySphereAnimation.isRunning = false;
-                    });
-                    
-                    window.addEventListener('resize', this.animationRunner.resize);
-                    console.log('Animation smoothly transitioned from early to main.');
+                    console.log('Early sphere animation kept running until overlay hide.');
                 } else {
                     // Если ранней анимации нет, запускаем обычным способом, но сразу показываем сферу
                     this.isSpawning = false; // Не используем spawn анимацию, показываем сразу
                     this.spawnStartTime = performance.now();
                     this.spawnProgress = 1; // Сфера видна сразу
-                    
+
                     if (this.animationRunner) {
                         if (this.animationRunner.isRunning) {
                             this.animationRunner.stop();
@@ -83,7 +63,7 @@ export const loadingOverlayManager = {
                             window.removeEventListener('resize', this.animationRunner.resize);
                         }
                     }
-                    
+
                     const { startAnimation, stopAnimation, resizeHandler } =
                         this._encapsulateAnimationScript(canvas, this);
                     this.animationRunner = {
@@ -95,10 +75,14 @@ export const loadingOverlayManager = {
                     this.animationRunner.start();
                     this.animationRunner.isRunning = true;
                     window.addEventListener('resize', this.animationRunner.resize);
-                    console.log('Animation started for existing overlay from HTML (sphere visible immediately).');
+                    console.log(
+                        'Animation started for existing overlay from HTML (sphere visible immediately).',
+                    );
                 }
             } else {
-                console.error('Canvas элемент #loadingCanvas не найден в существующем оверлее из HTML!');
+                console.error(
+                    'Canvas элемент #loadingCanvas не найден в существующем оверлее из HTML!',
+                );
             }
             return;
         } else if (this.overlayElement && document.body.contains(this.overlayElement)) {
@@ -114,7 +98,7 @@ export const loadingOverlayManager = {
         } else {
             // Создаём новый оверлей если не найден (оригинальная разметка и стили из мега-файла)
             console.log('Creating new overlay dynamically.');
-            
+
             const overlayHTML = `
             <canvas id="loadingCanvas"></canvas>
             <div class="loading-text" id="loadingText">Загрузка<span id="animated-dots"></span></div>
@@ -206,7 +190,7 @@ export const loadingOverlayManager = {
             background: linear-gradient(90deg, #8A2BE2, #A020F0, #4B0082, #A020F0, #8A2BE2);
             background-size: 300% 100%;
             border-radius: 3px;
-            transition: width 0.15s linear;
+            transition: width 0.25s ease-out;
             animation: progress-gradient-flow 2s linear infinite;
         }
 
@@ -294,38 +278,21 @@ export const loadingOverlayManager = {
 
     async hideAndDestroy() {
         console.log(
-            '[loadingOverlayManager.hideAndDestroy ASYNC V4] Начало плавного скрытия и уничтожения.',
+            '[loadingOverlayManager.hideAndDestroy ASYNC V5] Начало плавного скрытия (сфера продолжает вращаться до конца fade).',
         );
-        
-        // Останавливаем анимацию СРАЗУ, чтобы избежать предупреждений о производительности
-        if (this.animationRunner) {
-            if (typeof this.animationRunner.stop === 'function') {
-                this.animationRunner.stop();
-                this.animationRunner.isRunning = false;
-            }
-            if (typeof this.animationRunner.resize === 'function') {
-                window.removeEventListener('resize', this.animationRunner.resize);
-            }
-            console.log(
-                '[loadingOverlayManager.hideAndDestroy ASYNC V4] Анимация остановлена сразу, слушатель resize удален.',
-            );
-        }
-        
-        // Также останавливаем раннюю анимацию из HTML, если она еще работает
-        if (window._earlySphereAnimation && window._earlySphereAnimation.isRunning) {
-            if (typeof window._earlySphereAnimation.stop === 'function') {
-                window._earlySphereAnimation.stop();
-            }
-            if (typeof window._earlySphereAnimation.resize === 'function') {
-                window.removeEventListener('resize', window._earlySphereAnimation.resize);
-            }
-            window._earlySphereAnimation.isRunning = false;
-            console.log('[loadingOverlayManager.hideAndDestroy] Ранняя анимация остановлена.');
-        }
-        
+
+        // Не останавливаем анимацию здесь — сфера вращается во время всего fade, остановка в конце таймаута
+        const runnerToStop = this.animationRunner;
+        const earlyToStop =
+            window._earlySphereAnimation && window._earlySphereAnimation.isRunning
+                ? window._earlySphereAnimation
+                : null;
+
         // Плавно затемняем canvas (сферу) вместе с оверлеем
         const canvas = this.overlayElement?.querySelector('#loadingCanvas');
-        const initialCanvasOpacity = canvas ? parseFloat(getComputedStyle(canvas).opacity) || 1 : 1;
+        const _initialCanvasOpacity = canvas
+            ? parseFloat(getComputedStyle(canvas).opacity) || 1
+            : 1;
 
         const overlayPromise = new Promise((resolve) => {
             if (this.overlayElement && document.body.contains(this.overlayElement)) {
@@ -334,31 +301,47 @@ export const loadingOverlayManager = {
                 if (canvas) {
                     canvas.style.transition = `opacity ${this.fadeOutDuration}ms ease-out`;
                 }
-                
+
                 // Устанавливаем opacity для плавного затемнения
                 this.overlayElement.style.opacity = '0';
                 if (canvas) {
                     canvas.style.opacity = '0';
                 }
-                
+
                 console.log(
-                    '[loadingOverlayManager.hideAndDestroy ASYNC V4] Начато плавное затемнение оверлея и сферы.',
+                    '[loadingOverlayManager.hideAndDestroy ASYNC V5] Начато плавное затемнение оверлея и сферы.',
                 );
 
                 const currentOverlayElement = this.overlayElement;
 
                 const currentStyleElement = this.styleElement;
                 setTimeout(() => {
-                    // Анимация уже остановлена выше, просто удаляем элементы
+                    // Останавливаем анимацию только после завершения fade — без рывков в конце
+                    if (runnerToStop && typeof runnerToStop.stop === 'function') {
+                        runnerToStop.stop();
+                        if (typeof runnerToStop.resize === 'function') {
+                            window.removeEventListener('resize', runnerToStop.resize);
+                        }
+                        if (runnerToStop.isRunning !== undefined) runnerToStop.isRunning = false;
+                    }
+                    if (earlyToStop && typeof earlyToStop.stop === 'function') {
+                        earlyToStop.stop();
+                        if (typeof earlyToStop.resize === 'function') {
+                            window.removeEventListener('resize', earlyToStop.resize);
+                        }
+                        earlyToStop.isRunning = false;
+                    }
                     if (document.body.contains(currentOverlayElement)) {
                         currentOverlayElement.remove();
                         console.log(
-                            '[loadingOverlayManager.hideAndDestroy ASYNC V4] Элемент оверлея удален из DOM.',
+                            '[loadingOverlayManager.hideAndDestroy ASYNC V5] Элемент оверлея удален из DOM.',
                         );
                     }
                     if (currentStyleElement && document.head.contains(currentStyleElement)) {
                         currentStyleElement.remove();
-                        console.log('[loadingOverlayManager.hideAndDestroy] Элемент стилей удален.');
+                        console.log(
+                            '[loadingOverlayManager.hideAndDestroy] Элемент стилей удален.',
+                        );
                     }
                     if (this.overlayElement === currentOverlayElement) {
                         this.overlayElement = null;
@@ -369,8 +352,21 @@ export const loadingOverlayManager = {
                     resolve();
                 }, this.fadeOutDuration);
             } else {
+                if (runnerToStop && typeof runnerToStop.stop === 'function') {
+                    runnerToStop.stop();
+                    if (typeof runnerToStop.resize === 'function') {
+                        window.removeEventListener('resize', runnerToStop.resize);
+                    }
+                }
+                if (earlyToStop && typeof earlyToStop.stop === 'function') {
+                    earlyToStop.stop();
+                    if (typeof earlyToStop.resize === 'function') {
+                        window.removeEventListener('resize', earlyToStop.resize);
+                    }
+                    earlyToStop.isRunning = false;
+                }
                 console.log(
-                    '[loadingOverlayManager.hideAndDestroy ASYNC V4] Оверлей не существует или не в DOM, разрешаем промис немедленно.',
+                    '[loadingOverlayManager.hideAndDestroy ASYNC V5] Оверлей не существует или не в DOM, разрешаем промис немедленно.',
                 );
                 if (this.overlayElement) this.overlayElement = null;
                 if (this.styleElement && document.head.contains(this.styleElement)) {
@@ -431,6 +427,25 @@ export const loadingOverlayManager = {
         }
     },
 
+    /**
+     * Запускает эффект выхода: сфера увеличивается, точки уходят за пределы экрана, затем можно скрыть оверлей.
+     * Возвращает Promise, который резолвится по окончании анимации расширения.
+     */
+    async runExitEffect() {
+        const early = window._earlySphereAnimation;
+        if (
+            early &&
+            typeof early.setExitStartTime === 'function' &&
+            typeof early.getExitPromise === 'function'
+        ) {
+            early.setExitStartTime();
+            await early.getExitPromise();
+            return;
+        }
+        this.exitScaleStartTime = performance.now();
+        await new Promise((r) => setTimeout(r, EXIT_EXPAND_DURATION_MS + 100));
+    },
+
     _encapsulateAnimationScript(canvasElement, manager, initialState = null) {
         let localAnimationFrameId = null;
         const ctx = canvasElement.getContext('2d');
@@ -440,12 +455,20 @@ export const loadingOverlayManager = {
         let globalTime_anim = initialState?.globalTime || 0;
         let rotationX_anim = initialState?.rotationX || 0;
         let rotationY_anim = initialState?.rotationY || 0;
+        let lastFrameTime_anim = null;
+        const ROTATION_DELTA_NORM = 1 / 16;
 
         const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
+        function getExitScale_anim() {
+            if (!manager.exitScaleStartTime) return 1;
+            const elapsed = performance.now() - manager.exitScaleStartTime;
+            const t = Math.min(elapsed / EXIT_EXPAND_DURATION_MS, 1);
+            return 1 + (EXIT_MAX_SCALE - 1) * easeOutCubic(t);
+        }
+
         const config_anim = {
-            // Уменьшено количество частиц для лучшей производительности
-            particleCount: 1200,
+            particleCount: 2200,
             sphereBaseRadius: 4,
             focalLength: 250,
             rotationSpeedX: 0.0003,
@@ -454,16 +477,16 @@ export const loadingOverlayManager = {
             breathSpeed: 0.01,
             petalCount: 15,
             petalStrength: 0.2,
-            baseParticleMinSize: 0.5,
-            baseParticleMaxSize: 1,
+            baseParticleMinSize: 0.45,
+            baseParticleMaxSize: 1.1,
             colorPalette: [
-                [140, 70, 200, 1],
-                [170, 90, 220, 0.9],
-                [110, 50, 180, 0.9],
-                [190, 100, 230, 0.95],
-                [100, 100, 230, 1],
-                [70, 70, 190, 0.95],
-                [220, 150, 240, 0.85],
+                [160, 90, 220, 1],
+                [190, 110, 245, 0.95],
+                [130, 60, 200, 0.95],
+                [210, 120, 250, 1],
+                [120, 120, 240, 1],
+                [90, 90, 210, 0.95],
+                [235, 170, 255, 0.9],
             ],
             backgroundColor: 'rgba(0, 0, 0, 0)',
             spawnIndigoColor: [75, 0, 130],
@@ -532,8 +555,11 @@ export const loadingOverlayManager = {
                 let tempZ_rotX = y * Math.sin(rotationX_anim) + z * Math.cos(rotationX_anim);
                 y = tempY_rotX;
                 z = tempZ_rotX;
+                const exitScale = getExitScale_anim();
                 const dynamicSphereRadius =
-                    currentSphereRadius * (1 + breathPulse * config_anim.breathAmplitude);
+                    currentSphereRadius *
+                    (1 + breathPulse * config_anim.breathAmplitude) *
+                    exitScale;
                 const perspectiveFactor =
                     config_anim.focalLength /
                     (config_anim.focalLength - z * dynamicSphereRadius * 0.8);
@@ -561,8 +587,9 @@ export const loadingOverlayManager = {
                 const mainSize = this.currentDisplaySize;
 
                 const haloLayers = [
-                    { sizeFactor: 3.5, alphaFactor: 0.15, innerStop: 0.1, outerStop: 0.75 },
-                    { sizeFactor: 2.2, alphaFactor: 0.25, innerStop: 0.15, outerStop: 0.85 },
+                    { sizeFactor: 5, alphaFactor: 0.12, innerStop: 0.05, outerStop: 0.8 },
+                    { sizeFactor: 3.5, alphaFactor: 0.18, innerStop: 0.1, outerStop: 0.75 },
+                    { sizeFactor: 2.2, alphaFactor: 0.28, innerStop: 0.15, outerStop: 0.85 },
                 ];
                 for (const layer of haloLayers) {
                     const haloSize = mainSize * layer.sizeFactor;
@@ -630,7 +657,7 @@ export const loadingOverlayManager = {
             ctx.scale(dpr, dpr);
             centerX_anim = width_anim / 2;
             centerY_anim = height_anim / 2;
-            config_anim.sphereBaseRadius = Math.min(width_anim, height_anim) * 0.22;
+            config_anim.sphereBaseRadius = Math.min(width_anim, height_anim) * 0.1584;
         };
 
         function init_anim() {
@@ -642,9 +669,14 @@ export const loadingOverlayManager = {
         }
 
         function animate_anim(timestamp) {
+            timestamp = timestamp || performance.now();
+            const delta =
+                lastFrameTime_anim != null ? Math.min(timestamp - lastFrameTime_anim, 50) : 16;
+            lastFrameTime_anim = timestamp;
             globalTime_anim++;
-            rotationX_anim += 0.0003;
-            rotationY_anim += 0.002;
+            const d = delta * ROTATION_DELTA_NORM;
+            rotationX_anim += config_anim.rotationSpeedX * d;
+            rotationY_anim += config_anim.rotationSpeedY * d;
 
             ctx.fillStyle = config_anim.backgroundColor;
             ctx.clearRect(0, 0, width_anim, height_anim);
@@ -704,4 +736,3 @@ export const loadingOverlayManager = {
         };
     },
 };
-

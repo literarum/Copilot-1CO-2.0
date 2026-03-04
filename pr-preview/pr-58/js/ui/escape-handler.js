@@ -1,8 +1,11 @@
 'use strict';
 
+import { deactivateModalFocus } from './modals-manager.js';
+
 let deps = {
     getVisibleModals: null,
     getTopmostModal: null,
+    requestCloseModal: null,
 };
 
 export function setEscapeHandlerDependencies(dependencies) {
@@ -17,8 +20,17 @@ export function addEscapeHandler(modalElement) {
             const visibleModals = deps.getVisibleModals?.() ?? [];
             const topmost = deps.getTopmostModal?.(visibleModals);
             if (topmost && topmost.id === modalElement.id) {
-                modalElement.classList.add('hidden');
-                removeEscapeHandler(modalElement);
+                if (typeof deps.requestCloseModal === 'function') {
+                    if (deps.requestCloseModal(modalElement) !== false) {
+                        modalElement.classList.add('hidden');
+                        removeEscapeHandler(modalElement);
+                        deactivateModalFocus(modalElement);
+                    }
+                } else {
+                    modalElement.classList.add('hidden');
+                    removeEscapeHandler(modalElement);
+                    deactivateModalFocus(modalElement);
+                }
                 event.stopPropagation();
             }
         }

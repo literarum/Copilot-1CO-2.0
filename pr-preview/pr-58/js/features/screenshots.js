@@ -249,19 +249,19 @@ export async function showScreenshotViewerModal(screenshots, algorithmId, algori
         };
         if (currentView === 'grid') {
             renderScreenshotThumbnails(
-                    modalState.contentArea,
-                    sortedScreenshots,
-                    openLightboxHandler,
-                    modalState,
-                );
+                modalState.contentArea,
+                sortedScreenshots,
+                openLightboxHandler,
+                modalState,
+            );
         } else {
             renderScreenshotList(
-                    modalState.contentArea,
-                    sortedScreenshots,
-                    openLightboxHandler,
-                    null,
-                    modalState,
-                );
+                modalState.contentArea,
+                sortedScreenshots,
+                openLightboxHandler,
+                null,
+                modalState,
+            );
         }
     };
 
@@ -294,7 +294,12 @@ export async function showScreenshotViewerModal(screenshots, algorithmId, algori
     renderContent();
 }
 
-export function renderScreenshotThumbnails(container, screenshots, onOpenLightbox, modalState = null) {
+export function renderScreenshotThumbnails(
+    container,
+    screenshots,
+    onOpenLightbox,
+    _modalState = null,
+) {
     if (!container) {
         console.error('[renderScreenshotThumbnails] Контейнер не предоставлен.');
         return [];
@@ -466,7 +471,7 @@ export function renderScreenshotList(
     screenshots,
     onOpenLightbox,
     onItemClick = null,
-    modalState = null,
+    _modalState = null,
 ) {
     if (!container) {
         console.error('[renderScreenshotList] Контейнер не предоставлен.');
@@ -607,7 +612,7 @@ export function renderScreenshotList(
 
     container.appendChild(fragment);
     console.log(
-        `[renderScreenshotList] Рендеринг списка завершен. Добавлено: ${renderedCount} элементов.`
+        `[renderScreenshotList] Рендеринг списка завершен. Добавлено: ${renderedCount} элементов.`,
     );
 }
 
@@ -624,7 +629,7 @@ export async function handleViewScreenshotClick(event) {
     const stepIndexStr = button.dataset.stepIndex;
 
     console.log(
-        `[handleViewScreenshotClick v2] Нажата кнопка просмотра. Algorithm ID: ${algorithmId}, Step Index: ${stepIndexStr}`
+        `[handleViewScreenshotClick v2] Нажата кнопка просмотра. Algorithm ID: ${algorithmId}, Step Index: ${stepIndexStr}`,
     );
 
     if (!algorithmId || algorithmId === 'unknown') {
@@ -645,22 +650,22 @@ export async function handleViewScreenshotClick(event) {
 
     try {
         console.log(
-            `[handleViewScreenshotClick v2] Запрос скриншотов из индекса 'parentId' со значением: ${algorithmId}`
+            `[handleViewScreenshotClick v2] Запрос скриншотов из индекса 'parentId' со значением: ${algorithmId}`,
         );
         const allParentScreenshots = await getAllFromIndex('screenshots', 'parentId', algorithmId);
         const algorithmScreenshots = allParentScreenshots.filter(
-            (s) => s.parentType === 'algorithm'
+            (s) => s.parentType === 'algorithm',
         );
         console.log(
             `[handleViewScreenshotClick v2] Получено ${
                 algorithmScreenshots?.length ?? 0
-            } скриншотов для algorithmId=${algorithmId}.`
+            } скриншотов для algorithmId=${algorithmId}.`,
         );
 
         if (!Array.isArray(algorithmScreenshots)) {
             console.error(
                 '[handleViewScreenshotClick v2] Ошибка: getAllFromIndex или фильтрация вернули не массив!',
-                algorithmScreenshots
+                algorithmScreenshots,
             );
             throw new Error('Не удалось получить список скриншотов');
         }
@@ -672,7 +677,7 @@ export async function handleViewScreenshotClick(event) {
             screenshotsToShow = algorithmScreenshots.filter((s) => s.stepIndex === stepIndex);
             stepTitleSuffix = ` (Шаг ${stepIndex + 1})`;
             console.log(
-                `[handleViewScreenshotClick v2] Отфильтровано ${screenshotsToShow.length} скриншотов для шага ${stepIndex}.`
+                `[handleViewScreenshotClick v2] Отфильтровано ${screenshotsToShow.length} скриншотов для шага ${stepIndex}.`,
             );
             if (screenshotsToShow.length === 0) {
                 deps.showNotification?.('Для этого шага нет скриншотов.', 'info');
@@ -681,7 +686,7 @@ export async function handleViewScreenshotClick(event) {
         } else {
             screenshotsToShow = algorithmScreenshots;
             console.log(
-                `[handleViewScreenshotClick v2] Индекс шага не указан, показываем все ${screenshotsToShow.length} скриншотов для алгоритма ${algorithmId}.`
+                `[handleViewScreenshotClick v2] Индекс шага не указан, показываем все ${screenshotsToShow.length} скриншотов для алгоритма ${algorithmId}.`,
             );
             if (screenshotsToShow.length === 0) {
                 deps.showNotification?.('Для этого алгоритма нет скриншотов.', 'info');
@@ -699,7 +704,7 @@ export async function handleViewScreenshotClick(event) {
                 for (const section of sections) {
                     if (deps.algorithms && Array.isArray(deps.algorithms[section])) {
                         const foundAlgo = deps.algorithms[section].find(
-                            (a) => String(a?.id) === String(algorithmId)
+                            (a) => String(a?.id) === String(algorithmId),
                         );
                         if (foundAlgo) {
                             algorithmTitle = foundAlgo.title || algorithmId;
@@ -710,30 +715,30 @@ export async function handleViewScreenshotClick(event) {
                 }
                 if (!found) {
                     console.warn(
-                        `[handleViewScreenshotClick v2] Алгоритм с ID ${algorithmId} не найден ни в одной секции для получения заголовка.`
+                        `[handleViewScreenshotClick v2] Алгоритм с ID ${algorithmId} не найден ни в одной секции для получения заголовка.`,
                     );
                 }
             }
         } catch (titleError) {
             console.warn(
                 '[handleViewScreenshotClick v2] Не удалось получить название алгоритма:',
-                titleError
+                titleError,
             );
         }
 
         const finalModalTitle = `${algorithmTitle}${stepTitleSuffix}`;
         console.log(
-            `[handleViewScreenshotClick v2] Вызов showScreenshotViewerModal с ${screenshotsToShow.length} скриншотами. Title: "${finalModalTitle}"`
+            `[handleViewScreenshotClick v2] Вызов showScreenshotViewerModal с ${screenshotsToShow.length} скриншотами. Title: "${finalModalTitle}"`,
         );
         await showScreenshotViewerModal(screenshotsToShow, algorithmId, finalModalTitle);
     } catch (error) {
         console.error(
             `[handleViewScreenshotClick v2] Ошибка при загрузке или отображении скриншотов для алгоритма ID ${algorithmId}:`,
-            error
+            error,
         );
         deps.showNotification?.(
             `Ошибка загрузки скриншотов: ${error.message || 'Неизвестная ошибка'}`,
-            'error'
+            'error',
         );
     } finally {
         button.disabled = false;
@@ -978,7 +983,11 @@ export function renderTemporaryThumbnail(blob, tempIndex, container, stepEl) {
  * @param {Function} addCallback - Функция для добавления обработанного Blob
  * @param {HTMLElement|null} buttonElement - Элемент кнопки для блокировки во время обработки
  */
-export async function handleImageFileForStepProcessing(fileOrBlob, addCallback, buttonElement = null) {
+export async function handleImageFileForStepProcessing(
+    fileOrBlob,
+    addCallback,
+    buttonElement = null,
+) {
     if (!(fileOrBlob instanceof Blob)) {
         console.error(
             'handleImageFileForStepProcessing: Предоставленные данные не являются файлом или Blob.',
@@ -990,7 +999,10 @@ export async function handleImageFileForStepProcessing(fileOrBlob, addCallback, 
         console.error(
             'handleImageFileForStepProcessing: Не передан или не является функцией обязательный addCallback.',
         );
-        deps.showNotification?.('Внутренняя ошибка: Не задан обработчик добавления файла.', 'error');
+        deps.showNotification?.(
+            'Внутренняя ошибка: Не задан обработчик добавления файла.',
+            'error',
+        );
         return;
     }
     if (!fileOrBlob.type.startsWith('image/')) {
@@ -1175,11 +1187,11 @@ export async function processImageFile(fileOrBlob) {
                     0.8,
                 );
             };
-            img.onerror = (err) =>
+            img.onerror = (_err) =>
                 reject(new Error('Не удалось загрузить данные изображения в Image объект.'));
             img.src = e_reader.target.result;
         };
-        reader.onerror = (err) => reject(new Error('Не удалось прочитать файл изображения.'));
+        reader.onerror = (_err) => reject(new Error('Не удалось прочитать файл изображения.'));
         reader.readAsDataURL(fileOrBlob);
     });
 }
@@ -1434,4 +1446,3 @@ export async function renderExistingThumbnail(screenshotId, container, parentEle
     thumbDiv.appendChild(deleteBtn);
     container.appendChild(thumbDiv);
 }
-

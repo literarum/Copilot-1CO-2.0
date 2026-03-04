@@ -40,24 +40,6 @@ import * as Helpers from './utils/helpers.js';
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (будут инициализированы позже)
 // ============================================================================
 
-// Эти переменные будут определены в оригинальном script.js
-// и подключены через window объект для совместимости
-let algorithms = null;
-let isFavorite = null;
-let getFavoriteButtonHTML = null;
-let showAlgorithmDetail = null;
-let copyToClipboard = null;
-let applyCurrentView = null;
-let showNotification = null;
-let debounce = null;
-let setupClearButton = null;
-let showAddBookmarkModal = null;
-let showBookmarkDetail = null;
-let showOrganizeFoldersModal = null;
-let filterBookmarks = null;
-let populateBookmarkFolders = null;
-let loadingOverlayManager = null;
-
 // ============================================================================
 // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
 // ============================================================================
@@ -204,4 +186,6 @@ window.CopilotApp = {
 //     initApp();
 // }
 
-console.log('[App] Модуль приложения загружен. Используйте window.CopilotApp.init() для инициализации.');
+console.log(
+    '[App] Модуль приложения загружен. Используйте window.CopilotApp.init() для инициализации.',
+);

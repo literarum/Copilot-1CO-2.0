@@ -17,7 +17,8 @@ let deps = {
  */
 export function setEmployeeExtensionDependencies(dependencies) {
     if (dependencies.showNotification) deps.showNotification = dependencies.showNotification;
-    if (dependencies.saveUserPreferences) deps.saveUserPreferences = dependencies.saveUserPreferences;
+    if (dependencies.saveUserPreferences)
+        deps.saveUserPreferences = dependencies.saveUserPreferences;
     console.log('[employee-extension.js] Зависимости установлены');
 }
 

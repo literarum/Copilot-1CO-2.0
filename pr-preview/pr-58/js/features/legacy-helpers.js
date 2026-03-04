@@ -55,7 +55,10 @@ export async function loadCategoryInfo(categoryDisplayInfo) {
 export async function saveCategoryInfo(categoryDisplayInfo, onUpdated) {
     if (!State.db) {
         console.error('Cannot save category info: DB not ready.');
-        deps.showNotification?.('Ошибка сохранения настроек категорий: База данных недоступна', 'error');
+        deps.showNotification?.(
+            'Ошибка сохранения настроек категорий: База данных недоступна',
+            'error',
+        );
         return false;
     }
     try {

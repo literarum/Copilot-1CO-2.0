@@ -15,12 +15,13 @@ export function setAlgorithmsPdfExportDependencies(deps) {
 
 function formatMultiline(text) {
     if (!text) return '';
-    const escaped = escapeHtml(String(text));
+    const plainText = String(text).replace(/<[^>]*>/g, ' ');
+    const escaped = escapeHtml(plainText);
     return escaped.replace(/\n/g, '<br>');
 }
 
-function buildAlgorithmSectionExport(sectionId) {
-    const sectionAlgorithms = algorithms?.[sectionId];
+function buildAlgorithmSectionExport(sectionKey) {
+    const sectionAlgorithms = algorithms?.[sectionKey];
     if (!Array.isArray(sectionAlgorithms) || sectionAlgorithms.length === 0) {
         return null;
     }
@@ -30,20 +31,20 @@ function buildAlgorithmSectionExport(sectionId) {
 
     const title = document.createElement('h1');
     title.className = 'text-2xl font-bold';
-    title.textContent = `Алгоритмы: ${getSectionName(sectionId)}`;
+    title.textContent = `Алгоритмы: ${getSectionName(sectionKey)}`;
     wrapper.appendChild(title);
 
     sectionAlgorithms.forEach((algorithm, index) => {
         if (!algorithm) return;
         const card = document.createElement('div');
-        card.className =
-            'algorithm-step bg-white border border-gray-200 rounded-lg p-4 space-y-3';
+        card.className = 'algorithm-step bg-white border border-gray-200 rounded-lg p-4 space-y-3';
 
         const heading = document.createElement('div');
         heading.className = 'flex items-center gap-2';
-        heading.innerHTML = `<h2 class="text-lg font-semibold">${escapeHtml(
-            algorithm.title || `Алгоритм ${index + 1}`,
-        )}</h2>`;
+        const headingTitle = document.createElement('h2');
+        headingTitle.className = 'text-lg font-semibold';
+        headingTitle.textContent = algorithm.title || `Алгоритм ${index + 1}`;
+        heading.appendChild(headingTitle);
         card.appendChild(heading);
 
         const description =
@@ -64,8 +65,7 @@ function buildAlgorithmSectionExport(sectionId) {
             algorithm.steps.forEach((step, stepIndex) => {
                 if (!step) return;
                 const item = document.createElement('li');
-                item.className =
-                    'border-l-4 border-primary/60 pl-3 py-2 bg-gray-50 rounded-md';
+                item.className = 'border-l-4 border-primary/60 pl-3 py-2 bg-gray-50 rounded-md';
 
                 const stepTitle = escapeHtml(step.title || `Шаг ${stepIndex + 1}`);
                 const descriptionText =
@@ -86,11 +86,10 @@ function buildAlgorithmSectionExport(sectionId) {
                     )}</div>`;
                 }
                 if (exampleText) {
-                    html += `<div class="text-gray-500 mt-2">${formatMultiline(
-                        exampleText,
-                    )}</div>`;
+                    html += `<div class="text-gray-500 mt-2">${formatMultiline(exampleText)}</div>`;
                 }
-                item.innerHTML = linkify(html);
+                // Здесь уже готовая безопасная HTML-разметка; повторный linkify на whole HTML давал артефакты в PDF.
+                item.innerHTML = html;
                 list.appendChild(item);
             });
             card.appendChild(list);
@@ -109,8 +108,13 @@ export function initAlgorithmsPdfExportSystem() {
     }
 
     buttons.forEach((button) => {
-        const sectionId = button.dataset.algorithmExport;
-        if (!sectionId) return;
+        const sectionDomId = button.dataset.algorithmExport;
+        if (!sectionDomId) return;
+
+        // data-algorithm-export хранит ID контейнера (например, "programAlgorithms"),
+        // а данные алгоритмов лежат в объекте algorithms по ключу секции ("program").
+        // Приводим DOM-ID к ключу секции, убирая суффикс "Algorithms".
+        const sectionKey = sectionDomId.replace(/Algorithms$/, '') || sectionDomId;
         if (button._pdfExportHandler) {
             button.removeEventListener('click', button._pdfExportHandler);
         }
@@ -119,15 +123,15 @@ export function initAlgorithmsPdfExportSystem() {
                 showNotification?.('Сервис экспорта PDF недоступен.', 'error');
                 return;
             }
-            const content = buildAlgorithmSectionExport(sectionId);
+            const content = buildAlgorithmSectionExport(sectionKey);
             if (!content) {
                 showNotification?.('В разделе нет алгоритмов для экспорта.', 'warning');
                 return;
             }
-            const filename = `Алгоритмы_${getSectionName(sectionId)}`;
+            const filename = `Алгоритмы_${getSectionName(sectionKey)}`;
             ExportService.exportElementToPdf(content, filename, {
                 type: 'algorithm-section',
-                section: sectionId,
+                section: sectionKey,
             });
         };
         button.addEventListener('click', button._pdfExportHandler);
