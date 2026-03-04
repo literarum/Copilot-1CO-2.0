@@ -1,0 +1,1 @@
+{"sessionId":"c8ca62","location":"revocation-helper-probe.js:triggerDownload","message":"Download response headers","data":{"platform":"macos","url":"https://site-ten-alpha-62.vercel.app/downloads/CRL-Helper-macos","status":200,"contentType":"application/octet-stream","contentDisposition":"attachment; filename=\"CRL-Helper-macos\"","hypothesisId":"A"},"timestamp":1772290024527}

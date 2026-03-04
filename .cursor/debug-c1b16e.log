@@ -1,0 +1,2 @@
+{"sessionId":"c1b16e","location":"fns-cert-revocation.js:523","message":"checkRevocationHybrid args","data":{"helperEnabled":false,"helperBaseUrlRaw":"","helperBaseUrlToSend":"","crlCount":6},"timestamp":1772277504349,"hypothesisId":"A"}
+{"sessionId":"c1b16e","location":"fns-cert-revocation.js:523","message":"checkRevocationHybrid args","data":{"helperEnabled":false,"helperBaseUrlRaw":"http://localhost:7777","helperBaseUrlToSend":"","crlCount":6},"timestamp":1772287688240,"hypothesisId":"A"}

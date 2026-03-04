@@ -1,0 +1,27 @@
+{
+    "name": "copilot-1co",
+    "private": true,
+    "devDependencies": {
+        "eslint": "^9.0.0",
+        "prettier": "^3.0.0",
+        "tailwindcss": "^3.4.0",
+        "vitest": "^2.0.0"
+    },
+    "scripts": {
+        "build:css": "npx tailwindcss -i site/css/tailwind-input.css -o site/css/tailwind.generated.css -c site/tailwind.config.js",
+        "build": "node scripts/normalize-install-scripts.js && npm run build:css && bash scripts/build-helper-linux.sh",
+        "lint": "eslint \"site/js/**/*.js\" \"api/**/*.js\" \"yandex-function/**/*.js\"",
+        "format": "prettier --write \"**/*.{js,css,md,json}\"",
+        "format:check": "prettier --check \"**/*.{js,css,md,json}\"",
+        "test": "vitest",
+        "verify": "bash scripts/verify.sh",
+        "verify:quick": "bash scripts/verify.sh --quick",
+        "helper:crl": "node helper/crl-helper.js",
+        "build:helper:mac": "bash scripts/build-helper-mac.sh",
+        "build:helper:windows": "powershell -ExecutionPolicy Bypass -File scripts/build-helper-windows.ps1",
+        "deploy": "echo \"Use Yandex Cloud deployment guide in README.md\"",
+        "deploy:yandex:function:test": "npx vitest run api/revocation/yandex-handler.test.js",
+        "deploy:prod": "echo \"Use Yandex Cloud deployment guide in README.md\"",
+        "deploy:prod:windows": "echo \"Use Yandex Cloud deployment guide in README.md\""
+    }
+}
