@@ -4,9 +4,8 @@
 // API ПРОВЕРКИ ОТЗЫВА СЕРТИФИКАТОВ (Yandex Cloud Functions / любой внешний backend)
 // ============================================================================
 // Пустая строка = тот же origin (если API проксируется через тот же домен).
-// Для Yandex Cloud Functions укажите invoke URL функции, например:
-// https://functions.yandexcloud.net/<FUNCTION_ID>
-export const REVOCATION_API_BASE_URL = '';
+// Для Yandex Cloud Functions укажите invoke URL функции (без завершающего слэша).
+export const REVOCATION_API_BASE_URL = 'https://functions.yandexcloud.net/d4ek2is78822funrr85b';
 
 // ============================================================================
 // КОНФИГУРАЦИЯ ВКЛАДОК

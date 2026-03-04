@@ -91,6 +91,33 @@ export function migrateLegacyThemeVars() {
 }
 
 /**
+ * Применяет класс темы к документу (dark/light, --color-background, body theme-*-text).
+ * Используется для синхронизации с системной темой.
+ */
+export function applyThemeClass(isDark) {
+    const root = document.documentElement;
+    root.classList.toggle('dark', !!isDark);
+    root.dataset.theme = isDark ? 'dark' : 'light';
+    const style = root.style;
+    style.setProperty(
+        '--color-background',
+        `var(--override-background-${isDark ? 'dark' : 'light'}, var(--override-background-base))`,
+    );
+    const body = document.body;
+    if (body.classList.contains('custom-bg-image-active')) {
+        body.classList.toggle('theme-dark-text', !!isDark);
+        body.classList.toggle('theme-light-text', !isDark);
+    }
+}
+
+/**
+ * Обработчик изменения системной темы (prefers-color-scheme).
+ */
+export function onSystemThemeChange(e) {
+    applyThemeClass(e.matches);
+}
+
+/**
  * Применение переопределений цветов темы
  * @param {Object} map - объект с переопределениями цветов
  */

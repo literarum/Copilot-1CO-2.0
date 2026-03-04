@@ -18,8 +18,8 @@ export const REVOCATION_NETWORK_POLICY = 'backend_first';
 export const REVOCATION_LOCAL_HELPER_ENABLED = false;
 export const REVOCATION_LOCAL_HELPER_BASE_URL = 'http://localhost:7777';
 
-/** true = браузер сначала загружает CRL через локальный helper (основной сценарий для РФ). */
-export const REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER = true;
+/** true = браузер загружает CRL через локальный helper (localhost:7777). false = только облачный API (Yandex и т.п.) загружает CRL. */
+export const REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER = false;
 
 /** URL to desktop app download page or direct binary; used when local helper is not responding. */
 export const REVOCATION_DESKTOP_APP_DOWNLOAD_URL = '/downloads/';

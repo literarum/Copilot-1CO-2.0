@@ -123,7 +123,7 @@ import {
     loadInitialFavoritesCache,
 } from './js/db/favorites.js';
 
-import { NotificationService } from './js/services/notification.js';
+import { NotificationService, showNotification } from './js/services/notification.js';
 
 import { ExportService, setLoadingOverlayManager } from './js/services/export.js';
 
@@ -158,6 +158,8 @@ import {
     setTheme as setThemeModule,
     migrateLegacyThemeVars as migrateLegacyThemeVarsModule,
     applyThemeOverrides as applyThemeOverridesModule,
+    applyThemeClass,
+    onSystemThemeChange,
 } from './js/components/theme.js';
 
 // Timer System
@@ -294,6 +296,7 @@ import {
     expandQueryWithSynonyms,
     searchWithRegex,
     debug_checkIndex,
+    ensureSearchIndexIsBuilt,
 } from './js/features/search.js';
 
 // Algorithm Components
@@ -355,6 +358,8 @@ import {
     showAddReglamentModal as showAddReglamentModalModule,
     editReglament as editReglamentModule,
     initReglamentsSystem as initReglamentsSystemModule,
+    loadCategoryInfo,
+    saveCategoryInfo,
 } from './js/components/reglaments.js';
 
 // Bookmark Components
@@ -583,6 +588,12 @@ import {
 } from './js/features/client-data.js';
 
 import {
+    initClientDataSystem,
+    ensureInnPreviewStyles,
+    setClientDataInitDependencies,
+} from './js/features/client-data-init.js';
+
+import {
     setClientNotesWindowDependencies,
     openClientNotesWindow as openClientNotesWindowModule,
     highlightClientNotesWindow as highlightClientNotesWindowModule,
@@ -684,6 +695,8 @@ import {
     setUISettingsDependencies,
     applyUISettings as applyUISettingsModule,
     applyInitialUISettings as applyInitialUISettingsModule,
+    loadUISettings,
+    saveUISettings,
 } from './js/ui/ui-settings.js';
 
 // Preview Settings (extracted from script.js)
@@ -745,14 +758,7 @@ if (showFavoritesHeaderButton && !showFavoritesHeaderButton.dataset.listenerAtta
 
 // FIELD_WEIGHTS и DEFAULT_WELCOME_CLIENT_NOTES_TEXT теперь импортируются из constants.js
 
-// ensureNotificationIconlessStyles теперь в NotificationService (services/notification.js)
-// Оставляем функцию для совместимости
-function ensureNotificationIconlessStyles() {
-    // Функция теперь в NotificationService, но оставляем заглушку для совместимости
-    // Импортированный NotificationService уже содержит эту логику
-}
-
-// NotificationService теперь импортируется из services/notification.js
+// NotificationService и showNotification импортируются из services/notification.js
 // Дубликат кода NotificationService был удален (было ~440 строк дублирующего кода)
 // Весь функционал доступен через импортированный модуль из services/notification.js
 
@@ -1381,28 +1387,7 @@ async function saveUserPreferences() {
 }
 
 // initDB теперь импортируется из db/indexeddb.js
-// Локальная функция удалена - используем импортированную версию
-
-async function ensureSearchIndexIsBuilt() {
-    console.log('Вызов ensureSearchIndexIsBuilt для проверки и построения поискового индекса.');
-    if (!State.db) {
-        console.warn(
-            'ensureSearchIndexIsBuilt: База данных не инициализирована. Проверка индекса невозможна.',
-        );
-        return;
-    }
-    try {
-        await checkAndBuildIndex();
-        console.log(
-            'ensureSearchIndexIsBuilt: Проверка и построение индекса завершены (или не требовались).',
-        );
-    } catch (error) {
-        console.error(
-            'ensureSearchIndexIsBuilt: Ошибка во время проверки/построения поискового индекса:',
-            error,
-        );
-    }
-}
+// ensureSearchIndexIsBuilt импортируется из js/features/search.js
 
 async function rebuildSearchIndexNow() {
     if (!State.db) {
@@ -1424,41 +1409,7 @@ async function rebuildSearchIndexNow() {
     }
 }
 
-async function loadCategoryInfo() {
-    if (!State.db) {
-        console.warn('DB not ready, using default categories.');
-        return;
-    }
-    try {
-        const savedInfo = await getFromIndexedDB('preferences', CATEGORY_INFO_KEY);
-        if (savedInfo && typeof savedInfo.data === 'object') {
-            categoryDisplayInfo = { ...categoryDisplayInfo, ...savedInfo.data };
-        }
-    } catch (error) {
-        console.error('Error loading reglament category info:', error);
-    }
-}
-
-async function saveCategoryInfo() {
-    if (!State.db) {
-        console.error('Cannot save category info: DB not ready.');
-        showNotification('Ошибка сохранения настроек категорий: База данных недоступна', 'error');
-        return false;
-    }
-    try {
-        await saveToIndexedDB('preferences', { id: CATEGORY_INFO_KEY, data: categoryDisplayInfo });
-        populateReglamentCategoryDropdowns();
-        console.log('Reglament category info saved successfully.');
-
-        showNotification('Настройки категорий регламентов сохранены.', 'success');
-
-        return true;
-    } catch (error) {
-        console.error('Error saving reglament category info:', error);
-        showNotification('Ошибка сохранения настроек категорий', 'error');
-        return false;
-    }
-}
+// loadCategoryInfo и saveCategoryInfo импортируются из js/components/reglaments.js
 
 // Wrapper для модуля reglaments.js
 // Reglaments operations functions теперь импортируются из js/components/reglaments.js
@@ -1502,102 +1453,7 @@ async function saveDataToIndexedDB() {
 
 // tabsConfig, allPanelIdsForDefault, defaultPanelOrder теперь импортируются из config.js
 
-async function loadUISettings() {
-    console.log('loadUISettings V2 (Unified): Загрузка настроек для модального окна...');
-
-    if (
-        typeof State.userPreferences !== 'object' ||
-        Object.keys(State.userPreferences).length === 0
-    ) {
-        console.error(
-            'loadUISettings: Глобальные настройки (State.userPreferences) не загружены. Попытка аварийной загрузки.',
-        );
-        await loadUserPreferences();
-    }
-
-    State.originalUISettings = JSON.parse(JSON.stringify(State.userPreferences));
-    State.currentPreviewSettings = JSON.parse(JSON.stringify(State.userPreferences));
-
-    if (typeof applyPreviewSettings === 'function') {
-        await applyPreviewSettings(State.currentPreviewSettings);
-    } else {
-        console.warn(
-            '[loadUISettings] Функция applyPreviewSettings не найдена. Предпросмотр не будет применен.',
-        );
-    }
-
-    console.log(
-        'loadUISettings: Настройки для модального окна подготовлены:',
-        State.currentPreviewSettings,
-    );
-    return State.currentPreviewSettings;
-}
-
-async function saveUISettings() {
-    console.log('Saving UI settings (Unified Logic V3 - Fixed Checkboxes)...');
-
-    const newSettings = getSettingsFromModal();
-    if (!newSettings) {
-        showNotification('Ошибка: Не удалось получить настройки из модального окна.', 'error');
-        return false;
-    }
-
-    State.userPreferences = { ...State.userPreferences, ...newSettings };
-
-    try {
-        if (typeof saveUserPreferences === 'function') {
-            await saveUserPreferences();
-            console.log('Единые настройки пользователя сохранены через saveUserPreferences().');
-        } else {
-            throw new Error('saveUserPreferences function not found.');
-        }
-
-        State.originalUISettings = JSON.parse(JSON.stringify(State.userPreferences));
-        State.currentPreviewSettings = JSON.parse(JSON.stringify(State.userPreferences));
-        State.isUISettingsDirty = false;
-
-        if (typeof applyPreviewSettings === 'function') {
-            await applyPreviewSettings(State.userPreferences);
-            console.log('UI settings applied immediately after saving.');
-        } else {
-            throw new Error(
-                'applyPreviewSettings function not found! UI might not update after save.',
-            );
-        }
-
-        const fallbackOrder =
-            Array.isArray(defaultPanelOrder) && defaultPanelOrder.length
-                ? [...defaultPanelOrder]
-                : Array.isArray(tabsConfig)
-                  ? tabsConfig.map((t) => t.id)
-                  : [];
-        const order =
-            Array.isArray(State.userPreferences?.panelOrder) &&
-            State.userPreferences.panelOrder.length
-                ? [...State.userPreferences.panelOrder]
-                : fallbackOrder;
-        const visibility =
-            Array.isArray(State.userPreferences?.panelVisibility) &&
-            State.userPreferences.panelVisibility.length === order.length
-                ? [...State.userPreferences.panelVisibility]
-                : order.map((id) => !(id === 'sedoTypes' || id === 'blacklistedClients'));
-        if (typeof applyPanelOrderAndVisibility === 'function') {
-            applyPanelOrderAndVisibility(order, visibility);
-        } else {
-            console.warn(
-                'applyPanelOrderAndVisibility not found; tabs order may not update immediately after save.',
-            );
-        }
-
-        showNotification('Настройки успешно сохранены.', 'success');
-        return true;
-    } catch (error) {
-        console.error('Error saving unified UI settings:', error);
-        showNotification(`Ошибка при сохранении настроек: ${error.message}`, 'error');
-        State.userPreferences = JSON.parse(JSON.stringify(State.originalUISettings));
-        return false;
-    }
-}
+// loadUISettings и saveUISettings импортируются из js/ui/ui-settings.js
 
 // ============================================================================
 // SEDO SYSTEM - MIGRATED to js/features/sedo.js
@@ -1662,214 +1518,6 @@ async function _processActualImport(jsonString) {
 // Wrapper для модуля Import/Export
 async function performForcedBackup() {
     return performForcedBackupModule();
-}
-
-function showNotification(message, type = 'success', duration = 5000) {
-    ensureNotificationIconlessStyles();
-    console.log(
-        `[SHOW_NOTIFICATION_CALL_V5.2_INLINE_STYLE] Message: "${message}", Type: "${type}", Duration: ${duration}, Timestamp: ${new Date().toISOString()}`,
-    );
-    let callStackInfo = 'N/A';
-    try {
-        const err = new Error();
-        if (err.stack) {
-            const stackLines = err.stack.split('\n');
-            callStackInfo = stackLines
-                .slice(2, 5)
-                .map((line) => line.trim())
-                .join(' -> ');
-        }
-    } catch (e) {}
-    console.log(`[SHOW_NOTIFICATION_CALL_STACK_V5.2_INLINE_STYLE] Called from: ${callStackInfo}`);
-
-    if (!message || typeof message !== 'string' || message.trim() === '') {
-        console.warn(
-            '[ShowNotification_V5.2_INLINE_STYLE] Вызван с пустым или невалидным сообщением. Уведомление не будет показано.',
-            { messageContent: message, type, duration },
-        );
-        return;
-    }
-
-    const FADE_DURATION_MS = 300;
-    const NOTIFICATION_ID = 'notification';
-
-    let notificationElement = document.getElementById(NOTIFICATION_ID);
-    let isNewNotification = !notificationElement;
-
-    if (notificationElement) {
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Найдено существующее уведомление (ID: ${NOTIFICATION_ID}). Обновление...`,
-        );
-        cancelAnimationFrame(Number(notificationElement.dataset.animationFrameId || 0));
-        clearTimeout(Number(notificationElement.dataset.hideTimeoutId || 0));
-        clearTimeout(Number(notificationElement.dataset.removeTimeoutId || 0));
-        notificationElement.style.transform = 'translateX(0)';
-        notificationElement.style.opacity = '1';
-    } else {
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Существующее уведомление не найдено. Создание нового (ID: ${NOTIFICATION_ID}).`,
-        );
-        notificationElement = document.createElement('div');
-        notificationElement.id = NOTIFICATION_ID;
-        notificationElement.setAttribute('role', 'alert');
-        notificationElement.style.willChange = 'transform, opacity';
-        notificationElement.style.transform = 'translateX(100%)';
-        notificationElement.style.opacity = '0';
-    }
-
-    let bgColorClass = 'bg-green-500 dark:bg-green-600';
-    let iconClass = 'fa-check-circle';
-
-    switch (type) {
-        case 'error':
-            bgColorClass = 'bg-red-600 dark:bg-red-700';
-            iconClass = 'fa-times-circle';
-            break;
-        case 'warning':
-            bgColorClass = 'bg-yellow-500 dark:bg-yellow-600';
-            iconClass = 'fa-exclamation-triangle';
-            break;
-        case 'info':
-            bgColorClass = 'bg-blue-500 dark:bg-blue-600';
-            iconClass = 'fa-info-circle';
-            break;
-    }
-
-    const colorClassesToRemove = [
-        'bg-green-500',
-        'dark:bg-green-600',
-        'bg-red-600',
-        'dark:bg-red-700',
-        'bg-yellow-500',
-        'dark:bg-yellow-600',
-        'bg-blue-500',
-        'dark:bg-blue-600',
-    ];
-    notificationElement.classList.remove(...colorClassesToRemove);
-
-    notificationElement.className = `fixed p-4 rounded-lg shadow-xl text-white text-sm font-medium transform transition-all duration-${FADE_DURATION_MS} ease-out max-w-sm sm:max-w-md ${bgColorClass}`;
-
-    notificationElement.style.top = '20px';
-    notificationElement.style.right = '20px';
-    notificationElement.style.bottom = 'auto';
-    notificationElement.style.left = 'auto';
-
-    notificationElement.style.zIndex = '200000';
-
-    let closeButton = notificationElement.querySelector('.notification-close-btn');
-    let messageSpan = notificationElement.querySelector('.notification-message-span');
-    let iconElement = notificationElement.querySelector('.notification-icon-i');
-
-    if (!closeButton || !messageSpan || !iconElement) {
-        notificationElement.innerHTML = '';
-
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'flex items-center';
-
-        iconElement = document.createElement('i');
-        try {
-            iconElement.style.color = 'var(--color-primary)';
-        } catch (e) {}
-
-        messageSpan = document.createElement('span');
-        messageSpan.className = 'flex-1 notification-message-span';
-
-        iconContainer.appendChild(iconElement);
-        iconContainer.appendChild(messageSpan);
-
-        closeButton = document.createElement('button');
-        closeButton.setAttribute('type', 'button');
-        closeButton.setAttribute('aria-label', 'Закрыть уведомление');
-        closeButton.className =
-            'ml-4 p-1 text-current opacity-70 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-white rounded-full flex items-center justify-center w-6 h-6 leading-none notification-close-btn';
-        closeButton.innerHTML = '<i class="fas fa-times fa-sm"></i>';
-
-        const contentWrapper = document.createElement('div');
-        contentWrapper.className = 'flex items-center justify-between w-full';
-        contentWrapper.appendChild(iconContainer);
-        contentWrapper.appendChild(closeButton);
-
-        notificationElement.appendChild(contentWrapper);
-    }
-
-    messageSpan.textContent = message;
-
-    const closeAndRemove = () => {
-        if (!document.body.contains(notificationElement)) {
-            console.log(
-                `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Элемент (msg: "${messageSpan.textContent}") уже удален, выход.`,
-            );
-            return;
-        }
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Запуск закрытия для (msg: "${messageSpan.textContent}").`,
-        );
-
-        clearTimeout(Number(notificationElement.dataset.hideTimeoutId));
-        clearTimeout(Number(notificationElement.dataset.removeTimeoutId));
-
-        notificationElement.style.transform = 'translateX(100%)';
-        notificationElement.style.opacity = '0';
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Анимация скрытия для (msg: "${messageSpan.textContent}") запущена.`,
-        );
-
-        const currentRemoveId = setTimeout(() => {
-            if (document.body.contains(notificationElement)) {
-                notificationElement.remove();
-                console.log(
-                    `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Элемент (msg: "${messageSpan.textContent}") удален из DOM по таймеру.`,
-                );
-            }
-        }, FADE_DURATION_MS);
-        notificationElement.dataset.removeTimeoutId = currentRemoveId.toString();
-    };
-
-    if (closeButton._clickHandler) {
-        closeButton.removeEventListener('click', closeButton._clickHandler);
-    }
-    closeButton._clickHandler = (e) => {
-        e.stopPropagation();
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Клик по крестику для (msg: "${messageSpan.textContent}").`,
-        );
-        closeAndRemove();
-    };
-    closeButton.addEventListener('click', closeButton._clickHandler);
-
-    if (isNewNotification) {
-        document.body.appendChild(notificationElement);
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Новое уведомление (msg: "${message}") добавлено в DOM.`,
-        );
-    }
-
-    if (!isNewNotification) {
-        notificationElement.style.transform = 'translateX(100%)';
-        notificationElement.style.opacity = '0';
-    }
-
-    notificationElement.dataset.animationFrameId = requestAnimationFrame(() => {
-        if (document.body.contains(notificationElement)) {
-            notificationElement.style.transform = 'translateX(0)';
-            notificationElement.style.opacity = '1';
-            console.log(
-                `[ShowNotification_V5.2_INLINE_STYLE] Анимация появления/обновления для (msg: "${message}") запущена.`,
-            );
-        }
-    }).toString();
-
-    if (duration > 0) {
-        const hideTimeoutId = setTimeout(closeAndRemove, duration);
-        notificationElement.dataset.hideTimeoutId = hideTimeoutId.toString();
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Установлен hideTimeoutId: ${hideTimeoutId} на ${duration}ms для (msg: "${message}").`,
-        );
-    } else if (duration === 0) {
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Duration is 0 для (msg: "${message}"). Автоматическое закрытие НЕ будет установлено.`,
-        );
-    }
 }
 
 const DEFAULT_MAIN_ALGORITHM = JSON.parse(JSON.stringify(algorithms.main));
@@ -2309,25 +1957,7 @@ function createPanelItemElement(id, name, isVisible = true) {
 // ============================================================================
 // createPanelItemElement - imported from ui-settings-modal.js module
 
-let _themeMql = null;
-function _applyThemeClass(isDark) {
-    const root = document.documentElement;
-    root.classList.toggle('dark', !!isDark);
-    root.dataset.theme = isDark ? 'dark' : 'light';
-    const style = root.style;
-    style.setProperty(
-        '--color-background',
-        `var(--override-background-${isDark ? 'dark' : 'light'}, var(--override-background-base))`,
-    );
-    const body = document.body;
-    if (body.classList.contains('custom-bg-image-active')) {
-        body.classList.toggle('theme-dark-text', !!isDark);
-        body.classList.toggle('theme-light-text', !isDark);
-    }
-}
-function _onSystemThemeChange(e) {
-    _applyThemeClass(e.matches);
-}
+// applyThemeClass и onSystemThemeChange импортируются из js/components/theme.js
 
 // applyPreviewSettings теперь импортируется из js/ui/preview-settings.js
 async function applyPreviewSettings(settings) {
@@ -2390,6 +2020,11 @@ setUISettingsDependencies({
         typeof loadUserPreferencesModule !== 'undefined'
             ? loadUserPreferencesModule
             : loadUserPreferences,
+    saveUserPreferences:
+        typeof saveUserPreferencesModule !== 'undefined'
+            ? saveUserPreferencesModule
+            : saveUserPreferences,
+    getSettingsFromModal: getSettingsFromModalModule,
     applyPanelOrderAndVisibility: applyPanelOrderAndVisibilityModule,
     ensureTabPresent:
         typeof ensureTabPresentModule !== 'undefined' ? ensureTabPresentModule : ensureTabPresent,
@@ -3466,371 +3101,28 @@ function applyClientNotesFontSize() {
 // ============================================================================
 // applyClientNotesFontSize - imported from client-data.js module
 
-let __lastCopyLockTime = 0;
-
-/**
- * Не даёт обработчику срабатывать чаще, чем раз в minIntervalMs миллисекунд.
- * @param {number} minIntervalMs
- * @returns {boolean} true, если можно продолжать; false, если нужно пропустить.
- */
-function __acquireCopyLock(minIntervalMs = 250) {
-    const now = Date.now();
-    if (now - __lastCopyLockTime < minIntervalMs) {
-        return false;
-    }
-    __lastCopyLockTime = now;
-    return true;
-}
-
-async function initClientDataSystem() {
-    ensureInnPreviewStyles();
-    const LOG_PREFIX = '[ClientDataSystem]';
-    console.log(`${LOG_PREFIX} Запуск инициализации...`);
-
-    const clientNotes = document.getElementById('clientNotes');
-    if (!clientNotes) {
-        console.error(
-            `${LOG_PREFIX} КРИТИЧЕСКАЯ ОШИБКА: поле для заметок #clientNotes не найдено. Система не будет работать.`,
-        );
-        return;
-    }
-    console.log(`${LOG_PREFIX} Поле #clientNotes успешно найдено.`);
-
-    const clearClientDataBtn = document.getElementById('clearClientDataBtn');
-    if (!clearClientDataBtn) {
-        console.warn(`${LOG_PREFIX} Кнопка #clearClientDataBtn не найдена.`);
-    }
-
-    const openClientNotesWindowBtn = document.getElementById('openClientNotesWindowBtn');
-    if (openClientNotesWindowBtn && typeof openClientNotesWindowModule === 'function') {
-        openClientNotesWindowBtn.addEventListener('click', () => openClientNotesWindowModule());
-    }
-
-    const buttonContainer = clearClientDataBtn?.parentNode;
-    if (!buttonContainer) {
-        console.warn(
-            `${LOG_PREFIX} Родительский контейнер для кнопок управления данными клиента не найден.`,
-        );
-    }
-
-    if (State.clientNotesInputHandler) {
-        clientNotes.removeEventListener('input', State.clientNotesInputHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'input' удален.`);
-    }
-    if (State.clientNotesKeydownHandler) {
-        clientNotes.removeEventListener('keydown', State.clientNotesKeydownHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keydown' удален.`);
-    }
-
-    if (State.clientNotesCtrlClickHandler) {
-        clientNotes.removeEventListener('mousedown', State.clientNotesCtrlClickHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'click' (Ctrl+Click INN) удален.`);
-    }
-    if (State.clientNotesBlurHandler) {
-        clientNotes.removeEventListener('blur', State.clientNotesBlurHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'blur' (сброс курсора) удален.`);
-    }
-    if (State.clientNotesCtrlKeyDownHandler) {
-        document.removeEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keydown' (Ctrl cursor) удален.`);
-    }
-    if (State.clientNotesCtrlKeyUpHandler) {
-        document.removeEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keyup' (Ctrl cursor) удален.`);
-    }
-
-    if (window.__clientNotesInnPreviewInputHandler) {
-        clientNotes.removeEventListener('input', window.__clientNotesInnPreviewInputHandler);
-        window.__clientNotesInnPreviewInputHandler = null;
-        console.log(`${LOG_PREFIX} Старый обработчик 'input' (ИНН-превью) удален.`);
-    }
-    if (
-        window.__clientNotesInnPreview &&
-        typeof window.__clientNotesInnPreview.destroy === 'function'
-    ) {
-        window.__clientNotesInnPreview.destroy();
-        window.__clientNotesInnPreview = null;
-        console.log(`${LOG_PREFIX} Старое ИНН-превью уничтожено.`);
-    }
-
-    State.clientNotesInputHandler = debounce(async () => {
-        try {
-            console.log(`${LOG_PREFIX} Debounce-таймер сработал. Выполняем действия...`);
-            const currentText = clientNotes.value;
-
-            console.log(`${LOG_PREFIX}   -> Вызов await saveClientData()`);
-            await saveClientData();
-
-            console.log(`${LOG_PREFIX}   -> Вызов await checkForBlacklistedInn()`);
-            await checkForBlacklistedInn(currentText);
-        } catch (error) {
-            console.error(`${LOG_PREFIX} Ошибка внутри debounced-обработчика:`, error);
-        }
-    }, 750);
-
-    clientNotes.addEventListener('input', State.clientNotesInputHandler);
-    console.log(`${LOG_PREFIX} Новый обработчик 'input' с debounce и await успешно привязан.`);
-
-    State.clientNotesKeydownHandler = (event) => {
-        if (event.key === 'Enter' && event.ctrlKey) {
-            event.preventDefault();
-            const textarea = event.target;
-            const value = textarea.value;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const textBeforeCursor = value.substring(0, start);
-            const regex = /(?:^|\n)\s*(\d+)([).])\s/g;
-            let lastNum = 0;
-            let delimiter = ')';
-            let match;
-            while ((match = regex.exec(textBeforeCursor)) !== null) {
-                const currentNum = parseInt(match[1], 10);
-                if (currentNum >= lastNum) {
-                    lastNum = currentNum;
-                    delimiter = match[2];
-                }
-            }
-            const nextNum = lastNum + 1;
-            let prefix = '\n\n';
-            if (start === 0) {
-                prefix = '';
-            } else {
-                const charBefore = value.substring(start - 1, start);
-                if (charBefore === '\n') {
-                    if (start >= 2 && value.substring(start - 2, start) === '\n\n') {
-                        prefix = '';
-                    } else {
-                        prefix = '\n';
-                    }
-                }
-            }
-            const insertionText = prefix + nextNum + delimiter + ' ';
-            textarea.value = value.substring(0, start) + insertionText + value.substring(end);
-            textarea.selectionStart = textarea.selectionEnd = start + insertionText.length;
-            textarea.scrollTop = textarea.scrollHeight;
-            textarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-        }
-    };
-    clientNotes.addEventListener('keydown', State.clientNotesKeydownHandler);
-    console.log(`${LOG_PREFIX} Обработчик 'keydown' (Ctrl+Enter) успешно привязан.`);
-
-    function getInnAtCursor(ta) {
-        const text = ta.value || '';
-        const n = text.length;
-        const isDigit = (ch) => ch >= '0' && ch <= '9';
-        const basePos = ta.selectionStart ?? 0;
-        console.log(`[getInnAtCursor] Base position (selectionStart): ${basePos}`);
-        const candidates = [basePos, basePos - 1, basePos + 1, basePos - 2, basePos + 2];
-        for (const p of candidates) {
-            if (p < 0 || p >= n) continue;
-            if (!isDigit(text[p])) continue;
-            let l = p,
-                r = p + 1;
-            while (l > 0 && isDigit(text[l - 1])) l--;
-            while (r < n && isDigit(text[r])) r++;
-            const token = text.slice(l, r);
-            if (token.length === 10 || token.length === 12) {
-                console.log(`[getInnAtCursor] Found valid INN: "${token}" at [${l}, ${r}]`);
-                return { inn: token, start: l, end: r };
-            }
-        }
-        console.log(`[getInnAtCursor] No INN found at position ${basePos}.`);
-        return null;
-    }
-
-    const clientNotesCtrlMouseDownHandler = async (event) => {
-        console.log(
-            `[ClientNotes Handler] Event triggered: ${event.type}. Ctrl/Meta: ${
-                event.ctrlKey || event.metaKey
-            }`,
-        );
-        if (!(event.ctrlKey || event.metaKey)) return;
-        if (typeof event.button === 'number' && event.button !== 0) return;
-        if (!__acquireCopyLock(250)) return;
-
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        console.log(
-            `[ClientNotes Handler] Before getInnAtCursor: selectionStart=${clientNotes.selectionStart}, selectionEnd=${clientNotes.selectionEnd}`,
-        );
-        const hit = getInnAtCursor(clientNotes);
-
-        if (!hit) {
-            console.log('[ClientNotes Handler] INN not found, handler exits without action.');
-            return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        try {
-            clientNotes.setSelectionRange(hit.start, hit.end);
-            await copyToClipboard(hit.inn, `ИНН ${hit.inn} скопирован!`);
-        } catch (e) {
-            console.error('[ClientDataSystem] Ошибка копирования ИНН по Ctrl+MouseDown:', e);
-        }
-    };
-
-    clientNotes.addEventListener('mousedown', clientNotesCtrlMouseDownHandler);
-    State.clientNotesCtrlClickHandler = clientNotesCtrlMouseDownHandler;
-    console.log(`${LOG_PREFIX} Обработчик 'mousedown' (Ctrl+Click INN→copy) привязан.`);
-
-    State.clientNotesCtrlKeyDownHandler = (e) => {
-        const isClientNotesFocused = document.activeElement === clientNotes;
-        const ctrlOrMeta = e.ctrlKey || e.metaKey;
-        if (ctrlOrMeta && isClientNotesFocused) {
-            ensureInnPreviewStyles();
-            if (!window.__clientNotesInnPreview) {
-                window.__clientNotesInnPreview = createClientNotesInnPreview(clientNotes);
-            }
-            const p = window.__clientNotesInnPreview;
-            p.show();
-            p.update();
-            if (!window.__clientNotesInnPreviewInputHandler) {
-                window.__clientNotesInnPreviewInputHandler = () => {
-                    if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.update();
-                };
-                clientNotes.addEventListener('input', window.__clientNotesInnPreviewInputHandler);
-            }
-        }
-    };
-    State.clientNotesCtrlKeyUpHandler = (e) => {
-        if (!e.ctrlKey && !e.metaKey) {
-            clientNotes.style.cursor = '';
-            if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
-        }
-    };
-    State.clientNotesBlurHandler = () => {
-        clientNotes.style.cursor = '';
-        if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
-    };
-    document.addEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
-    document.addEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
-    clientNotes.addEventListener('blur', State.clientNotesBlurHandler);
-    console.log(`${LOG_PREFIX} Индикация курсора при Ctrl/Meta активирована.`);
-
-    if (clearClientDataBtn) {
-        clearClientDataBtn.addEventListener('click', async () => {
-            const confirmed =
-                typeof showAppConfirmModule === 'function'
-                    ? await showAppConfirmModule({
-                          title: 'Очистка данных',
-                          message: 'Вы уверены, что хотите очистить все данные по обращению?',
-                          confirmText: 'Очистить',
-                          cancelText: 'Отмена',
-                          confirmClass: 'bg-amber-500 hover:bg-amber-600 text-white',
-                      })
-                    : confirm('Вы уверены, что хотите очистить все данные по обращению?');
-            if (confirmed) {
-                clearClientData();
-            }
-        });
-    }
-
-    if (buttonContainer) {
-        const existingExportBtn = document.getElementById('exportTextBtn');
-        if (!existingExportBtn) {
-            const exportTextBtn = document.createElement('button');
-            exportTextBtn.id = 'exportTextBtn';
-            exportTextBtn.innerHTML = `<i class="fas fa-file-download"></i><span class="hidden lg:inline lg:ml-1">Сохранить .txt</span>`;
-            exportTextBtn.className = `p-2 lg:px-3 lg:py-1.5 bg-primary hover:bg-secondary text-white rounded-md transition text-sm flex items-center justify-center shrink-0`;
-            exportTextBtn.title = 'Сохранить заметки как .txt файл';
-            exportTextBtn.addEventListener('click', exportClientDataToTxt);
-            buttonContainer.appendChild(exportTextBtn);
-        }
-    }
-
-    try {
-        console.log(`${LOG_PREFIX} Загрузка начальных данных для clientNotes...`);
-        let clientDataNotesValue = '';
-        if (State.db) {
-            const clientDataFromDB = await getFromIndexedDB('clientData', 'current');
-            if (clientDataFromDB && clientDataFromDB.notes) {
-                clientDataNotesValue = clientDataFromDB.notes;
-            }
-        } else {
-            const localData = localStorage.getItem('clientData');
-            if (localData) {
-                try {
-                    clientDataNotesValue = JSON.parse(localData).notes || '';
-                } catch (e) {
-                    console.warn(
-                        '[initClientDataSystem] Ошибка парсинга clientData из localStorage:',
-                        e,
-                    );
-                }
-            }
-        }
-        clientNotes.value = clientDataNotesValue;
-        console.log(`${LOG_PREFIX} Данные загружены. clientNotes.value установлен.`);
-
-        applyClientNotesFontSize();
-    } catch (error) {
-        console.error(`${LOG_PREFIX} Ошибка при загрузке данных клиента:`, error);
-    }
-
-    console.log(`${LOG_PREFIX} Инициализация системы данных клиента полностью завершена.`);
-    // ensureBodyScrollUnlocked вызывается внутри createClientNotesInnPreview при необходимости
-    // Убеждаемся, что нет открытых модальных окон перед разблокировкой скролла
-    try {
-        const visibleModals = typeof getVisibleModals === 'function' ? getVisibleModals() : [];
-        if (visibleModals.length === 0) {
-            document.body.classList.remove('modal-open', 'overflow-hidden');
-            if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
-            if (document.documentElement.style.overflow === 'hidden')
-                document.documentElement.style.overflow = '';
-        }
-    } catch (e) {
-        console.warn('[initClientDataSystem] Ошибка при проверке модальных окон:', e);
-    }
-}
-
-function ensureInnPreviewStyles() {
-    if (document.getElementById('innPreviewStyles')) return;
-    const style = document.createElement('style');
-    style.id = 'innPreviewStyles';
-    style.textContent = `
-    .client-notes-preview{
-        position: absolute;
-        --inn-offset-x: -0.4px;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        overflow: hidden;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        background: transparent;
-        pointer-events: none;
-        z-index: 2;
-    }
-    .client-notes-preview::-webkit-scrollbar{
-        width: 0; height: 0; display: none;
-    }
-        .client-notes-preview__inner{
-        position: relative;
-        will-change: transform;
-    }
-    .client-notes-preview .inn-highlight{
-        color: var(--color-primary, #7aa2ff) !important;
-        text-decoration: underline;
-        text-decoration-color: var(--color-primary);
-        text-decoration-thickness: .1em;
-        text-underline-offset: .12em;
-        text-decoration-skip-ink: auto;
-        /* НИЧЕГО, что меняет метрики инлайна */
-        display: inline;
-        padding: 0;
-        margin: 0;
-    }
- 
-  `;
-    document.head.appendChild(style);
-}
-
 // createClientNotesInnPreview теперь импортируется из js/features/client-data.js
 function createClientNotesInnPreview(textarea) {
     return createClientNotesInnPreviewModule(textarea, escapeHtml, getVisibleModals);
 }
+
+// initClientDataSystem и ensureInnPreviewStyles импортируются из js/features/client-data-init.js
+setClientDataInitDependencies({
+    State,
+    debounce,
+    saveClientData,
+    checkForBlacklistedInn,
+    createClientNotesInnPreview,
+    copyToClipboard: copyToClipboardModule,
+    getFromIndexedDB,
+    applyClientNotesFontSize,
+    clearClientData,
+    exportClientDataToTxt,
+    getVisibleModals,
+    showAppConfirm: showAppConfirmModule,
+    openClientNotesWindow: openClientNotesWindowModule,
+});
+console.log('[script.js] Зависимости client-data-init установлены.');
 
 // ============================================================================
 // createClientNotesInnPreview - MIGRATED to js/features/client-data.js
@@ -4988,6 +4280,7 @@ function getOrCreateModal(modalId, modalClassName, modalHTML, setupCallback) {
 setReglamentsDependencies({
     State,
     categoryDisplayInfo,
+    CATEGORY_INFO_KEY,
     getFromIndexedDB,
     saveToIndexedDB,
     deleteFromIndexedDB,
