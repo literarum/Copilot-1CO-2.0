@@ -517,6 +517,41 @@ async function checkRevocationHybridBatch(serial, crlEntries, options = {}) {
     return { serial, revoked: checks.some((item) => item.revoked), results: checks };
 }
 
+/**
+ * Normalizes incoming event so that path/method work with or without function-ID prefix
+ * and with API Gateway-style requestContext (e.g. requestContext.http.method/path).
+ * Paths like /d4ek2is78822funrr85b/api/health are normalized to /api/health.
+ */
+function normalizeEvent(event) {
+    if (!event || typeof event !== 'object') {
+        return {
+            httpMethod: 'GET',
+            path: '/',
+            queryStringParameters: {},
+            multiValueQueryStringParameters: {},
+            body: null,
+            isBase64Encoded: false,
+        };
+    }
+    const ctx = event.requestContext || {};
+    const http = ctx.http || ctx.request?.http || {};
+    let method = (http.method || event.httpMethod || 'GET').toUpperCase();
+    let path = String(http.path || event.path || '/').trim() || '/';
+    // Strip leading /{functionId} segment when path is /{id}/api/... or /{id}/health
+    const prefixMatch = path.match(/^\/[a-zA-Z0-9-]+(?=\/(?:api\/|health))/);
+    if (prefixMatch) {
+        path = path.slice(prefixMatch[0].length);
+    }
+    return {
+        httpMethod: method,
+        path,
+        queryStringParameters: event.queryStringParameters || {},
+        multiValueQueryStringParameters: event.multiValueQueryStringParameters || {},
+        body: event.body,
+        isBase64Encoded: Boolean(event.isBase64Encoded),
+    };
+}
+
 function parseEventBody(event) {
     if (!event || event.body == null) return null;
     const raw = event.isBase64Encoded
@@ -545,8 +580,9 @@ function isHealthRoute(event) {
 }
 
 module.exports.handler = async function handler(event) {
+    const ev = normalizeEvent(event);
     try {
-        const method = String(event?.httpMethod || 'GET').toUpperCase();
+        const method = ev.httpMethod;
 
         if (method === 'OPTIONS') {
             return {
@@ -557,15 +593,15 @@ module.exports.handler = async function handler(event) {
             };
         }
 
-        if (isHealthRoute(event)) {
+        if (isHealthRoute(ev)) {
             return json(200, { ok: true, service: 'copilot-1co-revocation', yandexCloud: true });
         }
 
         if (method === 'GET') {
-            const serial = event?.queryStringParameters?.serial || null;
-            const listUrl = event?.queryStringParameters?.listUrl || null;
-            const listUrls = getQueryMulti(event, 'listUrl');
-            const helperBaseUrl = HELPER_BASE_FROM_ENV || event?.queryStringParameters?.helperBaseUrl || '';
+            const serial = ev?.queryStringParameters?.serial || null;
+            const listUrl = ev?.queryStringParameters?.listUrl || null;
+            const listUrls = getQueryMulti(ev, 'listUrl');
+            const helperBaseUrl = HELPER_BASE_FROM_ENV || ev?.queryStringParameters?.helperBaseUrl || '';
             const options = { helperBaseUrl };
             const result =
                 listUrls.length > 1
@@ -575,7 +611,7 @@ module.exports.handler = async function handler(event) {
         }
 
         if (method === 'POST') {
-            const rawBody = parseEventBody(event);
+            const rawBody = parseEventBody(ev);
             let body = null;
             try {
                 body = rawBody ? JSON.parse(rawBody) : {};

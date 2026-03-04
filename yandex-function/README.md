@@ -32,3 +32,8 @@
 ```bash
 npx vitest run api/revocation/yandex-handler.test.js
 ```
+
+## Устранение 400 и CORS при вызове с браузера (например GitHub Pages)
+
+- **400 Bad Request** по URL `.../api/health` или при preflight: убедитесь, что у функции включён **публичный HTTP-триггер** (вызов по URL), а не только invoke по телу. В консоли Yandex: функция → триггеры → тип «HTTP» / «Прямой вызов», доступ без аутентификации.
+- **CORS (preflight не проходит)**: ответ на `OPTIONS` должен быть с кодом 2xx и заголовками `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`. Обработчик уже возвращает 204 и CORS для любого OPTIONS; при сохранении ошибки проверьте, что платформа не возвращает 400/5xx до вызова кода (см. пункт выше).

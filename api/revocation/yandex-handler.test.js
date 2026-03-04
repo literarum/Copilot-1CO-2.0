@@ -49,6 +49,67 @@ describe('yandex crl-checker handler', () => {
         expect(result.headers['Access-Control-Allow-Methods']).toContain('OPTIONS');
     });
 
+    it('returns health for path with function-ID prefix (normalized path)', async () => {
+        const { handler } = require('../../yandex-function/crl-checker/index.js');
+        const result = await handler(
+            {
+                httpMethod: 'GET',
+                path: '/d4ek2is78822funrr85b/api/health',
+                headers: {},
+                queryStringParameters: {},
+                multiValueQueryStringParameters: {},
+            },
+            {},
+        );
+
+        expect(result.statusCode).toBe(200);
+        expect(result.headers['Content-Type']).toContain('application/json');
+        expect(JSON.parse(result.body)).toEqual(
+            expect.objectContaining({
+                ok: true,
+                service: 'copilot-1co-revocation',
+            }),
+        );
+    });
+
+    it('returns 204 + CORS for OPTIONS with path containing function-ID prefix', async () => {
+        const { handler } = require('../../yandex-function/crl-checker/index.js');
+        const result = await handler(
+            {
+                httpMethod: 'OPTIONS',
+                path: '/d4ek2is78822funrr85b/api/revocation/check',
+                headers: {},
+                queryStringParameters: {},
+                multiValueQueryStringParameters: {},
+            },
+            {},
+        );
+
+        expect(result.statusCode).toBe(204);
+        expect(result.headers['Access-Control-Allow-Origin']).toBe('*');
+        expect(result.headers['Access-Control-Allow-Methods']).toContain('OPTIONS');
+    });
+
+    it('returns health when event uses requestContext.http (API Gateway style)', async () => {
+        const { handler } = require('../../yandex-function/crl-checker/index.js');
+        const result = await handler(
+            {
+                requestContext: {
+                    http: {
+                        method: 'GET',
+                        path: '/api/health',
+                    },
+                },
+                queryStringParameters: {},
+                multiValueQueryStringParameters: {},
+            },
+            {},
+        );
+
+        expect(result.statusCode).toBe(200);
+        expect(JSON.parse(result.body).ok).toBe(true);
+    });
+
     it('uses http candidate first for FNS hosts', async () => {
         const { handler } = require('../../yandex-function/crl-checker/index.js');
         const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(

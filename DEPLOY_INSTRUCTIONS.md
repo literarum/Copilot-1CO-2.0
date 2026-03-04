@@ -16,7 +16,7 @@
     - Timeout: `60s`
     - Memory: `512 MB`
 6. Опубликуйте новую версию.
-7. Включите публичный доступ (Allow unauthenticated invoke).
+7. Включите публичный доступ (Allow unauthenticated invoke). Для вызова с сайта (в т.ч. GitHub Pages) нужен именно HTTP-триггер с публичным доступом — иначе возможны 400 и блокировка CORS при preflight.
 
 ## 2) Проверить function URL
 
