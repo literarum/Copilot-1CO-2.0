@@ -861,6 +861,7 @@ export function initFNSCertificateRevocationSystem() {
                 const PROBE_INTERVAL_MS = 3000;
                 const PROBE_FIRST_DELAY_MS = 2000;
                 const PROBE_WINDOW_MS = 120000;
+                const PROBE_MAX_CONSECUTIVE_FAILURES = 5;
                 let probeFailCount = 0;
                 const doProbe = () => {
                     probeHelperAvailability(REVOCATION_LOCAL_HELPER_BASE_URL).then((ok) => {
@@ -871,7 +872,7 @@ export function initFNSCertificateRevocationSystem() {
                             installGate.innerHTML = '';
                         } else {
                             probeFailCount += 1;
-                            if (probeFailCount >= 40) {
+                            if (probeFailCount >= PROBE_MAX_CONSECUTIVE_FAILURES) {
                                 clearInterval(checkInterval);
                             }
                         }
