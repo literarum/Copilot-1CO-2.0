@@ -180,7 +180,7 @@ export async function appInit(context = 'normal') {
         REVOCATION_API_BASE_URL.trim()
     ) {
         const apiBase = REVOCATION_API_BASE_URL.trim().replace(/\/$/, '');
-        probeHelperAvailability(apiBase).then((ok) => {
+        probeHelperAvailability(apiBase, { path: '/api/health' }).then((ok) => {
             if (typeof window !== 'undefined') window.__revocationHelperAvailable = ok;
         });
     }

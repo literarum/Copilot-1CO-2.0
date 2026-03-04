@@ -8,6 +8,7 @@ const PROBE_TIMEOUT_MS = 2000;
 let ingestUnavailable = false;
 function sendAgentDebugLog(payload) {
     if (ingestUnavailable) return;
+    if (typeof window !== 'undefined' && window.location && !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)) return;
     // #region agent log
     fetch('http://127.0.0.1:7520/ingest/374fe693-b6e8-47c0-81cf-9d56349887e0', {
         method: 'POST',
@@ -24,11 +25,13 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Probes helper availability via GET /health.
- * @param {string} baseUrl - e.g. 'http://localhost:7777'
+ * Probes helper or revocation API availability.
+ * @param {string} baseUrl - e.g. 'http://localhost:7777' or 'https://functions.yandexcloud.net/...'
+ * @param {{ path?: string }} [options] - path: '/health' for local helper, '/api/health' for Yandex/API
  * @returns {Promise<boolean>}
  */
-export async function probeHelperAvailability(baseUrl) {
+export async function probeHelperAvailability(baseUrl, options = {}) {
+    const path = options.path ?? '/health';
     const base = String(baseUrl || '')
         .trim()
         .replace(/\/$/, '');
@@ -37,7 +40,7 @@ export async function probeHelperAvailability(baseUrl) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
     try {
-        const res = await fetch(`${base}/health`, {
+        const res = await fetch(`${base}${path.startsWith('/') ? path : `/${path}`}`, {
             method: 'GET',
             signal: controller.signal,
         });
