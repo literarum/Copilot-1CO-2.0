@@ -9,13 +9,21 @@ import { State } from '../app/state.js';
 export function setTheme(mode) {
     const root = document.documentElement;
     const apply = (isDark) => {
+        root.classList.add('theme-switching');
         root.classList.toggle('dark', !!isDark);
         root.dataset.theme = isDark ? 'dark' : 'light';
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                root.classList.remove('theme-switching');
+            });
+        });
     };
     if (setTheme._mq && setTheme._onChange) {
         try {
             setTheme._mq.removeEventListener('change', setTheme._onChange);
-        } catch (_) {}
+        } catch {
+            // old browsers may not support removeEventListener on MediaQueryList
+        }
         setTheme._mq = null;
         setTheme._onChange = null;
     }
@@ -28,12 +36,34 @@ export function setTheme(mode) {
         setTheme._onChange = (e) => apply(e.matches);
         try {
             mq.addEventListener('change', setTheme._onChange);
-        } catch (_) {}
+        } catch {
+            // fallback for browsers with legacy MediaQueryList API
+        }
         isDark = mq.matches;
     }
     apply(isDark);
+    updateThemeToggleButtonIcons(isDark);
     if (State.userPreferences) {
         State.userPreferences.theme = mode;
+    }
+}
+
+/**
+ * Синхронизирует видимость иконок солнца/луны в кнопке переключения темы,
+ * чтобы при смене темы не отображались обе иконки одновременно.
+ */
+function updateThemeToggleButtonIcons(isDark) {
+    const btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    const sunIcon = btn.querySelector('.fa-sun');
+    const moonIcon = btn.querySelector('.fa-moon');
+    if (sunIcon) {
+        sunIcon.style.display = isDark ? '' : 'none';
+        sunIcon.classList.toggle('hidden', !isDark);
+    }
+    if (moonIcon) {
+        moonIcon.style.display = isDark ? 'none' : '';
+        moonIcon.classList.toggle('hidden', isDark);
     }
 }
 
@@ -43,7 +73,7 @@ export function setTheme(mode) {
 export function migrateLegacyThemeVars() {
     const root = document.documentElement;
     const styleAttr = root.getAttribute('style') || '';
-    const matches = styleAttr.match(/--color-[a-z0-9\-]+:\s*[^;]+/gi);
+    const matches = styleAttr.match(/--color-[a-z0-9-]+:\s*[^;]+/gi);
     if (!matches) return;
     for (const decl of matches) {
         const [name, rawVal] = decl.split(':');

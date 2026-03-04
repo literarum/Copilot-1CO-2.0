@@ -1,8 +1,7 @@
 'use strict';
 
-import { escapeHtml, linkify } from '../utils/html.js';
-import { getStepContentAsText, getSectionName, formatExampleForTextarea, deepEqual } from '../utils/helpers.js';
-import { State } from '../app/state.js';
+import { escapeHtml } from '../utils/html.js';
+import { getSectionName, formatExampleForTextarea, deepEqual } from '../utils/helpers.js';
 import { renderMainAlgorithm } from './main-algorithm.js';
 
 // ============================================================================
@@ -19,10 +18,7 @@ let algorithms = null;
 let isFavorite = null;
 let getFavoriteButtonHTML = null;
 let showAlgorithmDetail = null;
-let copyToClipboard = null;
 let applyCurrentView = null;
-let loadMainAlgoCollapseState = null;
-let saveMainAlgoCollapseState = null;
 
 // Дополнительные зависимости для редактирования
 let showNotification = null;
@@ -32,12 +28,6 @@ let updateStepNumbers = null;
 let toggleStepCollapse = null;
 let Sortable = null;
 
-// Дополнительные зависимости для showAlgorithmDetail
-let ExportService = null;
-let renderScreenshotIcon = null;
-let handleViewScreenshotClick = null;
-let openAnimatedModal = null;
-
 /**
  * Устанавливает зависимости для компонента алгоритмов
  */
@@ -46,10 +36,7 @@ export function setAlgorithmsDependencies(deps) {
     isFavorite = deps.isFavorite;
     getFavoriteButtonHTML = deps.getFavoriteButtonHTML;
     showAlgorithmDetail = deps.showAlgorithmDetail;
-    copyToClipboard = deps.copyToClipboard;
     applyCurrentView = deps.applyCurrentView;
-    loadMainAlgoCollapseState = deps.loadMainAlgoCollapseState;
-    saveMainAlgoCollapseState = deps.saveMainAlgoCollapseState;
     // Дополнительные зависимости для редактирования
     if (deps.showNotification) showNotification = deps.showNotification;
     if (deps.attachStepDeleteHandler) attachStepDeleteHandler = deps.attachStepDeleteHandler;
@@ -117,19 +104,21 @@ export async function renderAlgorithmCards(section) {
               )}</p>`
             : '';
 
-        const isFav = isFavorite && typeof isFavorite === 'function'
-            ? isFavorite('algorithm', String(algorithm.id))
-            : false;
-        const favButtonHTML = getFavoriteButtonHTML && typeof getFavoriteButtonHTML === 'function'
-            ? getFavoriteButtonHTML(
-                  algorithm.id,
-                  'algorithm',
-                  section,
-                  titleText,
-                  descriptionText || '',
-                  isFav,
-              )
-            : '';
+        const isFav =
+            isFavorite && typeof isFavorite === 'function'
+                ? isFavorite('algorithm', String(algorithm.id))
+                : false;
+        const favButtonHTML =
+            getFavoriteButtonHTML && typeof getFavoriteButtonHTML === 'function'
+                ? getFavoriteButtonHTML(
+                      algorithm.id,
+                      'algorithm',
+                      section,
+                      titleText,
+                      descriptionText || '',
+                      isFav,
+                  )
+                : '';
 
         card.innerHTML = `
             <div class="flex justify-between items-start mb-2">
@@ -174,7 +163,7 @@ export function getAlgorithmText(algoData) {
     if (!algoData || typeof algoData !== 'object') {
         return texts;
     }
-    
+
     const cleanHtml = (text) =>
         typeof text === 'string'
             ? text
@@ -249,7 +238,9 @@ export function getAlgorithmText(algoData) {
                             } else if (item && typeof item === 'object') {
                                 try {
                                     itemText = cleanHtml(JSON.stringify(item));
-                                } catch (e) {}
+                                } catch {
+                                    // ignore non-serializable values during index preparation
+                                }
                             }
                             if (itemText) stepsTextParts.push(itemText);
                         });
@@ -487,7 +478,11 @@ export function normalizeAlgorithmSteps(stepsArray) {
         }
         if (step.type && step.type !== 'inn_step') {
             newStep.type = step.type;
-        } else if (!step.type && newStep.hasOwnProperty('type') && step.type !== 'inn_step') {
+        } else if (
+            !step.type &&
+            Object.prototype.hasOwnProperty.call(newStep, 'type') &&
+            step.type !== 'inn_step'
+        ) {
             delete newStep.type;
         }
         return newStep;
@@ -509,10 +504,11 @@ export function initStepSorting(containerElement) {
     }
     if (!Sortable && typeof window.Sortable === 'undefined') {
         console.error('SortableJS не найден. Функционал перетаскивания не будет работать.');
-        if (showNotification) showNotification('Ошибка: Библиотека для сортировки не загружена.', 'error');
+        if (showNotification)
+            showNotification('Ошибка: Библиотека для сортировки не загружена.', 'error');
         return;
     }
-    
+
     const SortableLib = Sortable || window.Sortable;
 
     if (containerElement.sortableInstance) {
@@ -530,7 +526,7 @@ export function initStepSorting(containerElement) {
         chosenClass: 'sortable-chosen',
         dragClass: 'sortable-drag',
 
-        onEnd: function (evt) {
+        onEnd: function (_evt) {
             if (updateStepNumbers) {
                 updateStepNumbers(containerElement);
             } else if (typeof window.updateStepNumbers === 'function') {
@@ -539,14 +535,8 @@ export function initStepSorting(containerElement) {
                 console.error('Функция updateStepNumbers не найдена!');
             }
             const modal = containerElement.closest('#editModal, #addModal');
-            if (modal) {
-                if (modal.id === 'editModal') {
-                    State.isUISettingsDirty = true;
-                } else if (modal.id === 'addModal') {
-                    if (hasChanges('add')) {
-                        console.log('Изменения в окне добавления после перетаскивания.');
-                    }
-                }
+            if (modal && modal.id === 'addModal' && hasChanges('add')) {
+                console.log('Изменения в окне добавления после перетаскивания.');
             }
         },
     });
@@ -562,7 +552,8 @@ export function addEditStep() {
     const editStepsContainer = document.getElementById(containerId);
     if (!editStepsContainer) {
         console.error('Контейнер #editSteps не найден для добавления шага.');
-        if (showNotification) showNotification('Ошибка: Не удалось найти контейнер шагов.', 'error');
+        if (showNotification)
+            showNotification('Ошибка: Не удалось найти контейнер шагов.', 'error');
         return;
     }
     const editModal = document.getElementById('editModal');
@@ -575,7 +566,8 @@ export function addEditStep() {
     const section = editModal.dataset.section;
     if (!section) {
         console.error('Не удалось определить секцию в addEditStep (dataset.section отсутствует).');
-        if (showNotification) showNotification('Ошибка: Не удалось определить раздел для добавления шага.', 'error');
+        if (showNotification)
+            showNotification('Ошибка: Не удалось определить раздел для добавления шага.', 'error');
         return;
     }
 
@@ -596,14 +588,7 @@ export function addEditStep() {
     if (deleteBtn) {
         const deleteHandler = attachStepDeleteHandler || window.attachStepDeleteHandler;
         if (typeof deleteHandler === 'function') {
-            deleteHandler(
-                deleteBtn,
-                stepDiv,
-                editStepsContainer,
-                section,
-                'edit',
-                isMainAlgorithm,
-            );
+            deleteHandler(deleteBtn, stepDiv, editStepsContainer, section, 'edit', isMainAlgorithm);
         } else {
             console.error('Функция attachStepDeleteHandler не найдена в addEditStep!');
             deleteBtn.disabled = true;
@@ -970,6 +955,9 @@ export function getCurrentEditState() {
         const isCopyableCheckbox = isMainAlgorithm
             ? stepDiv.querySelector('.step-is-copyable')
             : null;
+        const isCollapsibleCheckbox = isMainAlgorithm
+            ? stepDiv.querySelector('.step-is-collapsible')
+            : null;
         const noInnHelpCheckbox = isMainAlgorithm
             ? stepDiv.querySelector('.step-no-inn-help-checkbox')
             : null;
@@ -981,8 +969,8 @@ export function getCurrentEditState() {
                 isMainAlgorithm && exampleInput
                     ? exampleInput.value.trim()
                     : isMainAlgorithm
-                    ? ''
-                    : undefined,
+                      ? ''
+                      : undefined,
             additionalInfoText: additionalInfoTextarea ? additionalInfoTextarea.value.trim() : '',
             additionalInfoShowTop: additionalInfoPosTopCheckbox
                 ? additionalInfoPosTopCheckbox.checked
@@ -997,6 +985,11 @@ export function getCurrentEditState() {
                 currentStepData.isCopyable = isCopyableCheckbox.checked;
             } else {
                 currentStepData.isCopyable = false;
+            }
+            if (isCollapsibleCheckbox) {
+                currentStepData.isCollapsible = isCollapsibleCheckbox.checked;
+            } else {
+                currentStepData.isCollapsible = false;
             }
             if (noInnHelpCheckbox) {
                 currentStepData.showNoInnHelp = noInnHelpCheckbox.checked;
@@ -1135,6 +1128,26 @@ export function hasChanges(modalType) {
         return false;
     }
 
+    const isEffectivelyEmptyState = (state) => {
+        if (!state || typeof state !== 'object') return true;
+        const title = String(state.title || '').trim();
+        const description = String(state.description || '').trim();
+        const steps = Array.isArray(state.steps) ? state.steps : [];
+        if (title || description) return false;
+        return steps.every((step) => {
+            if (!step || typeof step !== 'object') return true;
+            return (
+                !String(step.title || '').trim() &&
+                !String(step.description || '').trim() &&
+                !String(step.example || '').trim() &&
+                !String(step.additionalInfoText || '').trim() &&
+                !String(step.existingScreenshotIds || '').trim() &&
+                !String(step.deletedScreenshotIds || '').trim() &&
+                !step.tempScreenshotsCount
+            );
+        });
+    };
+
     if (initialState === null) {
         console.error(
             `hasChanges (${modalType}): НАЧАЛЬНОЕ состояние (initialState) равно null! Невозможно сравнить. Возможно, произошла ошибка при открытии окна. Предполагаем наличие изменений для безопасности.`,
@@ -1143,7 +1156,7 @@ export function hasChanges(modalType) {
             `hasChanges (${modalType}): Текущее состояние (currentState):`,
             currentState ? JSON.parse(JSON.stringify(currentState)) : currentState,
         );
-        return true;
+        return !isEffectivelyEmptyState(currentState);
     }
     if (currentState === null) {
         console.error(
@@ -1212,6 +1225,7 @@ export function captureInitialEditState(algorithm, section) {
 
                     if (isMainAlgorithm) {
                         initialStep.isCopyable = step.isCopyable || false;
+                        initialStep.isCollapsible = step.isCollapsible || false;
                         initialStep.showNoInnHelp = step.showNoInnHelp || false;
                     }
 

@@ -4,7 +4,6 @@ import { escapeHtml } from '../utils/html.js';
 import { getStepContentAsText } from '../utils/helpers.js';
 import { MAIN_ALGO_COLLAPSE_KEY } from '../constants.js';
 import { getFromIndexedDB, saveToIndexedDB } from '../db/indexeddb.js';
-import { State } from '../app/state.js';
 
 // ============================================================================
 // КОМПОНЕНТ ГЛАВНОГО АЛГОРИТМА
@@ -97,10 +96,18 @@ export async function renderMainAlgorithm() {
     const validIndices =
         savedCollapse && savedCollapse.stepsCount === mainSteps.length
             ? savedCollapse.collapsedIndices.filter(
-                  (i) => Number.isInteger(i) && i >= 0 && i < mainSteps.length,
+                  (i) =>
+                      Number.isInteger(i) &&
+                      i >= 0 &&
+                      i < mainSteps.length &&
+                      !!mainSteps[i]?.isCollapsible,
               )
             : [];
     const collapsedSet = new Set(validIndices);
+    if (collapsedSet.size === 0 && mainSteps.length > 0) {
+        const firstCollapsible = mainSteps.findIndex((s) => !!s?.isCollapsible);
+        if (firstCollapsible >= 0) collapsedSet.add(firstCollapsible);
+    }
 
     if (mainSteps.length === 0) {
         const emptyP = document.createElement('p');
@@ -109,7 +116,8 @@ export async function renderMainAlgorithm() {
         mainAlgorithmContainer.appendChild(emptyP);
         const mainTitleElement = document.querySelector('#mainContent > div > div:nth-child(1) h2');
         if (mainTitleElement) {
-            mainTitleElement.textContent = algorithms.main.title || DEFAULT_MAIN_ALGORITHM?.title || 'Главный алгоритм';
+            mainTitleElement.textContent =
+                algorithms.main.title || DEFAULT_MAIN_ALGORITHM?.title || 'Главный алгоритм';
         }
         return;
     }
@@ -127,8 +135,15 @@ export async function renderMainAlgorithm() {
         }
 
         const stepDiv = document.createElement('div');
+        const isCollapsible = !!step.isCollapsible;
         stepDiv.className =
             'algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm mb-3';
+        if (isCollapsible) {
+            stepDiv.classList.add('collapsible');
+            if (collapsedSet.has(index)) {
+                stepDiv.classList.add('is-collapsed');
+            }
+        }
 
         if (step.isCopyable) {
             stepDiv.classList.add('copyable-step-active');
@@ -142,12 +157,23 @@ export async function renderMainAlgorithm() {
 
         stepDiv.addEventListener('click', (e) => {
             if (e.target.closest('h3')) return;
-            if (e.target.tagName === 'A' || e.target.closest('A')) return;
+            if (
+                e.target.closest('a') ||
+                e.target.closest('button') ||
+                e.target.closest('[role="button"]')
+            )
+                return;
 
             const currentStepData = algorithms.main.steps[index];
-            if (currentStepData && currentStepData.isCopyable && copyToClipboard) {
+            if (
+                currentStepData &&
+                currentStepData.isCopyable &&
+                typeof copyToClipboard === 'function'
+            ) {
                 const textToCopy = getStepContentAsText(currentStepData);
-                copyToClipboard(textToCopy, 'Содержимое шага скопировано!');
+                if (textToCopy && textToCopy.trim()) {
+                    copyToClipboard(textToCopy, 'Содержимое шага скопировано!');
+                }
             }
         });
 
@@ -163,11 +189,14 @@ export async function renderMainAlgorithm() {
             stepDiv.appendChild(additionalInfoTopDiv);
         }
 
-        // Заголовок шага
+        // Заголовок шага (клик — свернуть/развернуть)
         const titleH3 = document.createElement('h3');
         titleH3.className = 'font-semibold text-gray-900 dark:text-gray-100 mb-2';
         titleH3.textContent = step.title || `Шаг ${index + 1}`;
         stepDiv.appendChild(titleH3);
+
+        const collapsibleBody = document.createElement('div');
+        collapsibleBody.className = 'collapsible-body';
 
         // Описание шага
         if (step.description) {
@@ -195,14 +224,13 @@ export async function renderMainAlgorithm() {
                 descDiv.innerHTML = listHTML;
             }
 
-            stepDiv.appendChild(descDiv);
+            collapsibleBody.appendChild(descDiv);
         }
 
         // Пример для шага
         if (step.example) {
             const exampleDiv = document.createElement('div');
-            exampleDiv.className =
-                'mt-2 p-2';
+            exampleDiv.className = 'mt-2 p-2';
 
             if (typeof step.example === 'string') {
                 exampleDiv.innerHTML = `<strong>Пример:</strong><br>${escapeHtml(step.example)}`;
@@ -222,7 +250,7 @@ export async function renderMainAlgorithm() {
                 exampleDiv.innerHTML = exampleHTML;
             }
 
-            stepDiv.appendChild(exampleDiv);
+            collapsibleBody.appendChild(exampleDiv);
         }
 
         // Дополнительная информация снизу, если есть
@@ -234,7 +262,24 @@ export async function renderMainAlgorithm() {
                 typeof window.linkify === 'function'
                     ? window.linkify(step.additionalInfoText)
                     : escapeHtml(step.additionalInfoText);
-            stepDiv.appendChild(additionalInfoBottomDiv);
+            collapsibleBody.appendChild(additionalInfoBottomDiv);
+        }
+
+        stepDiv.appendChild(collapsibleBody);
+
+        if (isCollapsible) {
+            titleH3.addEventListener('click', async () => {
+                stepDiv.classList.toggle('is-collapsed');
+                const indices = Array.from(
+                    mainAlgorithmContainer.querySelectorAll('.algorithm-step.collapsible'),
+                )
+                    .map((el, i) => (el.classList.contains('is-collapsed') ? i : -1))
+                    .filter((i) => i >= 0);
+                await saveMainAlgoCollapseState({
+                    stepsCount: mainSteps.length,
+                    collapsedIndices: indices,
+                });
+            });
         }
 
         fragment.appendChild(stepDiv);
@@ -245,7 +290,8 @@ export async function renderMainAlgorithm() {
     // Обновление заголовка
     const mainTitleElement = document.querySelector('#mainContent > div > div:nth-child(1) h2');
     if (mainTitleElement) {
-        mainTitleElement.textContent = algorithms.main.title || DEFAULT_MAIN_ALGORITHM?.title || 'Главный алгоритм работы';
+        mainTitleElement.textContent =
+            algorithms.main.title || DEFAULT_MAIN_ALGORITHM?.title || 'Главный алгоритм работы';
     }
 
     console.log('[renderMainAlgorithm v9] Рендеринг главного алгоритма завершен.');

@@ -5,6 +5,12 @@
  * Вынесен из script.js для уменьшения мегафайла и улучшения модульности.
  */
 
+import { probeHelperAvailability } from '../features/revocation-helper-probe.js';
+import {
+    REVOCATION_LOCAL_HELPER_BASE_URL,
+    REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER,
+} from '../config/revocation-sources.js';
+
 let dependencies = {};
 
 /**
@@ -63,12 +69,17 @@ export async function appInit(context = 'normal') {
         initHotkeysModal,
         setupHotkeys,
         initFullscreenToggles,
+        fullscreenModalConfigs,
         initHeaderButtons,
         initThemeToggle,
         initModalOverlayHandler,
         initAlgorithmModalControls,
         applyInitialUISettings,
         initUI,
+        initScrollNavButtons,
+        initAutoExpandTextareas,
+        highlightClientNotesWindow,
+        isClientNotesWindowOpen,
     } = dependencies;
 
     let currentAppInitProgress = 0;
@@ -79,7 +90,10 @@ export async function appInit(context = 'normal') {
         if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
             loadingOverlayManager.updateProgress(displayProgress);
         }
-        if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.updateTask === 'function') {
+        if (
+            typeof window.BackgroundStatusHUD !== 'undefined' &&
+            typeof window.BackgroundStatusHUD.updateTask === 'function'
+        ) {
             window.BackgroundStatusHUD.updateTask('app-init', displayProgress, 100);
         }
         console.log(
@@ -94,7 +108,10 @@ export async function appInit(context = 'normal') {
     const updateFineGrainedProgress = (baseProgress, stageWeight, current, total) => {
         if (total === 0) {
             const displayProgress = Math.min(baseProgress, 99);
-            if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
+            if (
+                loadingOverlayManager &&
+                typeof loadingOverlayManager.updateProgress === 'function'
+            ) {
                 loadingOverlayManager.updateProgress(displayProgress);
             }
             console.log(
@@ -131,14 +148,17 @@ export async function appInit(context = 'normal') {
         FINAL_UI: 5,
     };
 
-    if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.startTask === 'function') {
-        window.BackgroundStatusHUD.startTask('app-init', 'Фоновая инициализация', { weight: 1, total: 100 });
+    if (
+        typeof window.BackgroundStatusHUD !== 'undefined' &&
+        typeof window.BackgroundStatusHUD.startTask === 'function'
+    ) {
+        window.BackgroundStatusHUD.startTask('app-init', 'Фоновая инициализация', {
+            weight: 1,
+            total: 100,
+        });
     }
 
-    if (
-        NotificationService &&
-        typeof NotificationService.init === 'function'
-    ) {
+    if (NotificationService && typeof NotificationService.init === 'function') {
         try {
             NotificationService.init();
         } catch (e) {
@@ -149,8 +169,15 @@ export async function appInit(context = 'normal') {
     }
     updateTotalAppInitProgress(STAGE_WEIGHTS_APP_INIT.NOTIFICATION_SERVICE, 'NotificationService');
 
+    if (REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER && REVOCATION_LOCAL_HELPER_BASE_URL) {
+        probeHelperAvailability(REVOCATION_LOCAL_HELPER_BASE_URL).then((ok) => {
+            if (typeof window !== 'undefined') window.__revocationHelperAvailable = ok;
+        });
+    }
+
     let dbInitialized = false;
 
+    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
         try {
             if (typeof initDB === 'function') {
@@ -286,11 +313,17 @@ export async function appInit(context = 'normal') {
                                 baseProgressForIndex + STAGE_WEIGHTS_APP_INIT.INDEX_BUILD,
                                 99,
                             );
-                            if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
+                            if (
+                                loadingOverlayManager &&
+                                typeof loadingOverlayManager.updateProgress === 'function'
+                            ) {
                                 loadingOverlayManager.updateProgress(displayProgress);
                             }
                         } else if (processed === 0 && total === 0) {
-                            if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
+                            if (
+                                loadingOverlayManager &&
+                                typeof loadingOverlayManager.updateProgress === 'function'
+                            ) {
                                 loadingOverlayManager.updateProgress(
                                     Math.min(
                                         baseProgressForIndex + STAGE_WEIGHTS_APP_INIT.INDEX_BUILD,
@@ -308,9 +341,15 @@ export async function appInit(context = 'normal') {
                             '[appInit V3] Функция checkAndBuildIndex не найдена, вызываем ensureSearchIndexIsBuilt.',
                         );
                         await ensureSearchIndexIsBuilt();
-                        if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
+                        if (
+                            loadingOverlayManager &&
+                            typeof loadingOverlayManager.updateProgress === 'function'
+                        ) {
                             loadingOverlayManager.updateProgress(
-                                Math.min(baseProgressForIndex + STAGE_WEIGHTS_APP_INIT.INDEX_BUILD, 99),
+                                Math.min(
+                                    baseProgressForIndex + STAGE_WEIGHTS_APP_INIT.INDEX_BUILD,
+                                    99,
+                                ),
                             );
                         }
                     }
@@ -329,7 +368,10 @@ export async function appInit(context = 'normal') {
                     );
             }
             currentAppInitProgress = baseProgressForIndex + STAGE_WEIGHTS_APP_INIT.INDEX_BUILD;
-            if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
+            if (
+                loadingOverlayManager &&
+                typeof loadingOverlayManager.updateProgress === 'function'
+            ) {
                 loadingOverlayManager.updateProgress(Math.min(currentAppInitProgress, 99));
             }
 
@@ -345,7 +387,9 @@ export async function appInit(context = 'normal') {
                     showReglamentsForCategory: showReglamentsForCategory,
                     loadingOverlayManager: loadingOverlayManager,
                     debounce: debounce,
-                    categoryDisplayInfo: categoryDisplayInfo
+                    categoryDisplayInfo: categoryDisplayInfo,
+                    highlightClientNotesWindow: highlightClientNotesWindow,
+                    isClientNotesWindowOpen: isClientNotesWindowOpen,
                 });
                 console.log('[appInit] Search dependencies установлены');
             }
@@ -437,10 +481,7 @@ export async function appInit(context = 'normal') {
                     func:
                         typeof initFNSCertificateRevocationSystem === 'function'
                             ? initFNSCertificateRevocationSystem
-                            : () =>
-                                console.warn(
-                                    'initFNSCertificateRevocationSystem not defined',
-                                ),
+                            : () => console.warn('initFNSCertificateRevocationSystem not defined'),
                     critical: false,
                 },
                 {
@@ -503,7 +544,12 @@ export async function appInit(context = 'normal') {
                     name: 'initFullscreenToggles',
                     func:
                         typeof initFullscreenToggles === 'function'
-                            ? initFullscreenToggles
+                            ? () =>
+                                  initFullscreenToggles(
+                                      Array.isArray(fullscreenModalConfigs)
+                                          ? fullscreenModalConfigs
+                                          : [],
+                                  )
                             : () => console.warn('initFullscreenToggles not defined'),
                     critical: false,
                 },
@@ -539,13 +585,31 @@ export async function appInit(context = 'normal') {
                             : () => console.warn('initAlgorithmModalControls not defined'),
                     critical: false,
                 },
+                {
+                    name: 'initScrollNavButtons',
+                    func:
+                        typeof initScrollNavButtons === 'function'
+                            ? initScrollNavButtons
+                            : () => console.warn('initScrollNavButtons not defined'),
+                    critical: false,
+                },
+                {
+                    name: 'initAutoExpandTextareas',
+                    func:
+                        typeof initAutoExpandTextareas === 'function'
+                            ? initAutoExpandTextareas
+                            : () => console.warn('initAutoExpandTextareas not defined'),
+                    critical: false,
+                },
             ];
+            const criticalSystems = initSystems.filter((s) => s.critical);
+            const nonCriticalSystems = initSystems.filter((s) => !s.critical);
             let successCount = 0;
             let errorCount = 0;
             const baseProgressForUISystems = currentAppInitProgress;
             let processedUISystems = 0;
 
-            for (const system of initSystems) {
+            for (const system of criticalSystems) {
                 try {
                     if (typeof system.func === 'function') {
                         await Promise.resolve(system.func());
@@ -553,16 +617,14 @@ export async function appInit(context = 'normal') {
                         successCount++;
                     } else {
                         console.warn(
-                            `[appInit V3] ⚠ ${system.name} не найдена или не является функцией (неожиданно, т.к. должна быть заглушка).`,
+                            `[appInit V3] ⚠ ${system.name} не найдена или не является функцией.`,
                         );
-                        if (system.critical)
-                            throw new Error(`Critical system ${system.name} not found`);
+                        throw new Error(`Critical system ${system.name} not found`);
                     }
                 } catch (error) {
                     console.error(`[appInit V3] ✗ Ошибка инициализации ${system.name}:`, error);
                     errorCount++;
-                    if (system.critical)
-                        throw new Error(`Critical system ${system.name} failed: ${error.message}`);
+                    throw new Error(`Critical system ${system.name} failed: ${error.message}`);
                 }
                 processedUISystems++;
                 updateFineGrainedProgress(
@@ -572,8 +634,48 @@ export async function appInit(context = 'normal') {
                     initSystems.length,
                 );
             }
+
+            const nonCriticalResults = await Promise.allSettled(
+                nonCriticalSystems.map((system) =>
+                    typeof system.func === 'function'
+                        ? Promise.resolve(system.func()).then(
+                              () => ({ system, success: true }),
+                              (err) => ({ system, success: false, error: err }),
+                          )
+                        : Promise.resolve({ system, success: false }),
+                ),
+            );
+            nonCriticalResults.forEach((result, idx) => {
+                const system = nonCriticalSystems[idx];
+                const data =
+                    result.status === 'fulfilled'
+                        ? result.value
+                        : { system, success: false, error: result.reason };
+                if (data.success) {
+                    console.log(`[appInit V3] ✓ ${data.system.name} инициализирована успешно.`);
+                    successCount++;
+                } else {
+                    if (data.error)
+                        console.error(
+                            `[appInit V3] ✗ Ошибка инициализации ${data.system.name}:`,
+                            data.error,
+                        );
+                    else console.warn(`[appInit V3] ⚠ ${data.system.name} не найдена.`);
+                    errorCount++;
+                }
+            });
+            processedUISystems = initSystems.length;
+            updateFineGrainedProgress(
+                baseProgressForUISystems,
+                STAGE_WEIGHTS_APP_INIT.UI_SYSTEMS,
+                processedUISystems,
+                initSystems.length,
+            );
             currentAppInitProgress = baseProgressForUISystems + STAGE_WEIGHTS_APP_INIT.UI_SYSTEMS;
-            if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
+            if (
+                loadingOverlayManager &&
+                typeof loadingOverlayManager.updateProgress === 'function'
+            ) {
                 loadingOverlayManager.updateProgress(Math.min(currentAppInitProgress, 99));
             }
             console.log(
@@ -607,22 +709,39 @@ export async function appInit(context = 'normal') {
             await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
             console.log('[appInit V3] Отрисовка DOM браузером должна была произойти.');
 
-            if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
+            if (
+                loadingOverlayManager &&
+                typeof loadingOverlayManager.updateProgress === 'function'
+            ) {
                 loadingOverlayManager.updateProgress(100);
             }
-            if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.updateTask === 'function') {
+            if (
+                typeof window.BackgroundStatusHUD !== 'undefined' &&
+                typeof window.BackgroundStatusHUD.updateTask === 'function'
+            ) {
                 window.BackgroundStatusHUD.updateTask('app-init', 100, 100);
             }
-            // finishTask('app-init') вызывается в window.onload после скрытия оверлея и запуска initGoogleDocSections,
-            // чтобы уведомление «Приложение полностью загружено» не появлялось до исчезновения оверлея и плашки HUD
+            // Завершаем задачу HUD сразу по окончании appInit, чтобы таймаут принудительного скрытия не срабатывал
+            if (
+                typeof window.BackgroundStatusHUD !== 'undefined' &&
+                typeof window.BackgroundStatusHUD.finishTask === 'function'
+            ) {
+                window.BackgroundStatusHUD.finishTask('app-init', true);
+            }
             console.log('[appInit V3] ✓ Инициализация приложения завершена успешно.');
             resolve(dbInitialized);
         } catch (criticalError) {
             console.error('[appInit V3] ✗ КРИТИЧЕСКАЯ ОШИБКА инициализации:', criticalError);
-            if (loadingOverlayManager && typeof loadingOverlayManager.updateProgress === 'function') {
+            if (
+                loadingOverlayManager &&
+                typeof loadingOverlayManager.updateProgress === 'function'
+            ) {
                 loadingOverlayManager.updateProgress(100);
             }
-            if (typeof window.BackgroundStatusHUD !== 'undefined' && typeof window.BackgroundStatusHUD.finishTask === 'function') {
+            if (
+                typeof window.BackgroundStatusHUD !== 'undefined' &&
+                typeof window.BackgroundStatusHUD.finishTask === 'function'
+            ) {
                 window.BackgroundStatusHUD.finishTask('app-init', false);
             }
             if (NotificationService && typeof NotificationService.add === 'function') {

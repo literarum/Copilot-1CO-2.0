@@ -1,63 +1,63 @@
-# Инструкции по деплою
+# Инструкции по деплою в Yandex Cloud
 
-## Быстрый старт
+## Архитектура
 
-### 1. Закоммитить и запушить изменения
+- Backend: Yandex Cloud Function `crl-checker` (Node.js 22).
+- Frontend: Object Storage static hosting.
+- Связка фронта и API: `site/js/config.js -> REVOCATION_API_BASE_URL`.
+
+## 1) Обновить функцию `crl-checker`
+
+1. Откройте функцию `crl-checker` в Yandex Cloud Console.
+2. Runtime: `Node.js 22`.
+3. Entry point: `index.handler`.
+4. Вставьте содержимое `yandex-function/crl-checker/index.js` в редактор функции.
+5. Рекомендуемые параметры:
+    - Timeout: `60s`
+    - Memory: `512 MB`
+6. Опубликуйте новую версию.
+7. Включите публичный доступ (Allow unauthenticated invoke).
+
+## 2) Проверить function URL
+
+Проверка health:
 
 ```bash
-git add worker/ .github/workflows/deploy-worker-cloudflare.yml site/js/config.js site/js/features/fns-cert-revocation.js wrangler.toml
-git commit -m "Add Cloudflare Worker for certificate revocation check API"
-git push origin main
+curl "https://functions.yandexcloud.net/<FUNCTION_ID>/api/health"
 ```
 
-(Если работаете в ветке safe-work: `git push origin safe-work`, затем сделайте merge в main через Pull Request)
+Проверка API:
 
-### 2. Добавить секреты в GitHub
+```bash
+curl --request POST "https://functions.yandexcloud.net/<FUNCTION_ID>/api/revocation/check" \
+  --header "Content-Type: application/json" \
+  --data '{"serial":"01AB","listUrl":"https://pki.tax.gov.ru/cdp/test.crl"}'
+```
 
-1. Откройте репозиторий на GitHub
-2. Settings → Secrets and variables → Actions → New repository secret
-3. Добавьте два секрета:
-   - **`CLOUDFLARE_API_TOKEN`** — API Token с правами Workers Scripts: Edit
-     (Cloudflare Dashboard → My Profile → API Tokens → Create Token)
-   - **`CLOUDFLARE_ACCOUNT_ID`** — ID аккаунта (видно в Cloudflare Dashboard справа в сайдбаре)
+## 3) Настроить фронтенд
 
-### 3. Настроить Cloudflare Dashboard (Вариант B)
+В `site/js/config.js` укажите:
 
-1. Откройте https://dash.cloudflare.com
-2. Workers & Pages → ваш проект (или создайте новый, подключив репозиторий `literarum/Copilot-1CO-2.0`)
-3. Settings → Build configuration (или Builds & deployments)
-4. Укажите **Root directory**: `worker`
-5. Сохраните
+```js
+export const REVOCATION_API_BASE_URL = 'https://functions.yandexcloud.net/<FUNCTION_ID>';
+```
 
-После этого Cloudflare будет использовать `worker/wrangler.toml` и `worker/src/index.js`.
+## 4) Деплой статики в Object Storage
 
-### 4. После первого деплоя
+1. Создайте bucket.
+2. Включите:
+    - публичный доступ к объектам;
+    - публичный доступ к списку объектов.
+3. Включите static hosting:
+    - `index.html` как Index document;
+    - `index.html` или отдельный error-файл как Error document.
+4. Загрузите содержимое папки `site/` в bucket.
+5. Откройте сайт по URL:
+    - `https://<bucket>.s3-web.yandexcloud.net`
 
-**Через GitHub Actions:**
-- Откройте Actions → последний run "Deploy Revocation Worker (Cloudflare)"
-- В логах шага "Deploy Worker to Cloudflare" найдите URL вида:
-  `https://copilot-1co-revocation.xxxx.workers.dev`
+## 5) Контроль лимитов free-tier
 
-**Или через Cloudflare Dashboard:**
-- Workers & Pages → ваш проект → вверху будет показан URL Worker
+- Cloud Functions: `1,000,000` вызовов и `10 GB*hour` в месяц бесплатно.
+- Object Storage: `1 GB`, `10,000` PUT/POST/PATCH/LIST и `100,000` GET/HEAD/OPTIONS в месяц бесплатно.
 
-**Затем:**
-1. Скопируйте URL Worker
-2. Откройте `site/js/config.js`
-3. Замените пустую строку на URL:
-   ```js
-   export const REVOCATION_API_BASE_URL = 'https://copilot-1co-revocation.xxxx.workers.dev';
-   ```
-4. Закоммитьте и запушьте:
-   ```bash
-   git add site/js/config.js
-   git commit -m "Configure Worker API URL"
-   git push origin main
-   ```
-
-## Что происходит автоматически
-
-- При каждом пуше в `main`:
-  - **GitHub Actions** деплоит Worker в Cloudflare (если секреты настроены)
-  - **GitHub Actions** деплоит `site/` на GitHub Pages
-- Фронтенд на GitHub Pages автоматически использует Worker API для проверки отзыва (если `REVOCATION_API_BASE_URL` задан)
+Периодически проверяйте актуальные лимиты в официальной документации Yandex Cloud.

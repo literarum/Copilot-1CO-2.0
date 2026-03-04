@@ -38,7 +38,9 @@ export async function loadUserPreferences() {
     console.log(`${LOG_PREFIX} Запуск единой функции загрузки и миграции настроек.`);
 
     if (!DEFAULT_UI_SETTINGS) {
-        console.error(`${LOG_PREFIX} DEFAULT_UI_SETTINGS не установлен! Используются значения по умолчанию.`);
+        console.error(
+            `${LOG_PREFIX} DEFAULT_UI_SETTINGS не установлен! Используются значения по умолчанию.`,
+        );
         DEFAULT_UI_SETTINGS = {
             themeMode: 'dark',
             primaryColor: '#9933FF',
@@ -50,10 +52,25 @@ export async function loadUserPreferences() {
     }
 
     if (!defaultPanelOrder || !Array.isArray(defaultPanelOrder)) {
-        console.error(`${LOG_PREFIX} defaultPanelOrder не установлен или не является массивом! Используются значения по умолчанию.`);
+        console.error(
+            `${LOG_PREFIX} defaultPanelOrder не установлен или не является массивом! Используются значения по умолчанию.`,
+        );
         if (!tabsConfig || !Array.isArray(tabsConfig)) {
-            console.error(`${LOG_PREFIX} tabsConfig также не установлен! Используются жестко заданные значения.`);
-            defaultPanelOrder = ['main', 'program', 'links', 'extLinks', 'skzi', 'lk1c', 'webReg', 'reglaments', 'bookmarks', 'shablony'];
+            console.error(
+                `${LOG_PREFIX} tabsConfig также не установлен! Используются жестко заданные значения.`,
+            );
+            defaultPanelOrder = [
+                'main',
+                'program',
+                'links',
+                'extLinks',
+                'skzi',
+                'lk1c',
+                'webReg',
+                'reglaments',
+                'bookmarks',
+                'shablony',
+            ];
         } else {
             defaultPanelOrder = tabsConfig.map((t) => t.id);
         }
@@ -138,9 +155,12 @@ export async function loadUserPreferences() {
         }
 
         // Вычисляем currentPanelIds с проверкой на null/undefined
-        const currentPanelIds = (tabsConfig && Array.isArray(tabsConfig)) 
-            ? tabsConfig.map((t) => t.id)
-            : (Array.isArray(defaultPanelOrder) ? defaultPanelOrder : []);
+        const currentPanelIds =
+            tabsConfig && Array.isArray(tabsConfig)
+                ? tabsConfig.map((t) => t.id)
+                : Array.isArray(defaultPanelOrder)
+                  ? defaultPanelOrder
+                  : [];
         const knownPanelIds = new Set(currentPanelIds);
         const actualDefaultPanelVisibility = currentPanelIds.map(
             (id) => !(id === 'sedoTypes' || id === 'blacklistedClients'),
@@ -166,9 +186,10 @@ export async function loadUserPreferences() {
         currentPanelIds.forEach((panelId, index) => {
             if (!processedIds.has(panelId)) {
                 effectiveOrder.push(panelId);
-                const defaultVisibility = index < actualDefaultPanelVisibility.length 
-                    ? actualDefaultPanelVisibility[index]
-                    : !(panelId === 'sedoTypes' || panelId === 'blacklistedClients');
+                const defaultVisibility =
+                    index < actualDefaultPanelVisibility.length
+                        ? actualDefaultPanelVisibility[index]
+                        : !(panelId === 'sedoTypes' || panelId === 'blacklistedClients');
                 effectiveVisibility.push(defaultVisibility);
                 console.log(
                     `${LOG_PREFIX} Добавлена новая панель "${panelId}" с видимостью по умолчанию.`,
@@ -230,7 +251,8 @@ export async function saveUserPreferences() {
                 console.warn(
                     `${LOG_PREFIX} Поле '${field}' отсутствует в State.userPreferences. Устанавливается пустая строка или false.`,
                 );
-                State.userPreferences[field] = typeof State.userPreferences[field] === 'boolean' ? false : '';
+                State.userPreferences[field] =
+                    typeof State.userPreferences[field] === 'boolean' ? false : '';
             }
         });
 
@@ -249,4 +271,3 @@ export async function saveUserPreferences() {
         return false;
     }
 }
-

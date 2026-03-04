@@ -1,0 +1,5 @@
+# Shell scripts must use LF so curl | bash works on macOS/Linux
+*.sh text eol=lf
+site/install-*.sh text eol=lf
+# PowerShell: LF avoids issues when script is served and run via irm | iex
+*.ps1 text eol=lf

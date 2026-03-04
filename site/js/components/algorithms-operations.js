@@ -28,17 +28,24 @@ let getSectionName = null;
 export function setAlgorithmsOperationsDependencies(deps) {
     if (deps.algorithms !== undefined) algorithms = deps.algorithms;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
-    if (deps.createStepElementHTML !== undefined) createStepElementHTML = deps.createStepElementHTML;
-    if (deps.formatExampleForTextarea !== undefined) formatExampleForTextarea = deps.formatExampleForTextarea;
+    if (deps.createStepElementHTML !== undefined)
+        createStepElementHTML = deps.createStepElementHTML;
+    if (deps.formatExampleForTextarea !== undefined)
+        formatExampleForTextarea = deps.formatExampleForTextarea;
     if (deps.toggleStepCollapse !== undefined) toggleStepCollapse = deps.toggleStepCollapse;
-    if (deps.attachStepDeleteHandler !== undefined) attachStepDeleteHandler = deps.attachStepDeleteHandler;
+    if (deps.attachStepDeleteHandler !== undefined)
+        attachStepDeleteHandler = deps.attachStepDeleteHandler;
     if (deps.updateStepNumbers !== undefined) updateStepNumbers = deps.updateStepNumbers;
     if (deps.initStepSorting !== undefined) initStepSorting = deps.initStepSorting;
-    if (deps.captureInitialEditState !== undefined) captureInitialEditState = deps.captureInitialEditState;
-    if (deps.captureInitialAddState !== undefined) captureInitialAddState = deps.captureInitialAddState;
+    if (deps.captureInitialEditState !== undefined)
+        captureInitialEditState = deps.captureInitialEditState;
+    if (deps.captureInitialAddState !== undefined)
+        captureInitialAddState = deps.captureInitialAddState;
     if (deps.openAnimatedModal !== undefined) openAnimatedModal = deps.openAnimatedModal;
-    if (deps.attachScreenshotHandlers !== undefined) attachScreenshotHandlers = deps.attachScreenshotHandlers;
-    if (deps.renderExistingThumbnail !== undefined) renderExistingThumbnail = deps.renderExistingThumbnail;
+    if (deps.attachScreenshotHandlers !== undefined)
+        attachScreenshotHandlers = deps.attachScreenshotHandlers;
+    if (deps.renderExistingThumbnail !== undefined)
+        renderExistingThumbnail = deps.renderExistingThumbnail;
     if (deps.addNewStep !== undefined) addNewStep = deps.addNewStep;
     if (deps.getSectionName !== undefined) getSectionName = deps.getSectionName;
 }
@@ -109,28 +116,24 @@ export async function editAlgorithm(algorithmId, section = 'main') {
         const collapseControls = document.createElement('div');
         collapseControls.className = 'mr-auto';
         collapseControls.innerHTML = `
-            <button type="button" class="collapse-all-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-900 dark:text-gray-100">Свернуть все</button>
-            <button type="button" class="expand-all-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-900 dark:text-gray-100 ml-1">Развернуть все</button>
+            <button type="button" class="collapse-all-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition">Свернуть все</button>
+            <button type="button" class="expand-all-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition ml-2">Развернуть все</button>
         `;
         actionsContainer.insertBefore(collapseControls, actionsContainer.firstChild);
 
         actionsContainer.querySelector('.collapse-all-btn').addEventListener('click', () => {
-            editStepsContainerElement
-                .querySelectorAll('.edit-step')
-                .forEach((step) => {
-                    if (typeof toggleStepCollapse === 'function') {
-                        toggleStepCollapse(step, true);
-                    }
-                });
+            editStepsContainerElement.querySelectorAll('.edit-step').forEach((step) => {
+                if (typeof toggleStepCollapse === 'function') {
+                    toggleStepCollapse(step, true);
+                }
+            });
         });
         actionsContainer.querySelector('.expand-all-btn').addEventListener('click', () => {
-            editStepsContainerElement
-                .querySelectorAll('.edit-step')
-                .forEach((step) => {
-                    if (typeof toggleStepCollapse === 'function') {
-                        toggleStepCollapse(step, false);
-                    }
-                });
+            editStepsContainerElement.querySelectorAll('.edit-step').forEach((step) => {
+                if (typeof toggleStepCollapse === 'function') {
+                    toggleStepCollapse(step, false);
+                }
+            });
         });
     }
 
@@ -359,28 +362,24 @@ export async function showAddModal(section) {
         const collapseControls = document.createElement('div');
         collapseControls.className = 'mr-auto';
         collapseControls.innerHTML = `
-            <button type="button" class="collapse-all-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-900 dark:text-gray-100">Свернуть все</button>
-            <button type="button" class="expand-all-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-900 dark:text-gray-100 ml-1">Развернуть все</button>
+            <button type="button" class="collapse-all-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition">Свернуть все</button>
+            <button type="button" class="expand-all-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition ml-2">Развернуть все</button>
         `;
         actionsContainer.insertBefore(collapseControls, actionsContainer.firstChild);
 
         actionsContainer.querySelector('.collapse-all-btn').addEventListener('click', () => {
-            newStepsContainerElement
-                .querySelectorAll('.edit-step')
-                .forEach((step) => {
-                    if (typeof toggleStepCollapse === 'function') {
-                        toggleStepCollapse(step, true);
-                    }
-                });
+            newStepsContainerElement.querySelectorAll('.edit-step').forEach((step) => {
+                if (typeof toggleStepCollapse === 'function') {
+                    toggleStepCollapse(step, true);
+                }
+            });
         });
         actionsContainer.querySelector('.expand-all-btn').addEventListener('click', () => {
-            newStepsContainerElement
-                .querySelectorAll('.edit-step')
-                .forEach((step) => {
-                    if (typeof toggleStepCollapse === 'function') {
-                        toggleStepCollapse(step, false);
-                    }
-                });
+            newStepsContainerElement.querySelectorAll('.edit-step').forEach((step) => {
+                if (typeof toggleStepCollapse === 'function') {
+                    toggleStepCollapse(step, false);
+                }
+            });
         });
     }
 

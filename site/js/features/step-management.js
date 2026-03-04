@@ -126,7 +126,10 @@ export function attachStepDeleteHandler(
             }
         } else if (isMainSection && mode === 'edit') {
             if (deps.showNotification) {
-                deps.showNotification('Главный алгоритм должен содержать хотя бы один шаг.', 'warning');
+                deps.showNotification(
+                    'Главный алгоритм должен содержать хотя бы один шаг.',
+                    'warning',
+                );
             }
         } else {
             console.log('Попытка удалить единственный шаг - проигнорировано.');

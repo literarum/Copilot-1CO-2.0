@@ -6,6 +6,7 @@ let deps = {
     editAlgorithm: null,
     ExportService: null,
     closeAnimatedModal: null,
+    showAppConfirm: null,
 };
 
 export function setAlgorithmModalControlDependencies(dependencies) {
@@ -60,7 +61,10 @@ export function initAlgorithmModalControls() {
         const sectionToDelete = currentModal.dataset.currentSection;
 
         if (!algorithmIdToDelete || !sectionToDelete) {
-            deps.showNotification?.('Ошибка: Не удалось определить алгоритм для удаления.', 'error');
+            deps.showNotification?.(
+                'Ошибка: Не удалось определить алгоритм для удаления.',
+                'error',
+            );
             return;
         }
 
@@ -74,11 +78,18 @@ export function initAlgorithmModalControls() {
             ? modalTitleElement.textContent
             : `алгоритм с ID ${algorithmIdToDelete}`;
 
-        if (
-            confirm(
-                `Вы уверены, что хотите удалить алгоритм "${algorithmTitle}"? Это действие необратимо.`,
-            )
-        ) {
+        const confirmed = deps.showAppConfirm
+            ? await deps.showAppConfirm({
+                  title: 'Удаление алгоритма',
+                  message: `Вы уверены, что хотите удалить алгоритм "${algorithmTitle}"? Это действие необратимо.`,
+                  confirmText: 'Удалить',
+                  cancelText: 'Отмена',
+                  confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+              })
+            : confirm(
+                  `Вы уверены, что хотите удалить алгоритм "${algorithmTitle}"? Это действие необратимо.`,
+              );
+        if (confirmed) {
             currentModal.classList.add('hidden');
 
             try {

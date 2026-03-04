@@ -30,6 +30,7 @@ export function setTabsOverflowDependencies(dependencies) {
 
 const MAX_UPDATE_VISIBLE_TABS_RETRIES = 5;
 const LAYOUT_ERROR_MARGIN = 5;
+const MIN_TAB_WIDTH_PX = 96;
 
 // ============================================================================
 // ОСНОВНЫЕ ФУНКЦИИ
@@ -66,8 +67,8 @@ export function updateVisibleTabs() {
         State.updateVisibleTabsRetryCount < MAX_UPDATE_VISIBLE_TABS_RETRIES
     ) {
         State.updateVisibleTabsRetryCount++;
-        console.warn(
-            `[updateVisibleTabs v8_FIXED - Retry ${State.updateVisibleTabsRetryCount}/${MAX_UPDATE_VISIBLE_TABS_RETRIES}] tabsNav.offsetWidth is 0. Retrying in next frame...`,
+        console.debug(
+            `[updateVisibleTabs] tabsNav.offsetWidth is 0, retry ${State.updateVisibleTabsRetryCount}/${MAX_UPDATE_VISIBLE_TABS_RETRIES}.`,
         );
         requestAnimationFrame(updateVisibleTabs);
         return;
@@ -75,8 +76,8 @@ export function updateVisibleTabs() {
         tabsNav.offsetWidth === 0 &&
         State.updateVisibleTabsRetryCount >= MAX_UPDATE_VISIBLE_TABS_RETRIES
     ) {
-        console.warn(
-            `[updateVisibleTabs] Element not visible yet (offsetWidth=0). Will recalculate on resize.`,
+        console.debug(
+            '[updateVisibleTabs] Element not visible yet (offsetWidth=0). Will recalculate on resize.',
         );
         if (moreTabsContainer && document.body.contains(moreTabsContainer)) {
             moreTabsContainer.classList.add('hidden');
@@ -111,8 +112,6 @@ export function updateVisibleTabs() {
     }
 
     const navWidth = tabsNav.offsetWidth;
-    let totalWidth = 0;
-    let firstOverflowIndex = -1;
 
     let moreTabsWidth = 0;
     if (moreTabsContainer) {
@@ -122,24 +121,24 @@ export function updateVisibleTabs() {
         if (wasMoreButtonHidden) moreTabsContainer.classList.add('hidden');
     }
 
+    const availableWidth = navWidth - moreTabsWidth - LAYOUT_ERROR_MARGIN;
+
+    // Более агрессивный и точный подсчет: используем реальную ширину вкладок,
+    // добавляя небольшой запас, чтобы ни одна вкладка не вылезала за пределы серой линии.
+    let firstOverflowIndex = -1;
+    let usedWidth = 0;
+    const PER_TAB_EXTRA_GAP = 8; // небольшой запас на зазоры/округление
+
     for (let i = 0; i < visibleTabs.length; i++) {
         const tab = visibleTabs[i];
-        const currentTabWidth = tab.offsetWidth;
+        const rawWidth = tab.offsetWidth || MIN_TAB_WIDTH_PX;
+        const tabWidth = rawWidth + PER_TAB_EXTRA_GAP;
 
-        if (currentTabWidth === 0) {
-            console.warn(
-                `[updateVisibleTabs v8_FIXED] Tab ${
-                    tab.id || 'with no id'
-                } has offsetWidth 0! Skipping.`,
-            );
-            continue;
-        }
-
-        if (totalWidth + currentTabWidth + moreTabsWidth + LAYOUT_ERROR_MARGIN > navWidth) {
+        if (usedWidth + tabWidth > availableWidth) {
             firstOverflowIndex = i;
             break;
         }
-        totalWidth += currentTabWidth;
+        usedWidth += tabWidth;
     }
 
     if (firstOverflowIndex !== -1) {
@@ -156,7 +155,7 @@ export function updateVisibleTabs() {
             const dropdownItem = document.createElement('a');
             dropdownItem.href = '#';
             dropdownItem.className =
-                'block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 overflow-dropdown-item';
+                'block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-all duration-150 overflow-dropdown-item cursor-pointer';
             const icon = tab.querySelector('i');
             const text = tab.textContent.trim();
             dropdownItem.innerHTML = `${icon ? icon.outerHTML + ' ' : ''}${text}`;

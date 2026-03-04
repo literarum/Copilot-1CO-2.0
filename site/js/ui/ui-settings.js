@@ -29,11 +29,13 @@ export function setUISettingsDependencies(deps) {
     if (deps.DEFAULT_UI_SETTINGS !== undefined) DEFAULT_UI_SETTINGS = deps.DEFAULT_UI_SETTINGS;
     if (deps.tabsConfig !== undefined) tabsConfig = deps.tabsConfig;
     if (deps.defaultPanelOrder !== undefined) defaultPanelOrder = deps.defaultPanelOrder;
-    if (deps.defaultPanelVisibility !== undefined) defaultPanelVisibility = deps.defaultPanelVisibility;
+    if (deps.defaultPanelVisibility !== undefined)
+        defaultPanelVisibility = deps.defaultPanelVisibility;
     if (deps.applyPreviewSettings !== undefined) applyPreviewSettings = deps.applyPreviewSettings;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
     if (deps.loadUserPreferences !== undefined) loadUserPreferences = deps.loadUserPreferences;
-    if (deps.applyPanelOrderAndVisibility !== undefined) applyPanelOrderAndVisibility = deps.applyPanelOrderAndVisibility;
+    if (deps.applyPanelOrderAndVisibility !== undefined)
+        applyPanelOrderAndVisibility = deps.applyPanelOrderAndVisibility;
     if (deps.ensureTabPresent !== undefined) ensureTabPresent = deps.ensureTabPresent;
     if (deps.setupTabsOverflow !== undefined) setupTabsOverflow = deps.setupTabsOverflow;
     if (deps.updateVisibleTabs !== undefined) updateVisibleTabs = deps.updateVisibleTabs;
@@ -154,7 +156,10 @@ export async function applyUISettings() {
         }
     }
 
-    if (typeof State.originalUISettings !== 'object' || Object.keys(State.originalUISettings).length === 0) {
+    if (
+        typeof State.originalUISettings !== 'object' ||
+        Object.keys(State.originalUISettings).length === 0
+    ) {
         State.originalUISettings = JSON.parse(JSON.stringify(settingsToApply));
         console.log('applyUISettings: State.originalUISettings инициализированы.');
     }
@@ -208,7 +213,10 @@ export async function applyUISettings() {
 export async function applyInitialUISettings() {
     console.log('applyInitialUISettings V2: Применение начальных UI настроек (единая логика)...');
 
-    if (typeof State.userPreferences !== 'object' || Object.keys(State.userPreferences).length === 0) {
+    if (
+        typeof State.userPreferences !== 'object' ||
+        Object.keys(State.userPreferences).length === 0
+    ) {
         console.error(
             'applyInitialUISettings: State.userPreferences не инициализирован! Это не должно происходить.',
         );
@@ -230,13 +238,14 @@ export async function applyInitialUISettings() {
         await applyPreviewSettings(State.userPreferences);
         try {
             const order =
-                Array.isArray(State.userPreferences?.panelOrder) && State.userPreferences.panelOrder.length
+                Array.isArray(State.userPreferences?.panelOrder) &&
+                State.userPreferences.panelOrder.length
                     ? [...State.userPreferences.panelOrder]
                     : Array.isArray(defaultPanelOrder) && defaultPanelOrder.length
-                    ? [...defaultPanelOrder]
-                    : Array.isArray(tabsConfig)
-                    ? tabsConfig.map((t) => t.id)
-                    : [];
+                      ? [...defaultPanelOrder]
+                      : Array.isArray(tabsConfig)
+                        ? tabsConfig.map((t) => t.id)
+                        : [];
             const visArr =
                 Array.isArray(State.userPreferences?.panelVisibility) &&
                 State.userPreferences.panelVisibility.length === order.length
@@ -254,10 +263,7 @@ export async function applyInitialUISettings() {
             if (typeof setupTabsOverflow === 'function') setupTabsOverflow();
             if (typeof updateVisibleTabs === 'function') updateVisibleTabs();
         } catch (e) {
-            console.warn(
-                'applyInitialUISettings: не удалось досоздать вкладку Шаблоны:',
-                e,
-            );
+            console.warn('applyInitialUISettings: не удалось досоздать вкладку Шаблоны:', e);
         }
         console.log('applyInitialUISettings: Начальные UI настройки успешно применены.');
     } catch (applyError) {

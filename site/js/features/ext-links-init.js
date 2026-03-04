@@ -24,13 +24,17 @@ let setupClearButton = null;
 
 export function setExtLinksInitDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
-    if (deps.showAddEditExtLinkModal !== undefined) showAddEditExtLinkModal = deps.showAddEditExtLinkModal;
-    if (deps.showOrganizeExtLinkCategoriesModal !== undefined) showOrganizeExtLinkCategoriesModal = deps.showOrganizeExtLinkCategoriesModal;
+    if (deps.showAddEditExtLinkModal !== undefined)
+        showAddEditExtLinkModal = deps.showAddEditExtLinkModal;
+    if (deps.showOrganizeExtLinkCategoriesModal !== undefined)
+        showOrganizeExtLinkCategoriesModal = deps.showOrganizeExtLinkCategoriesModal;
     if (deps.filterExtLinks !== undefined) filterExtLinks = deps.filterExtLinks;
     if (deps.handleExtLinkAction !== undefined) handleExtLinkAction = deps.handleExtLinkAction;
-    if (deps.handleViewToggleClick !== undefined) handleViewToggleClick = deps.handleViewToggleClick;
+    if (deps.handleViewToggleClick !== undefined)
+        handleViewToggleClick = deps.handleViewToggleClick;
     if (deps.loadExtLinks !== undefined) loadExtLinks = deps.loadExtLinks;
-    if (deps.populateExtLinkCategoryFilter !== undefined) populateExtLinkCategoryFilter = deps.populateExtLinkCategoryFilter;
+    if (deps.populateExtLinkCategoryFilter !== undefined)
+        populateExtLinkCategoryFilter = deps.populateExtLinkCategoryFilter;
     if (deps.getAllExtLinks !== undefined) getAllExtLinks = deps.getAllExtLinks;
     if (deps.renderExtLinks !== undefined) renderExtLinks = deps.renderExtLinks;
     if (deps.debounce !== undefined) debounce = deps.debounce;
@@ -50,7 +54,7 @@ export async function initExternalLinksSystem() {
 
     // Ждем, пока DOM будет готов
     if (document.readyState === 'loading') {
-        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+        await new Promise((resolve) => document.addEventListener('DOMContentLoaded', resolve));
     }
 
     const panel = document.getElementById('extLinksContent');
@@ -60,26 +64,29 @@ export async function initExternalLinksSystem() {
         );
         return;
     }
-    
-    console.log(`${LOG_PREFIX} Панель #extLinksContent найдена, текущий innerHTML длина: ${panel.innerHTML.length}`);
+
+    console.log(
+        `${LOG_PREFIX} Панель #extLinksContent найдена, текущий innerHTML длина: ${panel.innerHTML.length}`,
+    );
 
     const structureHTML = `
         <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md">
             <div class="flex flex-wrap gap-x-4 gap-y-2 justify-between items-center mb-4 flex-shrink-0">
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Внешние ресурсы</h2>
-                <div class="flex items-center gap-2">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 flex-shrink-0">Внешние ресурсы</h2>
+                <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
                     <div class="flex items-center space-x-1 border border-gray-300 dark:border-gray-600 rounded-md p-0.5">
                             <button class="view-toggle p-1.5 rounded bg-primary text-white" data-view="cards" title="Вид карточек"> <i class="fas fa-th-large"></i> </button>
                             <button class="view-toggle p-1.5 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-300" data-view="list" title="Вид списка"> <i class="fas fa-list"></i> </button>
                         </div>
-                    <button
-                        id="addExtLinkBtn"
-                        class="h-9 px-3.5 bg-primary hover:bg-secondary text-white rounded-md shadow-sm transition inline-flex items-center gap-2"
-                    >
-                        <i class="fas fa-plus mr-1"></i>Добавить
-                    </button>
                     <button id="organizeExtLinkCategoriesBtn" class="px-3 py-2 bg-primary hover:bg-secondary text-white dark:text-gray-200 rounded-md transition text-sm font-medium flex items-center">
                         <i class="fas fa-folder-open mr-2"></i>Категории
+                    </button>
+                    <button
+                        id="addExtLinkBtn"
+                        type="button"
+                        class="h-9 min-w-[7rem] px-3.5 bg-primary hover:bg-secondary text-white rounded-md shadow-sm transition inline-flex items-center justify-center gap-2"
+                    >
+                        <i class="fas fa-plus mr-1"></i>Добавить
                     </button>
                 </div>
             </div>
@@ -103,7 +110,7 @@ export async function initExternalLinksSystem() {
     panel.innerHTML = structureHTML;
 
     // Используем requestAnimationFrame для гарантии, что DOM обновился
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     const addBtn = panel.querySelector('#addExtLinkBtn');
     const organizeBtn = panel.querySelector('#organizeExtLinkCategoriesBtn');
@@ -120,7 +127,8 @@ export async function initExternalLinksSystem() {
     if (!categoryFilter) console.error(`${LOG_PREFIX} Не найден: #extLinkCategoryFilter`);
     if (!clearSearchBtn) console.error(`${LOG_PREFIX} Не найден: #clearExtLinkSearchBtn`);
     if (!contentContainer) console.error(`${LOG_PREFIX} Не найден: #extLinksContainer`);
-    if (!viewToggles || viewToggles.length === 0) console.error(`${LOG_PREFIX} Не найдены: .view-toggle`);
+    if (!viewToggles || viewToggles.length === 0)
+        console.error(`${LOG_PREFIX} Не найдены: .view-toggle`);
 
     if (
         !addBtn ||
@@ -145,7 +153,10 @@ export async function initExternalLinksSystem() {
         }
     });
     organizeBtn.addEventListener('click', () => {
-        if (showOrganizeExtLinkCategoriesModal && typeof showOrganizeExtLinkCategoriesModal === 'function') {
+        if (
+            showOrganizeExtLinkCategoriesModal &&
+            typeof showOrganizeExtLinkCategoriesModal === 'function'
+        ) {
             showOrganizeExtLinkCategoriesModal();
         } else {
             console.error(`${LOG_PREFIX} showOrganizeExtLinkCategoriesModal не найдена`);
@@ -189,7 +200,7 @@ export async function initExternalLinksSystem() {
     } else {
         console.error(`${LOG_PREFIX} populateExtLinkCategoryFilter не найдена`);
     }
-    
+
     if (getAllExtLinks && renderExtLinks && State) {
         const allLinks = await getAllExtLinks();
         renderExtLinks(allLinks, State.extLinkCategoryInfo);

@@ -18,7 +18,8 @@ let setTheme = null;
 
 export function setPreviewSettingsDependencies(deps) {
     if (deps.DEFAULT_UI_SETTINGS !== undefined) DEFAULT_UI_SETTINGS = deps.DEFAULT_UI_SETTINGS;
-    if (deps.calculateSecondaryColor !== undefined) calculateSecondaryColor = deps.calculateSecondaryColor;
+    if (deps.calculateSecondaryColor !== undefined)
+        calculateSecondaryColor = deps.calculateSecondaryColor;
     if (deps.hexToHsl !== undefined) hexToHsl = deps.hexToHsl;
     if (deps.hslToHex !== undefined) hslToHex = deps.hslToHex;
     if (deps.adjustHsl !== undefined) adjustHsl = deps.adjustHsl;
@@ -41,7 +42,8 @@ export async function applyPreviewSettings(settings) {
     const { style } = root;
     const body = document.body;
 
-    let primary = settings?.primaryColor || (DEFAULT_UI_SETTINGS && DEFAULT_UI_SETTINGS.primaryColor);
+    let primary =
+        settings?.primaryColor || (DEFAULT_UI_SETTINGS && DEFAULT_UI_SETTINGS.primaryColor);
     if (typeof primary !== 'string' || !/^#[a-fA-F0-9]{3}([a-fA-F0-9]{3})?$/.test(primary.trim())) {
         primary = (DEFAULT_UI_SETTINGS && DEFAULT_UI_SETTINGS.primaryColor) || '#7E22CE';
     }
@@ -50,7 +52,7 @@ export async function applyPreviewSettings(settings) {
     if (typeof calculateSecondaryColor === 'function') {
         try {
             style.setProperty('--color-secondary', calculateSecondaryColor(primary));
-        } catch (_) {
+        } catch {
             style.setProperty('--color-secondary', primary);
         }
     }

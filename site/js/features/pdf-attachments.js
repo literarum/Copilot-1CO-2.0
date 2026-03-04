@@ -31,7 +31,7 @@ export function isPdfFile(file) {
 /**
  * Setup PDF drag and drop on an element
  */
-export function setupPdfDragAndDrop(targetEl, onFiles, opts = {}) {
+export function setupPdfDragAndDrop(targetEl, onFiles, _opts = {}) {
     if (!targetEl || typeof onFiles !== 'function') return;
     if (targetEl._pdfDndWired) return;
     targetEl._pdfDndWired = true;
@@ -40,7 +40,7 @@ export function setupPdfDragAndDrop(targetEl, onFiles, opts = {}) {
     if (cs.position === 'static') targetEl.style.position = 'relative';
 
     const overlay = document.createElement('div');
-    overlay.className = `pdf-drop-overlay pointer-events-none absolute inset-0 rounded-xl z-[1000]
+    overlay.className = `pdf-drop-overlay pointer-events-none absolute inset-0 rounded-xl z-20
     border-2 border-dashed grid place-items-center text-sm font-medium
     opacity-0 transition-opacity`;
     overlay.style.zIndex = '1000';
@@ -60,7 +60,7 @@ export function setupPdfDragAndDrop(targetEl, onFiles, opts = {}) {
     targetEl.appendChild(overlay);
 
     let dragDepth = 0;
-    
+
     const isTransparent = (c) => {
         if (!c) return true;
         if (c === 'transparent') return true;
@@ -72,7 +72,7 @@ export function setupPdfDragAndDrop(targetEl, onFiles, opts = {}) {
         }
         return false;
     };
-    
+
     const parseRgb = (c) => {
         if (!c) return [0, 0, 0];
         const hex = c.trim().toLowerCase();
@@ -94,9 +94,7 @@ export function setupPdfDragAndDrop(targetEl, onFiles, opts = {}) {
         }
         return [0, 0, 0];
     };
-    
-    const toRgbStr = (arr) => `rgb(${arr[0]},${arr[1]},${arr[2]})`;
-    
+
     const toRgbaWithAlpha = (c, a) => {
         if (!c) return `rgba(0,0,0,${a})`;
         const hex = c.trim().toLowerCase();
@@ -233,7 +231,7 @@ export async function addPdfRecords(files, parentType, parentId) {
                 createdAt: Date.now(),
             };
 
-            const savedId = await saveToIndexedDB('pdfAttachments', record);
+            const savedId = await saveToIndexedDB('pdfFiles', record);
             results.push({ ...record, id: savedId });
             console.log(`[addPdfRecords] Saved PDF: ${file.name}, id=${savedId}`);
         } catch (err) {
@@ -249,7 +247,7 @@ export async function addPdfRecords(files, parentType, parentId) {
 export async function getPdfsForParent(parentType, parentId) {
     try {
         if (!State.db) throw new Error('DB not ready');
-        const all = await getAllFromIndexedDB('pdfAttachments');
+        const all = await getAllFromIndexedDB('pdfFiles');
         return all.filter(
             (r) => r.parentType === parentType && String(r.parentId) === String(parentId),
         );
@@ -297,7 +295,10 @@ export function mountPdfSection(hostEl, parentType, parentId) {
     }
 
     const section = document.createElement('div');
-    section.className = 'pdf-attachments-section mt-4 border-t pt-4';
+    section.className =
+        parentType === 'algorithm'
+            ? 'pdf-attachments-section mt-5 mb-2 border-t pt-4'
+            : 'pdf-attachments-section mt-4 border-t pt-4 px-6 pb-4';
     section.dataset.parentType = parentType;
     section.dataset.parentId = parentId;
 
@@ -318,7 +319,6 @@ export function mountPdfSection(hostEl, parentType, parentId) {
     </details>`;
 
     const row = section.querySelector('.pdf-row');
-    const list = section.querySelector('.pdf-list');
     const input = section.querySelector('.pdf-input');
     const btn = section.querySelector('.add-pdf-btn');
 
@@ -369,7 +369,7 @@ async function refreshPdfList(section, parentType, parentId) {
         const sizeKb = Math.max(1, Math.round((pdf.size || 0) / 1024));
         const safeName = (pdf.filename || 'file.pdf').replace(
             /[<>&"']/g,
-            (s) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[s]),
+            (s) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' })[s],
         );
 
         li.innerHTML = `
@@ -389,7 +389,7 @@ async function refreshPdfList(section, parentType, parentId) {
 
         li.querySelector('[data-act="rm"]')?.addEventListener('click', async () => {
             try {
-                await deleteFromIndexedDB('pdfAttachments', pdf.id);
+                await deleteFromIndexedDB('pdfFiles', pdf.id);
                 refreshPdfList(section, parentType, parentId);
                 showNotification('PDF удален', 'success');
             } catch (err) {
@@ -586,7 +586,7 @@ export function attachBookmarkPdfHandlers(form) {
                 typeof file?.name === 'string' && file.name.trim() ? file.name : `PDF ${idx + 1}`;
             const safe = displayName.replace(
                 /[<>&"']/g,
-                (s) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[s]),
+                (s) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' })[s],
             );
             const sizeKb = Math.max(1, Math.round((file.size || 0) / 1024));
 
