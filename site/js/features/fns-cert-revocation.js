@@ -516,10 +516,10 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
 
     const header = document.createElement('div');
     header.className =
-        'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between gap-2';
+        'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2';
     const initialStatusChip = certExpired
-        ? '<span data-fns-cert-status-badge class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Истёк</span>'
-        : '<span data-fns-cert-status-badge class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">Ожидает проверки</span>';
+        ? '<span data-fns-cert-status-badge class="block sm:inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Истёк</span>'
+        : '<span data-fns-cert-status-badge class="block sm:inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">Ожидает проверки</span>';
     header.innerHTML = `<span class="inline-flex items-center gap-2"><i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span></span>${initialStatusChip}`;
     card.appendChild(header);
 
@@ -583,95 +583,6 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
     );
 
     body.appendChild(mainTable);
-
-    const extrasExist =
-        (Array.isArray(certInfoData.crlDistributionPoints) &&
-            certInfoData.crlDistributionPoints.length) ||
-        Number.isFinite(certInfoData.bytesLength);
-
-    if (extrasExist) {
-        const spoiler = document.createElement('div');
-        spoiler.className = 'border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden';
-
-        const spoilerHeader = document.createElement('button');
-        spoilerHeader.type = 'button';
-        spoilerHeader.className =
-            'w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-50/80 dark:bg-gray-800/70 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors';
-        spoilerHeader.innerHTML =
-            '<span class="inline-flex items-center gap-2"><i class="fas fa-circle-info text-gray-400"></i><span>Дополнительные детали сертификата</span></span><span class="inline-flex items-center justify-center h-6 w-6 rounded-full border border-gray-300 dark:border-gray-600 text-[11px] transition-transform duration-200" aria-hidden="true">▼</span>';
-
-        const spoilerBody = document.createElement('div');
-        spoilerBody.className =
-            'overflow-hidden max-h-0 opacity-0 transition-all duration-300 ease-out bg-gray-50/70 dark:bg-gray-800/60';
-
-        const spoilerInner = document.createElement('dl');
-        spoilerInner.className =
-            'px-3.5 py-3 grid grid-cols-1 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] gap-x-6 gap-y-3 text-xs sm:text-sm';
-
-        const addExtraRow = (label, value, options = {}) => {
-            const rowLabel = document.createElement('dt');
-            rowLabel.className =
-                'text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 text-right sm:pr-1 flex sm:block justify-between';
-            const labelSpan = document.createElement('span');
-            labelSpan.textContent = `${label}:`;
-            rowLabel.appendChild(labelSpan);
-
-            const rowValue = document.createElement('dd');
-            const baseValueClass = options.mono
-                ? 'font-mono text-[11px] sm:text-xs text-gray-900 dark:text-gray-100'
-                : 'text-xs sm:text-sm text-gray-900 dark:text-gray-100';
-            rowValue.className = `${baseValueClass} break-words`;
-
-            const safeValue = value || '—';
-            if (options.lines && safeValue && safeValue.includes('\n')) {
-                rowValue.innerHTML = safeValue
-                    .split('\n')
-                    .map((line) => `<span class="block">${escapeHtmlForCert(line)}</span>`)
-                    .join('');
-            } else {
-                rowValue.textContent = safeValue;
-            }
-
-            spoilerInner.appendChild(rowLabel);
-            spoilerInner.appendChild(rowValue);
-        };
-
-        if (Array.isArray(certInfoData.crlDistributionPoints) && certInfoData.crlDistributionPoints.length) {
-            addExtraRow(
-                'CRL Distribution Points',
-                certInfoData.crlDistributionPoints.join('\n'),
-                {
-                    lines: true,
-                },
-            );
-        }
-        if (Number.isFinite(certInfoData.bytesLength)) {
-            addExtraRow('Размер сертификата (байт)', String(certInfoData.bytesLength), {
-                mono: true,
-            });
-        }
-
-        spoilerBody.appendChild(spoilerInner);
-        spoiler.appendChild(spoilerHeader);
-        spoiler.appendChild(spoilerBody);
-        body.appendChild(spoiler);
-
-        let spoilerOpen = false;
-        const toggleSpoiler = () => {
-            spoilerOpen = !spoilerOpen;
-            const icon = spoilerHeader.querySelector('span[aria-hidden="true"]');
-            if (spoilerOpen) {
-                spoilerBody.style.maxHeight = `${spoilerInner.offsetHeight + 24}px`;
-                spoilerBody.style.opacity = '1';
-                if (icon) icon.style.transform = 'rotate(180deg)';
-            } else {
-                spoilerBody.style.maxHeight = '0';
-                spoilerBody.style.opacity = '0';
-                if (icon) icon.style.transform = 'rotate(0deg)';
-            }
-        };
-        spoilerHeader.addEventListener('click', toggleSpoiler);
-    }
 
     card.appendChild(body);
     certInfo.appendChild(card);
@@ -1344,53 +1255,19 @@ export function initFNSCertificateRevocationSystem() {
                 const isExpiredOnly = finalRevocationState.reason === 'expired';
                 const summaryTitle = isRevoked
                     ? isExpiredOnly
-                        ? 'Итог проверки: Сертификат истёк'
-                        : 'Итог проверки: Сертификат отозван'
+                        ? 'По результатам проверки сертификат истёк'
+                        : 'По результатам проверки сертификат отозван'
                     : hasPartialResult
-                      ? 'Итог проверки: Частично проверен'
-                      : 'Итог проверки: Действителен';
+                      ? 'По результатам проверки сертификат проверен частично'
+                      : 'По результатам проверки сертификат не отозван';
                 const summaryHint = isRevoked
                     ? isExpiredOnly
                         ? 'Срок действия сертификата завершился.'
                         : 'Сертификат найден в списке отозванных.'
                     : hasPartialResult
                       ? `Проверено источников: ${successfulChecks} из ${results.length}.`
-                      : `Успешно проверено источников: ${successfulChecks} из ${results.length}.`;
-                const summaryTags = [];
-                if (finalRevocationState.reason === 'expired') summaryTags.push('expired');
-                if (hasNetworkFailures) summaryTags.push('network');
-                if (hasPartialResult) summaryTags.push('partial');
-                const summaryTagMeta = {
-                    expired: {
-                        label: 'истёк',
-                        hint: 'Срок действия сертификата завершился; по бизнес-правилу статус приравнен к отзыву.',
-                    },
-                    network: {
-                        label: 'сеть',
-                        hint: 'Часть источников недоступна из-за сетевых ошибок при загрузке списков отзыва.',
-                    },
-                    partial: {
-                        label: 'частично',
-                        hint: 'Проверка выполнена не по всем источникам, итог сформирован по доступным данным.',
-                    },
-                };
-                const tagMarkup = summaryTags.length
-                    ? `<div class="mt-2 flex flex-wrap gap-1.5">${summaryTags
-                          .map(
-                              (tag) => {
-                                  const tagInfo = summaryTagMeta[tag];
-                                  if (!tagInfo) return '';
-                                  const tooltipId = `summary-tag-tooltip-${tag}`;
-                                  return `<span class="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide border-current/40 bg-white/40 dark:bg-black/10">
-                                      <span>${escapeHtmlForCert(tagInfo.label)}</span>
-                                      <span tabindex="0" aria-describedby="${escapeHtmlForCert(tooltipId)}" aria-label="${escapeHtmlForCert(tagInfo.hint)}" class="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current/50 text-[9px] leading-none opacity-80 focus:outline-none focus:ring-1 focus:ring-current">i</span>
-                                      <span id="${escapeHtmlForCert(tooltipId)}" role="tooltip" class="pointer-events-none absolute left-1/2 top-full z-10 mt-1 w-56 -translate-x-1/2 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-gray-700 dark:text-gray-200 shadow-md opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0">${escapeHtmlForCert(tagInfo.hint)}</span>
-                                  </span>`;
-                              },
-                          )
-                          .join('')}</div>`
-                    : '';
-                summary.innerHTML = `<i class="fas fa-shield-alt mt-0.5"></i><div><div class="font-semibold">${escapeHtmlForCert(summaryTitle)}</div><div class="text-xs opacity-90 mt-0.5">${escapeHtmlForCert(summaryHint)}</div>${tagMarkup}</div>`;
+                      : 'Признаков отзыва или истечения срока действия не обнаружено.';
+                summary.innerHTML = `<i class="fas fa-shield-alt mt-0.5"></i><div><div class="font-semibold">${escapeHtmlForCert(summaryTitle)}</div><div class="text-xs opacity-90 mt-0.5">${escapeHtmlForCert(summaryHint)}</div></div>`;
                 detailsEl.appendChild(summary);
                 if (contentShell) {
                     contentShell.classList.toggle('fns-cert-shell-danger', Boolean(isRevoked));
@@ -1401,11 +1278,11 @@ export function initFNSCertificateRevocationSystem() {
                     if (isRevoked) {
                         statusBadge.textContent = isExpiredOnly ? 'Истёк' : 'Отозван';
                         statusBadge.className =
-                            'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+                            'block sm:inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
                     } else {
-                        statusBadge.textContent = 'Действителен';
+                        statusBadge.textContent = 'Не отозван';
                         statusBadge.className =
-                            'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+                            'block sm:inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
                     }
                 }
                 const usedLocalHelperFromBrowser =
@@ -1483,14 +1360,7 @@ export function initFNSCertificateRevocationSystem() {
                     clientInfo.textContent = 'Режим backend-first: клиентские загрузки отключены.';
                     detailList.insertBefore(clientInfo, detailList.firstChild);
                 }
-                if (finalRevocationState.reason === 'expired') {
-                    const expiredInfo = document.createElement('li');
-                    expiredInfo.className =
-                        'rounded-md border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-2 text-xs text-red-700 dark:text-red-300';
-                    expiredInfo.textContent =
-                        'Сертификат истёк: по бизнес-правилу автоматически приравнен к отозванному.';
-                    detailList.insertBefore(expiredInfo, detailList.firstChild);
-                }
+                // Дополнительное пояснение по истечению срока действия сертификата выводить не требуется.
                 if (detailList.children.length > 0 && !redirectToInstallGate) {
                     const useToggle = detailList.children.length > 1;
                     if (useToggle) {
