@@ -1490,33 +1490,43 @@
 
             <!-- Проверка сертификата на отзыв: зона загрузки, кнопка сброса, результат -->
             <div id="fnsCertContent" class="tab-content hidden" aria-labelledby="fnsCertTab">
-                <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md">
-                    <h2 class="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">Проверка сертификата</h2>
+                <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md fns-cert-shell">
+                    <h2 class="text-2xl font-bold mb-3 text-gray-900 dark:text-gray-100">Проверка сертификата</h2>
                     <div id="fnsCertProbeStatus" class="hidden mb-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm">
                         <span class="inline-block w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" aria-hidden="true"></span>
                         <span class="text-sm text-gray-600 dark:text-gray-300">Проверяем подключение…</span>
                     </div>
                     <div id="fnsCertInstallGate" class="hidden"></div>
                     <div id="fnsCertMainBlock" class="hidden">
-                        <p id="fnsCertWelcome" class="text-gray-600 dark:text-gray-400 text-sm mb-2 max-w-xl">
-                            Проверьте сертификат ФНС на отзыв. Перетащите файл (.pem, .cer, .crt) в область ниже или выберите его вручную.
+                        <p id="fnsCertWelcome" class="text-gray-700 dark:text-gray-300 text-sm sm:text-base mb-2 max-w-3xl">
+                            Перетащите файл или выберите его вручную по клику на поле ниже.
                         </p>
-                        <p class="text-xs text-green-700 dark:text-green-400 mb-4 flex items-center gap-2">
-                            <i class="fas fa-shield-alt"></i>Проверка выполняется только на вашем компьютере. Данные не передаются на сервер.
+                        <p class="text-sm sm:text-base text-green-700 dark:text-green-400 mb-4 flex items-center gap-2">
+                            <i class="fas fa-shield-alt text-base sm:text-lg"></i>
+                            <span>Сертификат остается только на вашем компьютере и не загружается на сервер.</span>
                         </p>
                         <div class="bg-white dark:bg-gray-700 p-6 rounded-xl border border-gray-200 dark:border-gray-600 space-y-4">
                             <div id="fnsCertDropZone" class="fns-drop-zone border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-gray-50/50 dark:hover:bg-gray-600/30 transition-colors duration-200">
                                 <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="hidden" />
-                                <p id="fnsCertDropZoneHint" class="text-gray-600 dark:text-gray-400 text-sm transition-colors duration-150"><i class="fas fa-certificate mr-2 text-gray-400"></i>Перетащите сертификат сюда или нажмите для выбора</p>
-                                <div id="fnsCertInfo" class="mt-2 text-sm text-gray-600 dark:text-gray-300 min-h-[1.5rem]"></div>
+                                <p id="fnsCertDropZoneHint" class="text-gray-600 dark:text-gray-400 text-sm transition-colors duration-150">
+                                    <i class="fas fa-certificate mr-2 text-gray-400"></i>
+                                    Перетащите сертификат сюда или нажмите для выбора
+                                </p>
                             </div>
-                            <div class="flex items-center justify-between gap-4">
-                                <button type="button" id="fnsCertResetBtn" class="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                    <i class="fas fa-undo mr-1.5"></i>Сброс
-                                </button>
-                                <div id="fnsCrlStatus" class="text-sm text-gray-500 dark:text-gray-400 min-h-[1.5rem]"></div>
-                            </div>
+                            <div id="fnsCertInfo" class="text-sm text-gray-700 dark:text-gray-200"></div>
                             <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-300 hidden"></div>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                <button
+                                    type="button"
+                                    id="fnsCertResetBtn"
+                                    class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-gray-900 text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white shadow-sm transition-colors"
+                                >
+                                    <i class="fas fa-rotate-left mr-2"></i>
+                                    <span>Сбросить сертификат</span>
+                                </button>
+                                <div id="fnsCrlStatus" class="flex-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 min-h-[1.5rem] leading-relaxed">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
