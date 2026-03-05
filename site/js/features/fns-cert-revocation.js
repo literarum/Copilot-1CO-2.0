@@ -515,48 +515,50 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
 
     const header = document.createElement('div');
     header.className =
-        'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600 flex flex-col gap-2';
+        'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600';
     header.setAttribute('data-fns-cert-header', '');
-    /* Бейдж статуса обновляется только после завершения проверки отзыва (см. runCheck). */
-    const initialStatusChip =
-        '<span data-fns-cert-status-badge class="inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">Ожидание проверки</span>';
-    header.innerHTML = `<span class="inline-flex items-center gap-2"><i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span></span>${initialStatusChip}`;
+    header.innerHTML = '<span class="inline-flex items-center gap-2"><i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span></span>';
     card.appendChild(header);
 
-    const body = document.createElement('div');
-    body.className =
-        'p-4 space-y-4';
+    /* Светящаяся панель статуса: обновляется после завершения проверки (runCheck). Красная — ИСТЕК/ОТОЗВАН, зелёная — ДЕЙСТВИТЕЛЕН. */
+    const statusPanel = document.createElement('div');
+    statusPanel.setAttribute('data-fns-cert-status-panel', '');
+    statusPanel.className = 'fns-cert-status-panel fns-cert-status-panel--pending';
+    statusPanel.textContent = 'Ожидание проверки';
+    card.appendChild(statusPanel);
 
-    const mainTable = document.createElement('dl');
-    mainTable.className =
-        'fns-cert-table grid grid-cols-1 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] gap-x-6 gap-y-3 text-sm';
+    const body = document.createElement('div');
+    body.className = 'p-4';
+
+    const mainTable = document.createElement('table');
+    mainTable.className = 'fns-cert-table';
+    mainTable.setAttribute('role', 'grid');
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th scope="col">Поле</th><th scope="col">Значение</th></tr>';
+    mainTable.appendChild(thead);
+    const tbody = document.createElement('tbody');
 
     const addRow = (label, value, options = {}) => {
-        const rowLabel = document.createElement('dt');
-        rowLabel.className =
-            'text-xs sm:text-[13px] font-semibold text-gray-500 dark:text-gray-400 text-right sm:pr-1 flex sm:block justify-between';
-        const labelSpan = document.createElement('span');
-        labelSpan.textContent = `${label}:`;
-        rowLabel.appendChild(labelSpan);
-
-        const rowValue = document.createElement('dd');
-        const baseValueClass = options.mono
-            ? 'font-mono text-[11px] sm:text-xs text-gray-900 dark:text-gray-100'
-            : 'text-sm text-gray-900 dark:text-gray-100';
-        rowValue.className = `${baseValueClass} break-words`;
-
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        th.scope = 'row';
+        th.className = 'fns-cert-table__label';
+        th.textContent = label;
+        tr.appendChild(th);
+        const td = document.createElement('td');
+        const baseValueClass = options.mono ? 'fns-cert-table__value fns-cert-table__value--mono' : 'fns-cert-table__value';
+        td.className = baseValueClass;
         const safeValue = value || '—';
-        if (options.lines && safeValue && safeValue.includes('\n')) {
-            rowValue.innerHTML = safeValue
+        if (options.lines && safeValue && String(safeValue).includes('\n')) {
+            td.innerHTML = String(safeValue)
                 .split('\n')
                 .map((line) => `<span class="block">${escapeHtmlForCert(line)}</span>`)
                 .join('');
         } else {
-            rowValue.textContent = safeValue;
+            td.textContent = safeValue;
         }
-
-        mainTable.appendChild(rowLabel);
-        mainTable.appendChild(rowValue);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
     };
 
     addRow('Файл', fileName);
@@ -564,24 +566,17 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
 
     const issuerStr =
         formatDnAsLines(certInfoData.issuer) || formatDnAttributes(certInfoData.issuer);
-    addRow('Издатель (CA)', issuerStr, {
-        lines: issuerStr && issuerStr.includes('\n'),
-    });
+    addRow('Издатель (CA)', issuerStr, { lines: issuerStr && issuerStr.includes('\n') });
 
     const subjectStr =
         formatDnAsLines(certInfoData.subject) || formatDnAttributes(certInfoData.subject);
-    addRow('Владелец (Subject)', subjectStr, {
-        lines: subjectStr && subjectStr.includes('\n'),
-    });
+    addRow('Владелец (Subject)', subjectStr, { lines: subjectStr && subjectStr.includes('\n') });
 
     const notBefore = escapeHtmlForCert(certInfoData.notBefore || '—');
     const notAfter = escapeHtmlForCert(certInfoData.notAfter || '—');
-    addRow(
-        'Срок действия',
-        `С ${notBefore}\nДо ${notAfter}`,
-        { lines: true },
-    );
+    addRow('Срок действия', `С ${notBefore}\nДо ${notAfter}`, { lines: true });
 
+    mainTable.appendChild(tbody);
     body.appendChild(mainTable);
 
     card.appendChild(body);
@@ -1267,26 +1262,25 @@ export function initFNSCertificateRevocationSystem() {
                     : hasPartialResult
                       ? `Проверено источников: ${successfulChecks} из ${results.length}.`
                       : 'Признаков отзыва или истечения срока действия не обнаружено.';
-                summary.innerHTML = `<i class="fas fa-shield-alt mt-0.5"></i><div><div class="font-semibold">${escapeHtmlForCert(summaryTitle)}</div><div class="text-xs opacity-90 mt-0.5">${escapeHtmlForCert(summaryHint)}</div></div>`;
+                summary.innerHTML = `<i class="fas fa-shield-alt mt-0.5"></i><div class="font-semibold">${escapeHtmlForCert(summaryTitle)}</div>`;
                 detailsEl.appendChild(summary);
                 if (contentShell) {
                     contentShell.classList.toggle('fns-cert-shell-danger', Boolean(isRevoked));
                 }
-                const certHeaderEl = certInfo.querySelector('[data-fns-cert-header]');
-                if (certHeaderEl) {
-                    certHeaderEl.classList.toggle('fns-cert-header-danger', Boolean(isRevoked));
-                }
 
-                const statusBadge = certInfo.querySelector('[data-fns-cert-status-badge]');
-                if (statusBadge) {
+                const statusPanelEl = certInfo.querySelector('[data-fns-cert-status-panel]');
+                if (statusPanelEl) {
+                    statusPanelEl.classList.remove(
+                        'fns-cert-status-panel--pending',
+                        'fns-cert-status-panel--danger',
+                        'fns-cert-status-panel--success',
+                    );
                     if (isRevoked) {
-                        statusBadge.textContent = isExpiredOnly ? 'Истёк' : 'Отозван';
-                        statusBadge.className =
-                            'inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+                        statusPanelEl.classList.add('fns-cert-status-panel--danger');
+                        statusPanelEl.textContent = isExpiredOnly ? 'ИСТЕК' : 'ОТОЗВАН';
                     } else {
-                        statusBadge.textContent = 'Не отозван';
-                        statusBadge.className =
-                            'inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+                        statusPanelEl.classList.add('fns-cert-status-panel--success');
+                        statusPanelEl.textContent = 'ДЕЙСТВИТЕЛЕН';
                     }
                 }
                 const usedLocalHelperFromBrowser =
