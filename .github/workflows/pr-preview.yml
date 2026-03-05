@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 concurrency:
   group: pr-preview-${{ github.event.pull_request.number }}
@@ -38,4 +39,20 @@ jobs:
       - name: Show preview URL in log
         if: success() && steps.pr-preview.outputs.preview-url != ''
         run: |
-          echo "Preview URL (если комментарий в PR не появился — скопируйте ссылку): ${{ steps.pr-preview.outputs.preview-url }}"
+          echo "Preview URL: ${{ steps.pr-preview.outputs.preview-url }}"
+      # Гарантированно оставляем комментарий со ссылкой (действие rossjrw иногда не создаёт его)
+      - name: Comment PR with preview link
+        if: github.event.action != 'closed' && success() && steps.pr-preview.outputs.deployment-action == 'deploy' && steps.pr-preview.outputs.preview-url != ''
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.pr-preview.outputs.preview-url }}
+        with:
+          script: |
+            const url = process.env.PREVIEW_URL;
+            const body = `## Ссылка на приложение (preview)\n\n**${url}**\n\n*(Развёрнуто из этого PR; обновляется при новых коммитах. Если 404 — в Settings → Pages выберите источник «Deploy from a branch», ветка \`gh-pages\`.)*`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
