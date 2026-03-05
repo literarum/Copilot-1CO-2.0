@@ -258,9 +258,13 @@ if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; the
   if [[ -n "$PR_NUM" ]]; then
     PREVIEW_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/pr-preview/pr-${PR_NUM}/"
     info "Ссылка на приложение (preview): $PREVIEW_URL"
-    info "Если комментарий со ссылкой в PR не появится — откройте вкладку Actions в репозитории или используйте ссылку выше."
+    if gh workflow run "PR Preview" -f pr_number="$PR_NUM" 2>/dev/null; then
+      info "Workflow PR Preview запущен; после завершения в PR появится комментарий со ссылкой."
+    else
+      info "Запустить превью вручную: Actions → PR Preview → Run workflow → номер PR $PR_NUM."
+    fi
   fi
-  info "Готово. Workflow PR Preview (если он есть в ветке main) задеплоит превью и оставит комментарий со ссылкой в PR."
+  info "Готово."
   open_pr_in_browser_if_possible "$NEW_PR_URL"
 else
   err "Не удалось создать PR через gh. Проверьте: gh auth status, права на push в origin, что ветка не защищена."
