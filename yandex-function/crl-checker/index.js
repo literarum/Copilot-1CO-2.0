@@ -554,10 +554,13 @@ function normalizeEvent(event) {
 
 function parseEventBody(event) {
     if (!event || event.body == null) return null;
-    const raw = event.isBase64Encoded
-        ? Buffer.from(String(event.body), 'base64').toString('utf-8')
-        : String(event.body);
-    return raw;
+    const b = event.body;
+    if (typeof b === 'object') {
+        return JSON.stringify(b);
+    }
+    return event.isBase64Encoded
+        ? Buffer.from(String(b), 'base64').toString('utf-8')
+        : String(b);
 }
 
 function getQueryMulti(event, key) {
@@ -580,7 +583,15 @@ function isHealthRoute(event) {
 }
 
 module.exports.handler = async function handler(event) {
-    const ev = normalizeEvent(event);
+    let ev;
+    try {
+        ev = normalizeEvent(event);
+    } catch (normErr) {
+        return json(500, {
+            revoked: false,
+            error: `Request normalization failed: ${normErr?.message || 'unknown'}`,
+        });
+    }
     try {
         const method = ev.httpMethod;
 
@@ -640,6 +651,7 @@ module.exports.handler = async function handler(event) {
 
         return json(405, { error: 'Method not allowed' });
     } catch (err) {
-        return json(500, { revoked: false, error: `Internal server error: ${err?.message || 'unknown'}` });
+        const msg = (err && typeof err.message === 'string') ? err.message : 'unknown';
+        return json(500, { revoked: false, error: `Internal server error: ${msg}` });
     }
 };

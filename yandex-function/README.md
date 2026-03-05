@@ -35,7 +35,8 @@
 npx vitest run api/revocation/yandex-handler.test.js
 ```
 
-## Устранение 400 и CORS при вызове с браузера (например GitHub Pages)
+## Устранение 400, 502 и CORS при вызове с браузера (например GitHub Pages)
 
 - **400 Bad Request** по URL `.../api/health` или при preflight: убедитесь, что у функции включён **публичный HTTP-триггер** (вызов по URL), а не только invoke по телу. В консоли Yandex: функция → триггеры → тип «HTTP» / «Прямой вызов», доступ без аутентификации.
+- **502 Bad Gateway** на `/api/revocation/check`: (1) Убедитесь, что функция разрешает **вызов без авторизации** (публичный доступ), иначе в спецификации API Gateway укажите `service_account_id` с ролью `serverless.functions.invoker` для этой функции. (2) Проверьте **таймаут функции** (рекомендуется ≥60 с) и при необходимости — таймаут обработки запроса в настройках API Gateway (например 1–5 мин).
 - **CORS (preflight не проходит)**: ответ на `OPTIONS` должен быть с кодом 2xx и заголовками `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`. Обработчик уже возвращает 204 и CORS для любого OPTIONS; при сохранении ошибки проверьте, что платформа не возвращает 400/5xx до вызова кода (см. пункт выше).

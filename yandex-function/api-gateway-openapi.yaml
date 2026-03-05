@@ -1,6 +1,7 @@
 # OpenAPI 3.0 spec for Yandex Cloud API Gateway → crl-checker function.
 # Прямой URL функции (functions.yandexcloud.net) не передаёт path в событие — только API Gateway.
 # Подставьте свой <FUNCTION_ID> перед созданием/обновлением API Gateway.
+# При 502: если функция не публичная, добавьте service_account_id (сервисный аккаунт с ролью serverless.functions.invoker).
 
 openapi: 3.0.0
 info:

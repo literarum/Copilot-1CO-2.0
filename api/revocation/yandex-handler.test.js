@@ -110,6 +110,29 @@ describe('yandex crl-checker handler', () => {
         expect(JSON.parse(result.body).ok).toBe(true);
     });
 
+    it('accepts POST with event.body as object (API Gateway may pass parsed JSON)', async () => {
+        const { handler } = require('../../yandex-function/crl-checker/index.js');
+        const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+            new Response(new Uint8Array([0x30, 0x03, 0x02, 0x01, 0x01]), {
+                status: 200,
+                headers: { 'Content-Type': 'application/pkix-crl' },
+            }),
+        );
+        const result = await handler(
+            {
+                httpMethod: 'POST',
+                path: '/api/revocation/check',
+                queryStringParameters: {},
+                multiValueQueryStringParameters: {},
+                body: { serial: '01AB', listUrl: 'https://pki.tax.gov.ru/cdp/test.crl' },
+                isBase64Encoded: false,
+            },
+            {},
+        );
+        expect(result.statusCode).toBe(200);
+        expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+    });
+
     it('uses http candidate first for FNS hosts', async () => {
         const { handler } = require('../../yandex-function/crl-checker/index.js');
         const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
