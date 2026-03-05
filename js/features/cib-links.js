@@ -32,6 +32,7 @@ let deps = {
     removeEscapeHandler: null,
     getRequiredElements: null,
     DEFAULT_CIB_LINKS: [],
+    showAppConfirm: null,
 };
 
 /**
@@ -56,7 +57,7 @@ export function initCibLinkSystem() {
 
     if (!coreElements) {
         console.error(
-            '!!! Отсутствуют критически важные элементы CIB в initCibLinkSystem. Инициализация прервана.'
+            '!!! Отсутствуют критически важные элементы CIB в initCibLinkSystem. Инициализация прервана.',
         );
         return;
     }
@@ -83,7 +84,7 @@ export function initCibLinkSystem() {
         }
     } else {
         console.error(
-            '!!! Функции debounce или filterLinks не найдены. Поиск ссылок 1С работать не будет.'
+            '!!! Функции debounce или filterLinks не найдены. Поиск ссылок 1С работать не будет.',
         );
     }
 
@@ -208,7 +209,7 @@ export async function showAddEditCibLinkModal(linkId = null) {
         console.error(`Ошибка при ${linkId ? 'загрузке' : 'подготовке'} ссылки 1С:`, error);
         deps.showNotification?.(
             `Не удалось ${linkId ? 'загрузить данные' : 'открыть форму'} ссылки`,
-            'error'
+            'error',
         );
     }
 }
@@ -242,15 +243,22 @@ export function handleLinkActionClick(event) {
                     deps.copyToClipboard(codeElement.textContent, 'Ссылка 1С скопирована!');
                 }
                 break;
+            case 'open-cib-link':
+                if (codeElement && deps.copyToClipboard) {
+                    deps.copyToClipboard(codeElement.textContent, 'Ссылка 1С скопирована!');
+                }
+                break;
             case 'edit':
                 showAddEditCibLinkModal(linkId);
                 break;
             case 'delete':
-                const titleElement = linkItem.querySelector('h3');
-                const linkTitle = titleElement
-                    ? titleElement.getAttribute('title') || titleElement.textContent
-                    : `ID ${linkId}`;
-                deleteCibLink(linkId, linkTitle);
+                {
+                    const titleElement = linkItem.querySelector('h3');
+                    const linkTitle = titleElement
+                        ? titleElement.getAttribute('title') || titleElement.textContent
+                        : `ID ${linkId}`;
+                    deleteCibLink(linkId, linkTitle);
+                }
                 break;
             default:
                 console.warn(`Неизвестное действие '${action}' для ссылки 1С.`);
@@ -285,7 +293,7 @@ export async function loadCibLinks() {
             const linksToSave = [...(deps.DEFAULT_CIB_LINKS || [])];
             if (linksToSave.length > 0) {
                 const savedLinkIds = await Promise.all(
-                    linksToSave.map((link) => saveToIndexedDB('links', link))
+                    linksToSave.map((link) => saveToIndexedDB('links', link)),
                 );
                 const linksWithIds = linksToSave.map((link, index) => ({
                     ...link,
@@ -298,17 +306,22 @@ export async function loadCibLinks() {
                     try {
                         await Promise.all(
                             linksWithIds.map((link) =>
-                                deps.updateSearchIndex('links', link.id, link, 'add', null).catch((err) =>
-                                    console.error(
-                                        `Ошибка индексации стартовой ссылки 1С ${link.id}:`,
-                                        err
-                                    )
-                                )
-                            )
+                                deps
+                                    .updateSearchIndex('links', link.id, link, 'add', null)
+                                    .catch((err) =>
+                                        console.error(
+                                            `Ошибка индексации стартовой ссылки 1С ${link.id}:`,
+                                            err,
+                                        ),
+                                    ),
+                            ),
                         );
                         console.log('Стартовые ссылки 1С проиндексированы.');
                     } catch (indexingError) {
-                        console.error('Общая ошибка при индексации стартовых ссылок 1С:', indexingError);
+                        console.error(
+                            'Общая ошибка при индексации стартовых ссылок 1С:',
+                            indexingError,
+                        );
                     }
                 }
 
@@ -353,9 +366,13 @@ export async function filterLinks() {
         let linksToDisplay = allLinks || [];
         if (searchValue) {
             linksToDisplay = linksToDisplay.filter((link) => {
-                const titleMatch = link.title && String(link.title).toLowerCase().includes(searchValue);
-                const linkMatch = link.link && String(link.link).toLowerCase().includes(searchValue);
-                const descMatch = link.description && String(link.description).toLowerCase().includes(searchValue);
+                const titleMatch =
+                    link.title && String(link.title).toLowerCase().includes(searchValue);
+                const linkMatch =
+                    link.link && String(link.link).toLowerCase().includes(searchValue);
+                const descMatch =
+                    link.description &&
+                    String(link.description).toLowerCase().includes(searchValue);
                 return titleMatch || linkMatch || descMatch;
             });
         }
@@ -377,6 +394,11 @@ export async function renderCibLinks(links) {
         return;
     }
 
+    const currentView =
+        (State && State.viewPreferences && State.viewPreferences['linksContainer']) ||
+        linksContainer.dataset.defaultView ||
+        'cards';
+
     linksContainer.innerHTML = '';
 
     if (!links || links.length === 0) {
@@ -395,44 +417,52 @@ export async function renderCibLinks(links) {
         }
 
         const linkElement = document.createElement('div');
-
-        linkElement.className =
-            'cib-link-item view-item group relative border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#374151] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer';
         linkElement.dataset.id = link.id;
 
         const buttonsHTML = `
-            <div class="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-                <button data-action="copy" class="copy-cib-link p-1.5 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Копировать ссылку">
-                    <i class="fas fa-copy fa-fw"></i>
-                </button>
-                <button data-action="edit" class="edit-cib-link p-1.5 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Редактировать">
-                    <i class="fas fa-edit fa-fw"></i>
-                </button>
-                <button data-action="delete" class="delete-cib-link p-1.5 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Удалить">
-                    <i class="fas fa-trash fa-fw"></i>
-                </button>
-            </div>
+            <button data-action="copy" class="copy-cib-link p-1.5 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Копировать ссылку">
+                <i class="fas fa-copy fa-fw"></i>
+            </button>
+            <button data-action="edit" class="edit-cib-link p-1.5 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Редактировать">
+                <i class="fas fa-edit fa-fw"></i>
+            </button>
+            <button data-action="delete" class="delete-cib-link p-1.5 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Удалить">
+                <i class="fas fa-trash fa-fw"></i>
+            </button>
         `;
 
-        const contentHTML = `
-            <div class="p-4 flex flex-col h-full">
-                <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1 pr-20" title="${
-                    link.title || ''
-                }">${link.title || 'Без названия'}</h3>
-                <div class="mb-2">
-                    <code class="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded break-all inline-block w-full">${
-                        link.link || ''
-                    }</code>
+        if (currentView === 'list') {
+            linkElement.className =
+                'cib-link-item view-item group flex items-center p-3 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer';
+            linkElement.innerHTML = `
+                <div class="flex-grow min-w-0 flex items-center cursor-pointer" data-action="open-cib-link">
+                    <i class="fas fa-link text-gray-400 dark:text-gray-500 mr-4 flex-shrink-0"></i>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="font-medium text-gray-900 dark:text-gray-100 truncate" title="${(link.title || '').replace(/"/g, '&quot;')}">${link.title || 'Без названия'}</h3>
+                        <code class="text-xs text-gray-500 dark:text-gray-400 truncate block">${(link.link || '').replace(/</g, '&lt;')}</code>
+                    </div>
                 </div>
-                ${
-                    link.description
-                        ? `<p class="text-gray-500 dark:text-gray-400 text-sm mt-auto flex-grow">${link.description}</p>`
-                        : '<div class="flex-grow"></div>'
-                }
-            </div>
-        `;
+                <div class="cib-link-actions flex-shrink-0 ml-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    ${buttonsHTML}
+                </div>
+            `;
+        } else {
+            linkElement.className =
+                'cib-link-item view-item group relative border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#374151] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer';
+            linkElement.innerHTML = `
+                <div class="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                    ${buttonsHTML}
+                </div>
+                <div class="p-4 flex flex-col h-full">
+                    <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1 pr-20" title="${(link.title || '').replace(/"/g, '&quot;')}">${link.title || 'Без названия'}</h3>
+                    <div class="mb-2">
+                        <code class="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded break-all inline-block w-full">${(link.link || '').replace(/</g, '&lt;')}</code>
+                    </div>
+                    ${link.description ? `<p class="text-gray-500 dark:text-gray-400 text-sm mt-auto flex-grow">${link.description.replace(/</g, '&lt;')}</p>` : '<div class="flex-grow"></div>'}
+                </div>
+            `;
+        }
 
-        linkElement.innerHTML = buttonsHTML + contentHTML;
         fragment.appendChild(linkElement);
     });
 
@@ -475,7 +505,7 @@ export async function handleCibLinkSubmit(event) {
                 l &&
                 typeof l.link === 'string' &&
                 l.link.trim() === linkValue &&
-                (!isEditing || String(l.id) !== String(id))
+                (!isEditing || String(l.id) !== String(id)),
         );
         if (duplicate) {
             deps.showNotification?.('Данная ссылка уже есть в базе данных', 'error');
@@ -501,7 +531,7 @@ export async function handleCibLinkSubmit(event) {
             } catch (fetchError) {
                 console.warn(
                     `Не удалось получить старые данные ссылки 1С (${newData.id}) перед обновлением индекса:`,
-                    fetchError
+                    fetchError,
                 );
                 newData.dateAdded = timestamp;
             }
@@ -524,18 +554,21 @@ export async function handleCibLinkSubmit(event) {
                     finalId,
                     newData,
                     isEditing ? 'update' : 'add',
-                    oldData
+                    oldData,
                 );
                 const oldDataStatus = oldData ? 'со старыми данными' : '(без старых данных)';
                 console.log(
-                    `Обновление индекса для ссылки 1С (${finalId}) инициировано ${oldDataStatus}.`
+                    `Обновление индекса для ссылки 1С (${finalId}) инициировано ${oldDataStatus}.`,
                 );
             } catch (indexError) {
                 console.error(
                     `Ошибка обновления поискового индекса для ссылки 1С ${finalId}:`,
-                    indexError
+                    indexError,
                 );
-                deps.showNotification?.('Ошибка обновления поискового индекса для ссылки.', 'warning');
+                deps.showNotification?.(
+                    'Ошибка обновления поискового индекса для ссылки.',
+                    'warning',
+                );
             }
         }
 
@@ -566,7 +599,17 @@ export async function handleCibLinkSubmit(event) {
  * @param {string} linkTitle - Заголовок ссылки (для подтверждения)
  */
 export async function deleteCibLink(linkId, linkTitle) {
-    if (confirm(`Вы уверены, что хотите удалить ссылку "${linkTitle || `ID ${linkId}`}"?`)) {
+    const title = linkTitle || `ID ${linkId}`;
+    const confirmed = deps.showAppConfirm
+        ? await deps.showAppConfirm({
+              title: 'Удаление ссылки 1С',
+              message: `Вы уверены, что хотите удалить ссылку «${title}»?`,
+              confirmText: 'Удалить',
+              cancelText: 'Отмена',
+              confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+          })
+        : confirm(`Вы уверены, что хотите удалить ссылку "${title}"?`);
+    if (confirmed) {
         try {
             const linkToDelete = await getFromIndexedDB('links', linkId);
             if (!linkToDelete) {
@@ -580,7 +623,7 @@ export async function deleteCibLink(linkId, linkTitle) {
                 } catch (indexError) {
                     console.error(
                         `Error updating search index for CIB link deletion ${linkId}:`,
-                        indexError
+                        indexError,
                     );
                 }
             }

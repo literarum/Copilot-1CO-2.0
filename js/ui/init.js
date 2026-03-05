@@ -9,30 +9,32 @@
 // ЗАВИСИМОСТИ
 // ============================================================================
 
-let State = null;
+let _State = null;
 let setActiveTab = null;
 let getVisibleModals = null;
 let getTopmostModal = null;
 let toggleModalFullscreen = null;
 let showNotification = null;
-let renderFavoritesPage = null;
-let updateVisibleTabs = null;
-let showBlacklistWarning = null;
+let _renderFavoritesPage = null;
+let _updateVisibleTabs = null;
+let _showBlacklistWarning = null;
 let hotkeysModalConfig = null;
 let initBackgroundSystems = null;
 
 export function setUIInitDependencies(deps) {
-    if (deps.State !== undefined) State = deps.State;
+    if (deps.State !== undefined) _State = deps.State;
     if (deps.setActiveTab !== undefined) setActiveTab = deps.setActiveTab;
     if (deps.getVisibleModals !== undefined) getVisibleModals = deps.getVisibleModals;
     if (deps.getTopmostModal !== undefined) getTopmostModal = deps.getTopmostModal;
-    if (deps.toggleModalFullscreen !== undefined) toggleModalFullscreen = deps.toggleModalFullscreen;
+    if (deps.toggleModalFullscreen !== undefined)
+        toggleModalFullscreen = deps.toggleModalFullscreen;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
-    if (deps.renderFavoritesPage !== undefined) renderFavoritesPage = deps.renderFavoritesPage;
-    if (deps.updateVisibleTabs !== undefined) updateVisibleTabs = deps.updateVisibleTabs;
-    if (deps.showBlacklistWarning !== undefined) showBlacklistWarning = deps.showBlacklistWarning;
+    if (deps.renderFavoritesPage !== undefined) _renderFavoritesPage = deps.renderFavoritesPage;
+    if (deps.updateVisibleTabs !== undefined) _updateVisibleTabs = deps.updateVisibleTabs;
+    if (deps.showBlacklistWarning !== undefined) _showBlacklistWarning = deps.showBlacklistWarning;
     if (deps.hotkeysModalConfig !== undefined) hotkeysModalConfig = deps.hotkeysModalConfig;
-    if (deps.initBackgroundSystems !== undefined) initBackgroundSystems = deps.initBackgroundSystems;
+    if (deps.initBackgroundSystems !== undefined)
+        initBackgroundSystems = deps.initBackgroundSystems;
 }
 
 // ============================================================================
@@ -79,9 +81,7 @@ export function initStepInteractions(stepElement) {
 
     const updateTitlePreview = () => {
         const stepNumberLabel = stepElement.querySelector('.step-number-label');
-        const stepNumber = stepNumberLabel
-            ? stepNumberLabel.textContent.replace('Шаг ', '')
-            : '';
+        const stepNumber = stepNumberLabel ? stepNumberLabel.textContent.replace('Шаг ', '') : '';
         titlePreview.value = titleInput.value || `Шаг ${stepNumber}`;
     };
 
@@ -164,7 +164,8 @@ export function initHotkeysModal() {
     const handleEscapeKeyInternal = (event) => {
         if (event.key === 'Escape') {
             if (hotkeysModal && !hotkeysModal.classList.contains('hidden')) {
-                const visibleModals = typeof getVisibleModals === 'function' ? getVisibleModals() : [];
+                const visibleModals =
+                    typeof getVisibleModals === 'function' ? getVisibleModals() : [];
                 const topmostModal =
                     visibleModals.length > 0 && typeof getTopmostModal === 'function'
                         ? getTopmostModal(visibleModals)
@@ -243,7 +244,9 @@ export function initHotkeysModal() {
                     hotkeysModalConfig.contentAreaSelector,
                 );
             } else {
-                console.error('Функция toggleModalFullscreen не найдена или конфигурация отсутствует!');
+                console.error(
+                    'Функция toggleModalFullscreen не найдена или конфигурация отсутствует!',
+                );
                 if (typeof showNotification === 'function') {
                     showNotification(
                         'Ошибка: Функция переключения полноэкранного режима недоступна.',

@@ -9,6 +9,36 @@ import { escapeHtml } from '../utils/html.js';
 import { getAllFromIndexedDB } from '../db/indexeddb.js';
 import { NotificationService } from '../services/notification.js';
 
+// Полные классы для бейджей категорий (Tailwind не поддерживает динамические имена классов)
+const CATEGORY_BADGE_CLASSES = {
+    gray: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+    red: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    orange: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+    yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    green: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    teal: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+    blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    indigo: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+    purple: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+    pink: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+    rose: 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200',
+};
+
+function normalizeCategoryColor(colorName) {
+    if (!colorName) return 'gray';
+    const raw = String(colorName).trim().toLowerCase();
+    const cleaned = raw
+        .replace(/^bg-/, '')
+        .replace(/\/.+$/, '')
+        .replace(/-(50|100|200|300|400|500|600|700|800|900|950)$/, '');
+    return CATEGORY_BADGE_CLASSES[cleaned] ? cleaned : 'gray';
+}
+
+function getCategoryBadgeClasses(colorName) {
+    const key = normalizeCategoryColor(colorName);
+    return CATEGORY_BADGE_CLASSES[key] || CATEGORY_BADGE_CLASSES.gray;
+}
+
 // ============================================================================
 // ЗАВИСИМОСТИ
 // ============================================================================
@@ -18,30 +48,34 @@ let getFavoriteButtonHTML = null;
 let showNotification = null;
 let State = null;
 let applyCurrentView = null;
-let debounce = null;
-let filterExtLinks = null;
-let setupClearButton = null;
-let showAddEditExtLinkModal = null;
-let showOrganizeExtLinkCategoriesModal = null;
-let handleExtLinkAction = null;
-let handleViewToggleClick = null;
+let _debounce = null;
+let _filterExtLinks = null;
+let _setupClearButton = null;
+let _showAddEditExtLinkModal = null;
+let _showOrganizeExtLinkCategoriesModal = null;
+let _handleExtLinkAction = null;
+let _handleViewToggleClick = null;
 
 /**
  * Устанавливает зависимости для компонента внешних ссылок
  */
 export function setExtLinksDependencies(deps) {
     if (deps.isFavorite !== undefined) isFavorite = deps.isFavorite;
-    if (deps.getFavoriteButtonHTML !== undefined) getFavoriteButtonHTML = deps.getFavoriteButtonHTML;
+    if (deps.getFavoriteButtonHTML !== undefined)
+        getFavoriteButtonHTML = deps.getFavoriteButtonHTML;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
     if (deps.State !== undefined) State = deps.State;
     if (deps.applyCurrentView !== undefined) applyCurrentView = deps.applyCurrentView;
-    if (deps.debounce !== undefined) debounce = deps.debounce;
-    if (deps.filterExtLinks !== undefined) filterExtLinks = deps.filterExtLinks;
-    if (deps.setupClearButton !== undefined) setupClearButton = deps.setupClearButton;
-    if (deps.showAddEditExtLinkModal !== undefined) showAddEditExtLinkModal = deps.showAddEditExtLinkModal;
-    if (deps.showOrganizeExtLinkCategoriesModal !== undefined) showOrganizeExtLinkCategoriesModal = deps.showOrganizeExtLinkCategoriesModal;
-    if (deps.handleExtLinkAction !== undefined) handleExtLinkAction = deps.handleExtLinkAction;
-    if (deps.handleViewToggleClick !== undefined) handleViewToggleClick = deps.handleViewToggleClick;
+    if (deps.debounce !== undefined) _debounce = deps.debounce;
+    if (deps.filterExtLinks !== undefined) _filterExtLinks = deps.filterExtLinks;
+    if (deps.setupClearButton !== undefined) _setupClearButton = deps.setupClearButton;
+    if (deps.showAddEditExtLinkModal !== undefined)
+        _showAddEditExtLinkModal = deps.showAddEditExtLinkModal;
+    if (deps.showOrganizeExtLinkCategoriesModal !== undefined)
+        _showOrganizeExtLinkCategoriesModal = deps.showOrganizeExtLinkCategoriesModal;
+    if (deps.handleExtLinkAction !== undefined) _handleExtLinkAction = deps.handleExtLinkAction;
+    if (deps.handleViewToggleClick !== undefined)
+        _handleViewToggleClick = deps.handleViewToggleClick;
 }
 
 // ============================================================================
@@ -83,20 +117,27 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
 
     let categoryData = null;
     if (link.category !== null && link.category !== undefined) {
-        categoryData = categoryMap[link.category] || null;
+        categoryData = categoryMap[link.category] || categoryMap[String(link.category)] || null;
 
         if (!categoryData && typeof link.category === 'string') {
             const legacyKey = link.category.toLowerCase();
             const legacyKeyToNameMap = {
                 docs: 'документация',
                 gov: 'гос. сайты',
+                gos: 'гос.сайты',
                 tools: 'инструменты',
                 other: 'прочее',
             };
             const targetName = legacyKeyToNameMap[legacyKey] || legacyKey;
+            const normalizedTargetName = targetName.replace(/\s+/g, '').toLowerCase();
 
             for (const key in categoryMap) {
-                if (categoryMap[key].name && categoryMap[key].name.toLowerCase() === targetName) {
+                const candidateName = String(categoryMap[key].name || '').toLowerCase();
+                const normalizedCandidateName = candidateName.replace(/\s+/g, '');
+                if (
+                    candidateName === targetName ||
+                    normalizedCandidateName === normalizedTargetName
+                ) {
                     categoryData = categoryMap[key];
                     break;
                 }
@@ -104,21 +145,35 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
         }
     }
 
+    if (categoryData && !categoryData.color) {
+        const normalizedName = String(categoryData.name || '')
+            .toLowerCase()
+            .replace(/\s+/g, '');
+        if (normalizedName.includes('гос.сайты') || normalizedName.includes('госсайты')) {
+            categoryData.color = 'blue';
+        }
+    }
+
+    const categoryDisplayName = categoryData
+        ? categoryData.name
+        : link.category != null
+          ? `Категория (ID: ${link.category})`
+          : '';
     let categoryBadgeHTML = '';
     if (categoryData) {
-        const colorName = categoryData.color || 'gray';
+        const badgeClasses = getCategoryBadgeClasses(categoryData.color);
         categoryBadgeHTML = `
-            <span class="folder-badge inline-block px-2 py-0.5 rounded text-xs whitespace-nowrap bg-${colorName}-100 text-${colorName}-800 dark:bg-${colorName}-900 dark:text-${colorName}-200" title="Папка: ${escapeHtml(
-            categoryData.name,
-        )}">
-                <i class="fas fa-tag mr-1 opacity-75"></i>${escapeHtml(categoryData.name)}
+            <span class="folder-badge inline-block px-2 py-0.5 rounded text-xs whitespace-nowrap ${badgeClasses}" title="Папка: ${escapeHtml(
+                categoryData.name,
+            )}">
+                ${escapeHtml(categoryData.name)}
             </span>`;
-    } else if (link.category) {
+    } else if (categoryDisplayName) {
         categoryBadgeHTML = `
-             <span class="folder-badge inline-block px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" title="Папка с ID: ${escapeHtml(
+             <span class="folder-badge inline-block px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" title="Категория с ID: ${escapeHtml(
                  String(link.category),
-             )} не найдена">
-                <i class="fas fa-question-circle mr-1 opacity-75"></i>Неизв. папка
+             )} не найдена в списке">
+                ${escapeHtml(categoryDisplayName)}
             </span>`;
     }
 
@@ -138,7 +193,7 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
             link.url,
         )}"><i class="fas fa-link mr-1 opacity-75"></i>${escapeHtml(hostnameForDisplay)}</a>`;
         cardClickOpensUrl = true;
-    } catch (e) {
+    } catch {
         urlHostnameHTML = `<span class="text-red-500 text-xs inline-flex items-center" title="Некорректный URL: ${escapeHtml(
             String(link.url),
         )}"><i class="fas fa-exclamation-triangle mr-1"></i>Некорр. URL</span>`;
@@ -148,12 +203,13 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
     // Используем зависимости или глобальные функции
     const isFavFunc = isFavorite || window.isFavorite;
     const getFavBtnFunc = getFavoriteButtonHTML || window.getFavoriteButtonHTML;
-    
+
     const isFav = typeof isFavFunc === 'function' ? isFavFunc('extLink', String(link.id)) : false;
-    const favButtonHTML = typeof getFavBtnFunc === 'function' 
-        ? getFavBtnFunc(link.id, 'extLink', 'extLinks', link.title, link.description, isFav)
-        : '';
-    
+    const favButtonHTML =
+        typeof getFavBtnFunc === 'function'
+            ? getFavBtnFunc(link.id, 'extLink', 'extLinks', link.title, link.description, isFav)
+            : '';
+
     const safeTitle = escapeHtml(link.title);
     const safeDescription = escapeHtml(link.description || 'Нет описания');
 
@@ -185,22 +241,22 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
         linkElement.innerHTML = mainContentHTML + actionsHTML;
     } else {
         linkElement.className =
-            'ext-link-item view-item group flex items-center p-3 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150 ease-in-out';
+            'ext-link-item view-item group flex items-center p-3 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer';
         linkElement.innerHTML = `
             <div class="flex-grow min-w-0 flex items-center cursor-pointer" data-action="open-link">
-                <i class="fas fa-link text-gray-400 dark:text-gray-500 mr-4"></i>
+                <i class="fas fa-link text-gray-400 dark:text-gray-500 mr-4 flex-shrink-0"></i>
                 <div class="min-w-0 flex-1">
                     <h3 class="font-medium text-gray-900 dark:text-gray-100 truncate" title="${safeTitle}">${safeTitle}</h3>
-                    <p class="ext-link-description text-sm text-gray-500 dark:text-gray-400 truncate" title="${safeDescription}">${safeDescription}</p>
+                    <p class="ext-link-description text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5" title="${safeDescription}">${safeDescription}</p>
                 </div>
             </div>
-             <div class="ext-link-actions flex-shrink-0 ml-4 flex items-center gap-2">
+            <div class="ext-link-actions flex-shrink-0 ml-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                 ${categoryBadgeHTML}
                 ${favButtonHTML}
-                <button data-action="edit" class="p-1.5 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Редактировать">
+                <button data-action="edit" class="p-1.5 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Редактировать">
                     <i class="fas fa-edit fa-fw text-sm"></i>
                 </button>
-                <button data-action="delete" class="p-1.5 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Удалить">
+                <button data-action="delete" class="p-1.5 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Удалить">
                     <i class="fas fa-trash fa-fw text-sm"></i>
                 </button>
             </div>
@@ -225,6 +281,34 @@ export async function renderExtLinks(links, categoryInfoMap = {}) {
         (State && State.viewPreferences && State.viewPreferences['extLinksContainer']) ||
         extLinksContainer.dataset.defaultView ||
         'cards';
+    const resolvedCategoryMap = { ...(categoryInfoMap || {}) };
+
+    // Подтягиваем категории из БД, если в карточках есть category, но map пустой/неполный.
+    const linksWithCategory = (links || []).filter(
+        (link) =>
+            link && link.category !== null && link.category !== undefined && link.category !== '',
+    );
+    const hasMissingCategory = linksWithCategory.some((link) => {
+        const key = String(link.category);
+        return !resolvedCategoryMap[key] && !resolvedCategoryMap[link.category];
+    });
+    if (hasMissingCategory) {
+        try {
+            const categories = await getAllFromIndexedDB('extLinkCategories');
+            (categories || []).forEach((cat) => {
+                if (!cat || typeof cat.id === 'undefined') return;
+                resolvedCategoryMap[cat.id] = {
+                    name: cat.name || 'Без названия',
+                    color: cat.color || 'gray',
+                };
+            });
+            if (State) {
+                State.extLinkCategoryInfo = { ...resolvedCategoryMap };
+            }
+        } catch (error) {
+            console.warn('renderExtLinks: не удалось догрузить категории внешних ресурсов:', error);
+        }
+    }
     extLinksContainer.innerHTML = '';
 
     if (!links || links.length === 0) {
@@ -233,7 +317,7 @@ export async function renderExtLinks(links, categoryInfoMap = {}) {
     } else {
         const fragment = document.createDocumentFragment();
         for (const link of links) {
-            const linkElement = createExtLinkElement(link, categoryInfoMap, currentView);
+            const linkElement = createExtLinkElement(link, resolvedCategoryMap, currentView);
             if (linkElement) {
                 fragment.appendChild(linkElement);
             }
@@ -262,7 +346,7 @@ export function initExternalLinksSystem() {
  */
 export async function loadExtLinks() {
     if (!State || !State.db) {
-        console.warn('loadExtLinks: База данных не инициализирована.');
+        console.debug('loadExtLinks: База данных не инициализирована.');
         if (State) {
             State.extLinkCategoryInfo = {};
         }
@@ -271,7 +355,7 @@ export async function loadExtLinks() {
 
     try {
         const categories = await getAllFromIndexedDB('extLinkCategories');
-        
+
         // Инициализируем State.extLinkCategoryInfo как объект, если его нет
         if (!State.extLinkCategoryInfo) {
             State.extLinkCategoryInfo = {};
@@ -289,7 +373,9 @@ export async function loadExtLinks() {
             });
             console.log(`loadExtLinks: Загружено ${categories.length} категорий внешних ссылок.`);
         } else {
-            console.log('loadExtLinks: Категории внешних ссылок не найдены. State.extLinkCategoryInfo пуст.');
+            console.log(
+                'loadExtLinks: Категории внешних ссылок не найдены. State.extLinkCategoryInfo пуст.',
+            );
         }
     } catch (error) {
         console.error('Ошибка при загрузке категорий внешних ссылок:', error);

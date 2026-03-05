@@ -28,10 +28,7 @@ html:not(.dark) *::-webkit-scrollbar {
 html:not(.dark)::-webkit-scrollbar-track,
 html:not(.dark) body::-webkit-scrollbar-track,
 html:not(.dark) *::-webkit-scrollbar-track {
-    background: var(
-        --override-scrollbar-track-light,
-        var(--color-surface-2)
-    ) !important;
+    background: var(--override-scrollbar-track-light, var(--color-surface-2)) !important;
 }
 html:not(.dark)::-webkit-scrollbar-thumb,
 html:not(.dark) body::-webkit-scrollbar-thumb,
@@ -42,19 +39,13 @@ html:not(.dark) *::-webkit-scrollbar-thumb {
 }
 html:not(.dark)::-webkit-scrollbar-corner,
 html:not(.dark) body::-webkit-scrollbar-corner {
-    background: var(
-        --override-scrollbar-track-light,
-        var(--color-surface-2)
-    ) !important;
+    background: var(--override-scrollbar-track-light, var(--color-surface-2)) !important;
 }
 
 /* --- DARK ------------------------------------------------------------ */
 html.dark,
 html.dark body {
-    scrollbar-color: var(
-            --override-scrollbar-thumb-dark,
-            var(--color-border-interactive)
-        )
+    scrollbar-color: var(--override-scrollbar-thumb-dark, var(--color-border-interactive))
         var(--override-scrollbar-track-dark, var(--color-surface-2)) !important;
     scrollbar-width: thin;
 }
@@ -72,10 +63,7 @@ html.dark *::-webkit-scrollbar-track {
 html.dark::-webkit-scrollbar-thumb,
 html.dark body::-webkit-scrollbar-thumb,
 html.dark *::-webkit-scrollbar-thumb {
-    background: var(
-        --override-scrollbar-thumb-dark,
-        var(--color-border-interactive)
-    ) !important;
+    background: var(--override-scrollbar-thumb-dark, var(--color-border-interactive)) !important;
     border-radius: var(--border-radius) !important;
     border: 2px solid var(--override-scrollbar-track-dark, var(--color-surface-2)) !important;
 }

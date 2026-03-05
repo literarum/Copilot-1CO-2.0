@@ -119,7 +119,7 @@ export async function handleBookmarkFormSubmit(event) {
                 }
             }
             new URL(testUrl);
-        } catch (_) {
+        } catch {
             if (typeof showNotification === 'function')
                 showNotification('Введите корректный URL (например, https://example.com)', 'error');
             saveButton.disabled = false;
@@ -176,6 +176,7 @@ export async function handleBookmarkFormSubmit(event) {
         if (isEditing) {
             newDataBase.id = finalId;
             console.log(`[Save Bookmark v6 TX] Редактирование закладки ID: ${finalId}`);
+            // eslint-disable-next-line no-async-promise-executor
             bookmarkReadyPromise = new Promise(async (resolve, reject) => {
                 try {
                     const request = bookmarksStore.get(finalId);
@@ -239,6 +240,7 @@ export async function handleBookmarkFormSubmit(event) {
             screenshotOps.forEach((op) => {
                 const { action, blob, oldScreenshotId } = op;
                 screenshotPromises.push(
+                    // eslint-disable-next-line no-async-promise-executor
                     new Promise(async (resolve) => {
                         try {
                             if (action === 'delete' && oldScreenshotId) {

@@ -12,6 +12,7 @@ export const State = {
     userPreferences: {
         theme: 'auto',
         showBlacklistUsageWarning: true,
+        staticHeader: false,
     },
 
     // UI состояние

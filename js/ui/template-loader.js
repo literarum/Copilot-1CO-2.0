@@ -30,17 +30,17 @@ export async function loadTemplate(templatePath) {
 export async function loadTemplateIntoElement(templatePath, target, options = {}) {
     const html = await loadTemplate(templatePath);
     const element = typeof target === 'string' ? document.querySelector(target) : target;
-    
+
     if (!element) {
         throw new Error(`Target element not found: ${target}`);
     }
-    
+
     if (options.replace) {
         element.innerHTML = html;
     } else {
         element.insertAdjacentHTML(options.position || 'beforeend', html);
     }
-    
+
     return element;
 }
 
@@ -58,7 +58,7 @@ export async function loadTemplateCached(templatePath) {
     if (templateCache.has(templatePath)) {
         return templateCache.get(templatePath);
     }
-    
+
     const html = await loadTemplate(templatePath);
     templateCache.set(templatePath, html);
     return html;
@@ -69,7 +69,7 @@ export async function loadTemplateCached(templatePath) {
  * @param {string[]} templatePaths - массив путей к шаблонам
  */
 export async function preloadTemplates(templatePaths) {
-    const promises = templatePaths.map(path => loadTemplateCached(path));
+    const promises = templatePaths.map((path) => loadTemplateCached(path));
     await Promise.all(promises);
     console.log(`Preloaded ${templatePaths.length} templates`);
 }

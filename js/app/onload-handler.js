@@ -40,11 +40,13 @@ export function registerOnloadHandler() {
                 console.log('[window.onload] Overlay not shown by earlyAppSetup, creating it now.');
                 deps.loadingOverlayManager.createAndShow();
             } else {
-                console.log('[window.onload] Overlay already exists (presumably shown by earlyAppSetup).');
+                console.log(
+                    '[window.onload] Overlay already exists (presumably shown by earlyAppSetup).',
+                );
             }
         }
 
-        const minDisplayTime = 3000;
+        const minDisplayTime = 5040;
         const minDisplayTimePromise = new Promise((resolve) => setTimeout(resolve, minDisplayTime));
         let appInitSuccessfully = false;
 
@@ -74,6 +76,11 @@ export function registerOnloadHandler() {
                 }
                 await new Promise((r) => setTimeout(r, 100));
 
+                if (deps.loadingOverlayManager?.runExitEffect) {
+                    await deps.loadingOverlayManager.runExitEffect();
+                    console.log('[window.onload Promise.all.then] Эффект выхода сферы завершён.');
+                }
+
                 if (deps.loadingOverlayManager?.hideAndDestroy) {
                     await deps.loadingOverlayManager.hideAndDestroy();
                     console.log('[window.onload Promise.all.then] Оверлей плавно скрыт.');
@@ -83,7 +90,20 @@ export function registerOnloadHandler() {
 
                 if (appContent) {
                     appContent.classList.remove('hidden');
+                    appContent.style.display = '';
+                    appContent.style.visibility = 'visible';
+                    appContent.style.opacity = '1';
                     appContent.classList.add('content-fading-in');
+                    const tabBarWrapper = appContent.querySelector('div.border-b');
+                    if (tabBarWrapper) {
+                        tabBarWrapper.style.visibility = 'visible';
+                        tabBarWrapper.style.display = '';
+                    }
+                    const tabsNav = appContent.querySelector('nav.flex.flex-wrap');
+                    if (tabsNav) {
+                        tabsNav.style.visibility = 'visible';
+                        tabsNav.style.display = 'flex';
+                    }
                     console.log(
                         '[window.onload Promise.all.then] appContent показан с fade-in эффектом.',
                     );
@@ -94,7 +114,9 @@ export function registerOnloadHandler() {
                         if (typeof deps.initGoogleDocSections === 'function') {
                             deps.initGoogleDocSections();
                         } else {
-                            console.error('Функция initGoogleDocSections не найдена в window.onload!');
+                            console.error(
+                                'Функция initGoogleDocSections не найдена в window.onload!',
+                            );
                         }
                         const hud = deps.backgroundStatusHUD || window.BackgroundStatusHUD;
                         if (hud?.finishTask) {
@@ -107,25 +129,15 @@ export function registerOnloadHandler() {
                             deps.initTabClickDelegation();
                         }
                         if (typeof deps.setupTabsOverflow === 'function') {
-                            console.log(
-                                'window.onload (FIXED): Вызов setupTabsOverflow для инициализации обработчиков.',
-                            );
                             deps.setupTabsOverflow();
-                        } else {
-                            console.warn(
-                                'window.onload (FIXED): Функция setupTabsOverflow не найдена.',
-                            );
                         }
 
                         if (typeof deps.updateVisibleTabs === 'function') {
-                            console.log(
-                                'window.onload (FIXED): Вызов updateVisibleTabs для первоначального расчета.',
-                            );
                             deps.updateVisibleTabs();
-                        } else {
-                            console.warn(
-                                'window.onload (FIXED): Функция updateVisibleTabs не найдена.',
-                            );
+                            requestAnimationFrame(() => deps.updateVisibleTabs());
+                            setTimeout(deps.updateVisibleTabs, 50);
+                            setTimeout(deps.updateVisibleTabs, 150);
+                            setTimeout(deps.updateVisibleTabs, 300);
                         }
 
                         if (typeof deps.initUISettingsModalHandlers === 'function') {

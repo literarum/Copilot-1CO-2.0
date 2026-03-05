@@ -1,10 +1,60 @@
 'use strict';
 
 import { escapeHtml, truncateText } from '../utils/html.js';
-import { getAllFromIndexedDB, getFromIndexedDB, saveToIndexedDB, getAllFromIndex as getAllFromIndexDB } from '../db/indexeddb.js';
+import { getAllFromIndexedDB, getFromIndexedDB, saveToIndexedDB } from '../db/indexeddb.js';
 import { CARD_CONTAINER_CLASSES, LIST_CONTAINER_CLASSES, SECTION_GRID_COLS } from '../config.js';
 import { ARCHIVE_FOLDER_ID, ARCHIVE_FOLDER_NAME } from '../constants.js';
 import { updateSearchIndex } from '../features/search.js';
+import { State as GlobalState } from '../app/state.js';
+
+// Полные классы для бейджей папок (Tailwind не поддерживает динамические имена классов — только явные строки)
+const FOLDER_BADGE_CLASSES = {
+    gray: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+    red: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    orange: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+    yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    green: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    teal: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+    blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    indigo: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+    purple: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+    pink: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+    rose: 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200',
+};
+
+const FOLDER_DOT_CLASSES = {
+    gray: 'bg-gray-500',
+    red: 'bg-red-600',
+    orange: 'bg-orange-500',
+    yellow: 'bg-yellow-400',
+    green: 'bg-green-500',
+    teal: 'bg-teal-500',
+    blue: 'bg-blue-600',
+    indigo: 'bg-indigo-600',
+    purple: 'bg-purple-600',
+    pink: 'bg-pink-600',
+    rose: 'bg-rose-500',
+};
+
+function normalizeFolderColor(colorName) {
+    if (!colorName) return 'gray';
+    const raw = String(colorName).trim().toLowerCase();
+    const cleaned = raw
+        .replace(/^bg-/, '')
+        .replace(/\/.+$/, '')
+        .replace(/-(50|100|200|300|400|500|600|700|800|900|950)$/, '');
+    return FOLDER_BADGE_CLASSES[cleaned] ? cleaned : 'gray';
+}
+
+function getFolderBadgeClasses(colorName) {
+    const key = normalizeFolderColor(colorName);
+    return FOLDER_BADGE_CLASSES[key] || FOLDER_BADGE_CLASSES.gray;
+}
+
+function getFolderDotClasses(colorName) {
+    const key = normalizeFolderColor(colorName);
+    return FOLDER_DOT_CLASSES[key] || FOLDER_DOT_CLASSES.gray;
+}
 
 // ============================================================================
 // КОМПОНЕНТ РАБОТЫ С ЗАКЛАДКАМИ
@@ -14,8 +64,8 @@ import { updateSearchIndex } from '../features/search.js';
 let isFavorite = null;
 let getFavoriteButtonHTML = null;
 let showAddBookmarkModal = null;
-let showBookmarkDetail = null;
-let showOrganizeFoldersModalDep = null;
+let _showBookmarkDetail = null;
+let _showOrganizeFoldersModalDep = null;
 let showNotification = null;
 let debounce = null;
 let setupClearButton = null;
@@ -29,9 +79,10 @@ let State = null;
 let showEditBookmarkModal = null;
 let deleteBookmarkDep = null;
 let showBookmarkDetailModal = null;
-let handleViewBookmarkScreenshotsDep = null;
+let _handleViewBookmarkScreenshotsDep = null;
 let NotificationService = null;
 let showScreenshotViewerModal = null;
+let showAppConfirm = null;
 
 /**
  * Устанавливает зависимости для компонента закладок
@@ -40,8 +91,8 @@ export function setBookmarksDependencies(deps) {
     isFavorite = deps.isFavorite;
     getFavoriteButtonHTML = deps.getFavoriteButtonHTML;
     showAddBookmarkModal = deps.showAddBookmarkModal;
-    showBookmarkDetail = deps.showBookmarkDetail;
-    showOrganizeFoldersModalDep = deps.showOrganizeFoldersModal;
+    _showBookmarkDetail = deps.showBookmarkDetail;
+    _showOrganizeFoldersModalDep = deps.showOrganizeFoldersModal;
     showNotification = deps.showNotification;
     debounce = deps.debounce;
     setupClearButton = deps.setupClearButton;
@@ -55,9 +106,10 @@ export function setBookmarksDependencies(deps) {
     showEditBookmarkModal = deps.showEditBookmarkModal;
     deleteBookmarkDep = deps.deleteBookmark;
     showBookmarkDetailModal = deps.showBookmarkDetailModal;
-    handleViewBookmarkScreenshotsDep = deps.handleViewBookmarkScreenshots;
+    _handleViewBookmarkScreenshotsDep = deps.handleViewBookmarkScreenshots;
     NotificationService = deps.NotificationService;
     showScreenshotViewerModal = deps.showScreenshotViewerModal;
+    showAppConfirm = deps.showAppConfirm;
 }
 
 /**
@@ -87,11 +139,11 @@ export function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'card
                 <i class="fas fa-archive mr-1 opacity-75"></i>${escapeHtml(ARCHIVE_FOLDER_NAME)}
             </span>`;
     } else if (folder) {
-        const colorName = folder.color || 'gray';
+        const badgeClasses = getFolderBadgeClasses(folder.color);
         folderBadgeHTML = `
-            <span class="folder-badge inline-block px-2 py-0.5 rounded text-xs whitespace-nowrap bg-${colorName}-100 text-${colorName}-800 dark:bg-${colorName}-900 dark:text-${colorName}-200" title="Папка: ${escapeHtml(
-            folder.name,
-        )}">
+            <span class="folder-badge inline-block px-2 py-0.5 rounded text-xs whitespace-nowrap ${badgeClasses}" title="Папка: ${escapeHtml(
+                folder.name,
+            )}">
                 <i class="fas fa-folder mr-1 opacity-75"></i>${escapeHtml(folder.name)}
             </span>`;
     } else if (bookmark.folder) {
@@ -104,9 +156,10 @@ export function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'card
     let externalLinkIconHTML = '';
     let urlHostnameHTML = '';
     let cardClickOpensUrl = false;
+    let fixedUrl = '';
 
     if (bookmark.url) {
-        let fixedUrl = String(bookmark.url)
+        fixedUrl = String(bookmark.url)
             .trim()
             .replace(/[\u200B-\u200D\uFEFF]/g, '');
         if (fixedUrl && !fixedUrl.match(/^https?:\/\//i)) {
@@ -134,6 +187,9 @@ export function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'card
     }
 
     bookmarkElement.dataset.opensUrl = String(viewMode === 'cards' && cardClickOpensUrl);
+    if (cardClickOpensUrl && fixedUrl) {
+        bookmarkElement.dataset.url = fixedUrl;
+    }
 
     const hasScreenshots =
         bookmark.screenshotIds &&
@@ -205,8 +261,8 @@ export function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'card
         const descriptionHTML = safeDescription
             ? `<p class="bookmark-description text-gray-600 dark:text-gray-300 text-sm line-clamp-3" title="${safeDescription}">${safeDescription}</p>`
             : bookmark.url
-            ? '<p class="bookmark-description text-sm mt-1 mb-2 italic text-gray-500">Нет описания</p>'
-            : '<p class="bookmark-description text-sm mt-1 mb-2 italic text-gray-500">Текстовая заметка</p>';
+              ? '<p class="bookmark-description text-sm mt-1 mb-2 italic text-gray-500">Нет описания</p>'
+              : '<p class="bookmark-description text-sm mt-1 mb-2 italic text-gray-500">Текстовая заметка</p>';
 
         const mainContentHTML = `
             <div class="flex-grow min-w-0 mb-3">
@@ -238,8 +294,8 @@ export function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'card
         const listDescText = safeDescription
             ? truncateText(safeDescription, 70)
             : bookmark.url
-            ? escapeHtml(bookmark.url)
-            : 'Текстовая заметка';
+              ? escapeHtml(bookmark.url)
+              : 'Текстовая заметка';
 
         const mainContentHTML = `
             <div class="flex items-center w-full min-w-0">
@@ -267,6 +323,15 @@ export function initBookmarkSystem() {
     const organizeBookmarksBtn = document.getElementById('organizeBookmarksBtn');
     const bookmarkSearchInput = document.getElementById('bookmarkSearchInput');
     const bookmarkFolderFilter = document.getElementById('bookmarkFolderFilter');
+    const bookmarksContainer = document.getElementById('bookmarksContainer');
+
+    if (bookmarksContainer && !bookmarksContainer.dataset.clickHandlerAttached) {
+        bookmarksContainer.addEventListener('click', handleBookmarkAction);
+        bookmarksContainer.dataset.clickHandlerAttached = 'true';
+        console.log(
+            'Делегированный обработчик кликов для закладок привязан к #bookmarksContainer.',
+        );
+    }
 
     if (addBookmarkBtn && !addBookmarkBtn.dataset.listenerAttached) {
         addBookmarkBtn.addEventListener('click', () => {
@@ -315,7 +380,7 @@ export function initBookmarkSystem() {
     if (State && State.db) {
         loadBookmarks();
     } else {
-        console.warn(
+        console.debug(
             '[initBookmarkSystem] БД ещё не готова, вызов loadBookmarks отложен (закладки подгрузятся после инициализации БД).',
         );
     }
@@ -339,8 +404,8 @@ export async function getAllBookmarks() {
  * Создает папки по умолчанию и примеры закладок, если их нет
  */
 export async function loadBookmarks() {
-    if (!State || !State.db) {
-        console.warn(
+    if (!GlobalState || !GlobalState.db) {
+        console.debug(
             'loadBookmarks: База данных ещё не инициализирована. Загрузка закладок будет выполнена после готовности БД.',
         );
         await renderBookmarkFolders([]);
@@ -509,7 +574,11 @@ export async function loadBookmarks() {
  * Рендерит закладки в контейнере
  */
 export async function renderBookmarks(bookmarks, folderMap = {}) {
-    const container = document.getElementById('bookmarksContainer');
+    let container = document.getElementById('bookmarksContainer');
+    if (!container) {
+        await new Promise((r) => requestAnimationFrame(r));
+        container = document.getElementById('bookmarksContainer');
+    }
     if (!container) {
         console.error('[renderBookmarks] Контейнер #bookmarksContainer не найден.');
         return;
@@ -523,13 +592,18 @@ export async function renderBookmarks(bookmarks, folderMap = {}) {
         return;
     }
 
-    // Определение режима отображения (будет получено из настроек)
-    const viewMode = 'cards'; // По умолчанию карточки
+    // Режим отображения из сохранённых настроек, чтобы не было рассинхрона (список выбран — отображаются карточки)
+    const viewMode =
+        (State && State.viewPreferences && State.viewPreferences['bookmarksContainer']) ||
+        container.dataset.defaultView ||
+        'cards';
 
-    // Применение классов контейнера
-    container.className = viewMode === 'cards' ? CARD_CONTAINER_CLASSES.join(' ') : LIST_CONTAINER_CLASSES.join(' ');
+    // Применение классов контейнера в соответствии с выбранным видом
+    container.className =
+        viewMode === 'cards' ? CARD_CONTAINER_CLASSES.join(' ') : LIST_CONTAINER_CLASSES.join(' ');
     if (viewMode === 'cards') {
-        SECTION_GRID_COLS.bookmarksContainer.forEach((cls) => container.classList.add(cls));
+        const gridCols = SECTION_GRID_COLS.bookmarksContainer || SECTION_GRID_COLS.default;
+        if (gridCols && gridCols.length) gridCols.forEach((cls) => container.classList.add(cls));
     }
 
     const fragment = document.createDocumentFragment();
@@ -539,7 +613,7 @@ export async function renderBookmarks(bookmarks, folderMap = {}) {
             continue;
         }
         const bookmarkElement = createBookmarkElement(bookmark, folderMap, viewMode);
-        fragment.appendChild(bookmarkElement);
+        if (bookmarkElement) fragment.appendChild(bookmarkElement);
     }
 
     container.appendChild(fragment);
@@ -877,9 +951,6 @@ export async function renderBookmarkFolders(folders) {
         Array.from(bookmarkFolderFilter.options).some((opt) => opt.value === currentValue)
     ) {
         bookmarkFolderFilter.value = currentValue;
-    } else if (bookmarkFolderFilter.options.length > 0 && currentValue !== ARCHIVE_FOLDER_ID) {
-        if (bookmarkFolderFilter.value !== ARCHIVE_FOLDER_ID && bookmarkFolderFilter.value !== '') {
-        }
     }
     console.log("renderBookmarkFolders: Список папок в фильтре обновлен, включая 'Архив'.");
 }
@@ -1030,10 +1101,8 @@ export async function handleSaveFolderSubmit(event) {
  */
 export function showOrganizeFoldersModal() {
     let modal = document.getElementById('foldersModal');
-    let isNewModal = false;
 
     if (!modal) {
-        isNewModal = true;
         modal = document.createElement('div');
         modal.id = 'foldersModal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4';
@@ -1172,7 +1241,9 @@ export function showOrganizeFoldersModal() {
     if (foldersListElement && typeof loadFoldersList === 'function') {
         loadFoldersList(foldersListElement);
     } else {
-        console.error('Не найден элемент #foldersList в модальном окне папок или loadFoldersList недоступна.');
+        console.error(
+            'Не найден элемент #foldersList в модальном окне папок или loadFoldersList недоступна.',
+        );
     }
 
     if (modal && typeof addEscapeHandler === 'function') {
@@ -1225,7 +1296,16 @@ export async function handleDeleteBookmarkFolderClick(folderId, folderItem) {
             );
         }
 
-        if (!confirm(confirmationMessage)) {
+        const confirmedFolderDelete = showAppConfirm
+            ? await showAppConfirm({
+                  title: 'Удаление папки',
+                  message: confirmationMessage,
+                  confirmText: 'Удалить',
+                  cancelText: 'Отмена',
+                  confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+              })
+            : confirm(confirmationMessage);
+        if (!confirmedFolderDelete) {
             console.log('Удаление папки отменено.');
             return;
         }
@@ -1407,12 +1487,11 @@ export async function loadFoldersListInContainer(foldersListElement) {
                 'folder-item flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0';
             folderItem.dataset.folderId = folder.id;
 
-            const colorName = folder.color || 'gray';
-            const colorClass = `bg-${colorName}-500`;
+            const dotClass = getFolderDotClasses(folder.color);
 
             folderItem.innerHTML = `
                 <div class="flex items-center flex-grow min-w-0 mr-2">
-                    <span class="w-4 h-4 rounded-full ${colorClass} mr-2 flex-shrink-0"></span>
+                    <span class="w-4 h-4 rounded-full ${dotClass} mr-2 flex-shrink-0"></span>
                     <span class="truncate" title="${folder.name}">${folder.name}</span>
                 </div>
                 <div class="flex-shrink-0">
@@ -1427,13 +1506,19 @@ export async function loadFoldersListInContainer(foldersListElement) {
 
             const deleteBtn = folderItem.querySelector('.delete-folder-btn');
             if (deleteBtn) {
-                deleteBtn.addEventListener('click', (e) => {
+                deleteBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    if (
-                        confirm(
-                            `Вы уверены, что хотите удалить папку "${folder.name}"? Закладки в ней не будут удалены, но потеряют привязку к папке.`,
-                        )
-                    ) {
+                    const simpleDeleteMessage = `Вы уверены, что хотите удалить папку "${folder.name}"? Закладки в ней не будут удалены, но потеряют привязку к папке.`;
+                    const allowDelete = showAppConfirm
+                        ? await showAppConfirm({
+                              title: 'Удаление папки',
+                              message: simpleDeleteMessage,
+                              confirmText: 'Удалить',
+                              cancelText: 'Отмена',
+                              confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+                          })
+                        : confirm(simpleDeleteMessage);
+                    if (allowDelete) {
                         handleDeleteBookmarkFolderClick(folder.id, folderItem);
                     }
                 });
@@ -1575,7 +1660,16 @@ export async function handleBookmarkAction(event) {
         }
     } else if (action === 'delete') {
         const title = bookmarkItem.querySelector('h3')?.title || `закладку с ID ${bookmarkId}`;
-        if (confirm(`Вы уверены, что хотите удалить закладку "${title}"?`)) {
+        const confirmed = showAppConfirm
+            ? await showAppConfirm({
+                  title: 'Удаление закладки',
+                  message: `Вы уверены, что хотите удалить закладку «${title}»?`,
+                  confirmText: 'Удалить',
+                  cancelText: 'Отмена',
+                  confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+              })
+            : confirm(`Вы уверены, что хотите удалить закладку "${title}"?`);
+        if (confirmed) {
             if (typeof deleteBookmarkDep === 'function') {
                 deleteBookmarkDep(bookmarkId);
             } else {
@@ -1592,7 +1686,7 @@ export async function handleBookmarkAction(event) {
     ) {
         const urlToOpen =
             action === 'open-card-url'
-                ? bookmarkItem.querySelector('a.bookmark-url')?.href
+                ? bookmarkItem.dataset.url || bookmarkItem.querySelector('a[href^="http"]')?.href
                 : (button || actionTarget)?.href;
 
         if (urlToOpen) {
@@ -1639,12 +1733,10 @@ export async function handleViewBookmarkScreenshots(bookmarkId) {
     const button = document.querySelector(
         `.bookmark-item[data-id="${bookmarkId}"] button[data-action="view-screenshots"]`,
     );
-    let originalContent, iconElement, originalIconClass;
+    let originalContent;
 
     if (button) {
         originalContent = button.innerHTML;
-        iconElement = button.querySelector('i');
-        originalIconClass = iconElement ? iconElement.className : null;
         button.disabled = true;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     }

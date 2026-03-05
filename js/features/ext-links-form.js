@@ -30,7 +30,6 @@ export function setExtLinksFormDependencies(deps) {
 
 export async function handleExtLinkFormSubmit(e) {
     e.preventDefault();
-    const form = e.target;
     const modalElements = ensureExtLinkModal();
 
     if (
@@ -48,19 +47,6 @@ export async function handleExtLinkFormSubmit(e) {
 
     const { modal, idInput, titleInput, urlInput, descriptionInput, categoryInput, saveButton } =
         modalElements;
-
-    if (modal) {
-        modal.classList.add('hidden');
-        if (typeof removeEscapeHandler === 'function') {
-            removeEscapeHandler(modal);
-        }
-    }
-    requestAnimationFrame(() => {
-        if (getVisibleModals().length === 0) {
-            document.body.classList.remove('modal-open');
-            document.body.classList.remove('overflow-hidden');
-        }
-    });
 
     if (saveButton) saveButton.disabled = true;
 
@@ -88,7 +74,7 @@ export async function handleExtLinkFormSubmit(e) {
             }
         }
         new URL(testUrl);
-    } catch (_) {
+    } catch {
         showNotification(
             'Пожалуйста, введите корректный URL (например, https://example.com)',
             'error',
@@ -162,7 +148,19 @@ export async function handleExtLinkFormSubmit(e) {
         const updatedLinks = await getAllExtLinks();
         renderExtLinks(updatedLinks, State.extLinkCategoryInfo);
         showNotification(isEditing ? 'Ресурс обновлен' : 'Ресурс добавлен');
-        modal.classList.add('hidden');
+
+        if (modal) {
+            modal.classList.add('hidden');
+            if (typeof removeEscapeHandler === 'function') {
+                removeEscapeHandler(modal);
+            }
+        }
+        requestAnimationFrame(() => {
+            if (typeof getVisibleModals === 'function' && getVisibleModals().length === 0) {
+                document.body.classList.remove('modal-open');
+                document.body.classList.remove('overflow-hidden');
+            }
+        });
     } catch (error) {
         console.error('Ошибка при сохранении внешнего ресурса:', error);
         showNotification('Ошибка при сохранении', 'error');

@@ -28,19 +28,92 @@ let getSectionName = null;
 export function setAlgorithmsOperationsDependencies(deps) {
     if (deps.algorithms !== undefined) algorithms = deps.algorithms;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
-    if (deps.createStepElementHTML !== undefined) createStepElementHTML = deps.createStepElementHTML;
-    if (deps.formatExampleForTextarea !== undefined) formatExampleForTextarea = deps.formatExampleForTextarea;
+    if (deps.createStepElementHTML !== undefined)
+        createStepElementHTML = deps.createStepElementHTML;
+    if (deps.formatExampleForTextarea !== undefined)
+        formatExampleForTextarea = deps.formatExampleForTextarea;
     if (deps.toggleStepCollapse !== undefined) toggleStepCollapse = deps.toggleStepCollapse;
-    if (deps.attachStepDeleteHandler !== undefined) attachStepDeleteHandler = deps.attachStepDeleteHandler;
+    if (deps.attachStepDeleteHandler !== undefined)
+        attachStepDeleteHandler = deps.attachStepDeleteHandler;
     if (deps.updateStepNumbers !== undefined) updateStepNumbers = deps.updateStepNumbers;
     if (deps.initStepSorting !== undefined) initStepSorting = deps.initStepSorting;
-    if (deps.captureInitialEditState !== undefined) captureInitialEditState = deps.captureInitialEditState;
-    if (deps.captureInitialAddState !== undefined) captureInitialAddState = deps.captureInitialAddState;
+    if (deps.captureInitialEditState !== undefined)
+        captureInitialEditState = deps.captureInitialEditState;
+    if (deps.captureInitialAddState !== undefined)
+        captureInitialAddState = deps.captureInitialAddState;
     if (deps.openAnimatedModal !== undefined) openAnimatedModal = deps.openAnimatedModal;
-    if (deps.attachScreenshotHandlers !== undefined) attachScreenshotHandlers = deps.attachScreenshotHandlers;
-    if (deps.renderExistingThumbnail !== undefined) renderExistingThumbnail = deps.renderExistingThumbnail;
+    if (deps.attachScreenshotHandlers !== undefined)
+        attachScreenshotHandlers = deps.attachScreenshotHandlers;
+    if (deps.renderExistingThumbnail !== undefined)
+        renderExistingThumbnail = deps.renderExistingThumbnail;
     if (deps.addNewStep !== undefined) addNewStep = deps.addNewStep;
     if (deps.getSectionName !== undefined) getSectionName = deps.getSectionName;
+}
+
+// ============================================================================
+// ГРУППЫ ГЛАВНОГО АЛГОРИТМА
+// ============================================================================
+
+/**
+ * Рендерит панель «Управление группами» и обновляет селекты групп в шагах
+ * @param {HTMLElement} container - контейнер для панели
+ * @param {Object} algorithm - копия алгоритма (algorithm.groups)
+ * @param {HTMLElement} editStepsContainer - контейнер с .edit-step
+ */
+function renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer) {
+    const groups = Array.isArray(algorithm.groups) ? algorithm.groups : [];
+    container.innerHTML = `
+        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-3 mb-3 bg-white dark:bg-gray-700/50">
+            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Управление группами</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Группы позволяют свернуть шаги в блоки на главном экране. Назначьте группу шагу в списке ниже.</p>
+            <div id="editMainAlgoGroupsList" class="space-y-2 mb-2"></div>
+            <button type="button" class="add-main-algo-group-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200">
+                <i class="fas fa-plus mr-1"></i>Добавить группу
+            </button>
+        </div>
+    `;
+    const listEl = container.querySelector('#editMainAlgoGroupsList');
+    if (!listEl) return;
+
+    groups.forEach((g, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        row.dataset.groupId = g.id;
+        row.innerHTML = `
+            <input type="text" class="main-algo-group-title flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" value="${typeof g.title === 'string' ? g.title.replace(/"/g, '&quot;') : g.id}" placeholder="Название группы">
+            <button type="button" class="main-algo-group-delete px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded" title="Удалить группу" aria-label="Удалить группу"><i class="fas fa-trash"></i></button>
+        `;
+        const input = row.querySelector('.main-algo-group-title');
+        const deleteBtn = row.querySelector('.main-algo-group-delete');
+        input.addEventListener('input', () => {
+            if (algorithm.groups[idx]) algorithm.groups[idx].title = input.value.trim() || algorithm.groups[idx].id;
+        });
+        deleteBtn.addEventListener('click', () => {
+            algorithm.groups.splice(idx, 1);
+            renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer);
+        });
+        listEl.appendChild(row);
+    });
+
+    container.querySelector('.add-main-algo-group-btn').addEventListener('click', () => {
+        const id = `gr-${Date.now()}`;
+        algorithm.groups.push({ id, title: 'Новая группа' });
+        renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer);
+    });
+
+    editStepsContainer.querySelectorAll('.edit-step').forEach((stepDiv) => {
+        const sel = stepDiv.querySelector('.step-group-id');
+        if (!sel) return;
+        const currentVal = sel.value;
+        while (sel.options.length > 1) sel.remove(1);
+        groups.forEach((g) => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.title || g.id;
+            sel.appendChild(opt);
+        });
+        if (currentVal && groups.some((g) => g.id === currentVal)) sel.value = currentVal;
+    });
 }
 
 // ============================================================================
@@ -109,28 +182,24 @@ export async function editAlgorithm(algorithmId, section = 'main') {
         const collapseControls = document.createElement('div');
         collapseControls.className = 'mr-auto';
         collapseControls.innerHTML = `
-            <button type="button" class="collapse-all-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-900 dark:text-gray-100">Свернуть все</button>
-            <button type="button" class="expand-all-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-900 dark:text-gray-100 ml-1">Развернуть все</button>
+            <button type="button" class="collapse-all-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition">Свернуть все</button>
+            <button type="button" class="expand-all-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition ml-2">Развернуть все</button>
         `;
         actionsContainer.insertBefore(collapseControls, actionsContainer.firstChild);
 
         actionsContainer.querySelector('.collapse-all-btn').addEventListener('click', () => {
-            editStepsContainerElement
-                .querySelectorAll('.edit-step')
-                .forEach((step) => {
-                    if (typeof toggleStepCollapse === 'function') {
-                        toggleStepCollapse(step, true);
-                    }
-                });
+            editStepsContainerElement.querySelectorAll('.edit-step').forEach((step) => {
+                if (typeof toggleStepCollapse === 'function') {
+                    toggleStepCollapse(step, true);
+                }
+            });
         });
         actionsContainer.querySelector('.expand-all-btn').addEventListener('click', () => {
-            editStepsContainerElement
-                .querySelectorAll('.edit-step')
-                .forEach((step) => {
-                    if (typeof toggleStepCollapse === 'function') {
-                        toggleStepCollapse(step, false);
-                    }
-                });
+            editStepsContainerElement.querySelectorAll('.edit-step').forEach((step) => {
+                if (typeof toggleStepCollapse === 'function') {
+                    toggleStepCollapse(step, false);
+                }
+            });
         });
     }
 
@@ -141,6 +210,26 @@ export async function editAlgorithm(algorithmId, section = 'main') {
         if (!isMainAlgorithm) {
             algorithmDescriptionInput.value = algorithm.description ?? '';
         }
+
+        if (isMainAlgorithm) {
+            if (!Array.isArray(algorithm.groups)) algorithm.groups = [];
+            let groupsContainer = document.getElementById('editMainAlgoGroups');
+            if (!groupsContainer) {
+                groupsContainer = document.createElement('div');
+                groupsContainer.id = 'editMainAlgoGroups';
+                groupsContainer.className = 'mb-4';
+                editStepsContainerElement.parentNode.insertBefore(
+                    groupsContainer,
+                    editStepsContainerElement,
+                );
+            }
+            groupsContainer.style.display = 'block';
+            renderMainAlgoGroupsPanel(groupsContainer, algorithm, editStepsContainerElement);
+        } else {
+            const groupsContainer = document.getElementById('editMainAlgoGroups');
+            if (groupsContainer) groupsContainer.style.display = 'none';
+        }
+
         editStepsContainerElement.innerHTML = '';
 
         if (!Array.isArray(algorithm.steps) || algorithm.steps.length === 0) {
@@ -229,6 +318,20 @@ export async function editAlgorithm(algorithmId, section = 'main') {
 
                 if (isMainAlgorithm && noInnHelpCheckbox) {
                     noInnHelpCheckbox.checked = step.showNoInnHelp || false;
+                }
+                if (isMainAlgorithm) {
+                    const groupSelect = stepDiv.querySelector('.step-group-id');
+                    if (groupSelect && Array.isArray(algorithm.groups)) {
+                        algorithm.groups.forEach((g) => {
+                            const opt = document.createElement('option');
+                            opt.value = g.id;
+                            opt.textContent = g.title || g.id;
+                            groupSelect.appendChild(opt);
+                        });
+                        if (step.groupId && algorithm.groups.some((g) => g.id === step.groupId)) {
+                            groupSelect.value = step.groupId;
+                        }
+                    }
                 }
 
                 if (!isMainAlgorithm) {
@@ -359,28 +462,24 @@ export async function showAddModal(section) {
         const collapseControls = document.createElement('div');
         collapseControls.className = 'mr-auto';
         collapseControls.innerHTML = `
-            <button type="button" class="collapse-all-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-900 dark:text-gray-100">Свернуть все</button>
-            <button type="button" class="expand-all-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-900 dark:text-gray-100 ml-1">Развернуть все</button>
+            <button type="button" class="collapse-all-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition">Свернуть все</button>
+            <button type="button" class="expand-all-btn px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition ml-2">Развернуть все</button>
         `;
         actionsContainer.insertBefore(collapseControls, actionsContainer.firstChild);
 
         actionsContainer.querySelector('.collapse-all-btn').addEventListener('click', () => {
-            newStepsContainerElement
-                .querySelectorAll('.edit-step')
-                .forEach((step) => {
-                    if (typeof toggleStepCollapse === 'function') {
-                        toggleStepCollapse(step, true);
-                    }
-                });
+            newStepsContainerElement.querySelectorAll('.edit-step').forEach((step) => {
+                if (typeof toggleStepCollapse === 'function') {
+                    toggleStepCollapse(step, true);
+                }
+            });
         });
         actionsContainer.querySelector('.expand-all-btn').addEventListener('click', () => {
-            newStepsContainerElement
-                .querySelectorAll('.edit-step')
-                .forEach((step) => {
-                    if (typeof toggleStepCollapse === 'function') {
-                        toggleStepCollapse(step, false);
-                    }
-                });
+            newStepsContainerElement.querySelectorAll('.edit-step').forEach((step) => {
+                if (typeof toggleStepCollapse === 'function') {
+                    toggleStepCollapse(step, false);
+                }
+            });
         });
     }
 

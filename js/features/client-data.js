@@ -19,7 +19,8 @@ let deps = {
  */
 export function setClientDataDependencies(dependencies) {
     if (dependencies.showNotification) deps.showNotification = dependencies.showNotification;
-    if (dependencies.NotificationService) deps.NotificationService = dependencies.NotificationService;
+    if (dependencies.NotificationService)
+        deps.NotificationService = dependencies.NotificationService;
     if (dependencies.updateSearchIndex) deps.updateSearchIndex = dependencies.updateSearchIndex;
     console.log('[client-data.js] Зависимости установлены');
 }
@@ -91,7 +92,10 @@ export async function saveClientData() {
                 lsError,
             );
             if (deps.showNotification) {
-                deps.showNotification('Критическая ошибка: Не удалось сохранить данные клиента.', 'error');
+                deps.showNotification(
+                    'Критическая ошибка: Не удалось сохранить данные клиента.',
+                    'error',
+                );
             }
         }
     }
@@ -223,7 +227,11 @@ export function clearClientData() {
  */
 export function applyClientNotesFontSize() {
     const clientNotes = document.getElementById('clientNotes');
-    if (clientNotes && State.userPreferences && typeof State.userPreferences.clientNotesFontSize === 'number') {
+    if (
+        clientNotes &&
+        State.userPreferences &&
+        typeof State.userPreferences.clientNotesFontSize === 'number'
+    ) {
         const fontSize = State.userPreferences.clientNotesFontSize;
         clientNotes.style.fontSize = `${fontSize}%`;
         console.log(`[applyClientNotesFontSize] Font size for client notes set to ${fontSize}%.`);
@@ -232,7 +240,10 @@ export function applyClientNotesFontSize() {
             console.warn(
                 '[applyClientNotesFontSize] Could not apply font size: #clientNotes element not found.',
             );
-        if (!State.userPreferences || typeof State.userPreferences.clientNotesFontSize !== 'number') {
+        if (
+            !State.userPreferences ||
+            typeof State.userPreferences.clientNotesFontSize !== 'number'
+        ) {
             console.warn(
                 '[applyClientNotesFontSize] Could not apply font size: State.userPreferences.clientNotesFontSize is missing or invalid.',
             );
@@ -247,12 +258,22 @@ export function applyClientNotesFontSize() {
  * @param {Function} getVisibleModals - функция для получения видимых модальных окон
  * @returns {Object} объект с методами управления превью
  */
+const noopClientNotesPreview = {
+    show() {},
+    hide() {},
+    update() {},
+    destroy() {},
+};
+
 export function createClientNotesInnPreview(textarea, escapeHtml, getVisibleModals) {
+    if (!textarea || !textarea.parentElement) return noopClientNotesPreview;
     const wrapper = textarea.parentElement;
     try {
         const ws = getComputedStyle(wrapper);
         if (ws.position === 'static') wrapper.style.position = 'relative';
-    } catch (_) {}
+    } catch {
+        // ignore style probe failures in detached/hidden contexts
+    }
 
     const preview = document.createElement('div');
     preview.className = 'client-notes-preview';
@@ -263,10 +284,13 @@ export function createClientNotesInnPreview(textarea, escapeHtml, getVisibleModa
     wrapper.appendChild(preview);
 
     const posOverlay = () => {
+        if (!wrapper) return;
         const tr = textarea.getBoundingClientRect();
         const wr = wrapper.getBoundingClientRect();
-        const left = tr.left - wr.left + wrapper.scrollLeft;
-        const top = tr.top - wr.top + wrapper.scrollTop;
+        const scrollLeft = typeof wrapper.scrollLeft === 'number' ? wrapper.scrollLeft : 0;
+        const scrollTop = typeof wrapper.scrollTop === 'number' ? wrapper.scrollTop : 0;
+        const left = tr.left - wr.left + scrollLeft;
+        const top = tr.top - wr.top + scrollTop;
         preview.style.left = `${left}px`;
         preview.style.top = `${top}px`;
         preview.style.width = `${textarea.clientWidth}px`;
@@ -323,7 +347,9 @@ export function createClientNotesInnPreview(textarea, escapeHtml, getVisibleModa
                 if (document.documentElement.style.overflow === 'hidden')
                     document.documentElement.style.overflow = '';
             }
-        } catch (_) {}
+        } catch {
+            // best-effort unlock; failures are non-critical
+        }
     };
 
     const update = () => {

@@ -38,7 +38,10 @@ function showNotification(message, type = 'success', duration = 5000) {
 }
 
 /**
- * Request permission for browser notifications
+ * Запрос разрешения на системные уведомления.
+ * Используется Web Notifications API: поддерживается в современных десктопных браузерах (Chrome, Firefox, Edge, Safari на Windows/macOS/Linux).
+ * При отсутствии поддержки или отказе пользователя показ уведомления о завершении таймера делается через alert().
+ * На мобильных и в PWA поведение зависит от поддержки браузера.
  */
 export async function requestAppNotificationPermission() {
     if (!('Notification' in window)) {
@@ -591,7 +594,7 @@ export function adjustTimerDuration(secondsToAdd) {
 /**
  * Switch to edit mode for timer segment
  */
-export function switchToEditMode(unitSpanElement, unitType) {
+export function switchToEditMode(unitSpanElement, _unitType) {
     if (State.activeEditingUnitElement) {
         commitTimerEdit(false);
     }
@@ -647,7 +650,10 @@ export function switchToEditMode(unitSpanElement, unitType) {
     unitSpanElement.parentNode.insertBefore(input, unitSpanElement.nextSibling);
     if (unitSpanElement === State.timerElements.minutesSpan && State.timerElements.colonSpan) {
         State.timerElements.colonSpan.style.display = 'none';
-    } else if (unitSpanElement === State.timerElements.secondsSpan && State.timerElements.colonSpan) {
+    } else if (
+        unitSpanElement === State.timerElements.secondsSpan &&
+        State.timerElements.colonSpan
+    ) {
         State.timerElements.colonSpan.style.display = 'none';
     }
     input.focus();
@@ -747,7 +753,10 @@ export function updateTimerDisplay() {
         !State.timerElements.minutesSpan ||
         !State.timerElements.secondsSpan
     ) {
-        if (timerDisplayElement && (!State.timerElements.minutesSpan || !State.timerElements.secondsSpan)) {
+        if (
+            timerDisplayElement &&
+            (!State.timerElements.minutesSpan || !State.timerElements.secondsSpan)
+        ) {
             const minutes = Math.floor(timeLeftVisual / 60);
             const seconds = timeLeftVisual % 60;
             timerDisplayElement.textContent = `${String(minutes).padStart(2, '0')}:${String(
@@ -762,6 +771,14 @@ export function updateTimerDisplay() {
             } else {
                 timerToggleIcon.classList.remove('fa-pause');
                 timerToggleIcon.classList.add('fa-play');
+            }
+        }
+        if (timerDisplayElement) {
+            timerDisplayElement.classList.toggle('timer-zero', timeLeftVisual === 0);
+            if (isTimerRunning && timeLeftVisual <= 10) {
+                timerDisplayElement.classList.add('timer-urgent');
+            } else {
+                timerDisplayElement.classList.remove('timer-urgent');
             }
         }
         return;
@@ -783,6 +800,15 @@ export function updateTimerDisplay() {
     } else {
         timerToggleIcon.classList.remove('fa-pause');
         timerToggleIcon.classList.add('fa-play');
+    }
+
+    if (timerDisplayElement) {
+        timerDisplayElement.classList.toggle('timer-zero', timeLeftVisual === 0);
+        if (isTimerRunning && timeLeftVisual <= 10) {
+            timerDisplayElement.classList.add('timer-urgent');
+        } else {
+            timerDisplayElement.classList.remove('timer-urgent');
+        }
     }
 }
 
@@ -895,14 +921,14 @@ export function initTimerSystem() {
         if (State.activeEditingUnitElement) {
             cancelTimerEdit();
         }
-        const amount = event.ctrlKey ? 5 : 30;
+        const amount = event.ctrlKey && event.shiftKey ? 30 : event.ctrlKey ? 10 : 5;
         adjustTimerDuration(amount);
     });
     timerDecreaseButton.addEventListener('click', (event) => {
         if (State.activeEditingUnitElement) {
             cancelTimerEdit();
         }
-        const amount = event.ctrlKey ? -5 : -30;
+        const amount = event.ctrlKey && event.shiftKey ? -30 : event.ctrlKey ? -10 : -5;
         adjustTimerDuration(amount);
     });
 

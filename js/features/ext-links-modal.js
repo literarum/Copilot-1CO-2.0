@@ -4,6 +4,12 @@
 // EXT LINKS MODAL (вынос из script.js)
 // ============================================================================
 
+import {
+    activateModalFocus,
+    deactivateModalFocus,
+    enhanceModalAccessibility,
+} from '../ui/modals-manager.js';
+
 let State = null;
 let showNotification = null;
 let getFromIndexedDB = null;
@@ -12,6 +18,29 @@ let removeEscapeHandler = null;
 let addEscapeHandler = null;
 let getVisibleModals = null;
 let handleExtLinkFormSubmit = null;
+let showUnsavedConfirmModal = null;
+let deepEqual = null;
+
+/** Состояние формы при открытии модалки (для проверки несохранённых изменений). */
+let extLinkInitialFormState = null;
+
+function getExtLinkFormState(form) {
+    if (!form) return null;
+    return {
+        title:
+            (form.elements?.extLinkTitle?.value ?? form.querySelector('#extLinkTitle')?.value) ||
+            '',
+        url: (form.elements?.extLinkUrl?.value ?? form.querySelector('#extLinkUrl')?.value) || '',
+        description:
+            (form.elements?.extLinkDescription?.value ??
+                form.querySelector('#extLinkDescription')?.value) ||
+            '',
+        category:
+            (form.elements?.extLinkCategory?.value ??
+                form.querySelector('#extLinkCategory')?.value) ||
+            '',
+    };
+}
 
 export function setExtLinksModalDependencies(deps) {
     State = deps.State;
@@ -22,6 +51,9 @@ export function setExtLinksModalDependencies(deps) {
     addEscapeHandler = deps.addEscapeHandler;
     getVisibleModals = deps.getVisibleModals;
     handleExtLinkFormSubmit = deps.handleExtLinkFormSubmit;
+    if (deps.showUnsavedConfirmModal !== undefined)
+        showUnsavedConfirmModal = deps.showUnsavedConfirmModal;
+    if (deps.deepEqual !== undefined) deepEqual = deps.deepEqual;
 }
 
 export function ensureExtLinkModal() {
@@ -71,12 +103,16 @@ export function ensureExtLinkModal() {
                                     </div>
                                     </div>`;
         document.body.appendChild(modal);
+        enhanceModalAccessibility(modal, {
+            labelledBy: 'extLinkModalTitle',
+        });
         const closeModal = (e) => {
             if (e) {
                 e.preventDefault();
                 e.stopPropagation();
             }
             modal.classList.add('hidden');
+            deactivateModalFocus(modal);
             if (typeof removeEscapeHandler === 'function') {
                 removeEscapeHandler(modal);
             }
@@ -85,12 +121,10 @@ export function ensureExtLinkModal() {
                 document.body.classList.remove('overflow-hidden');
             }
         };
-        modal
-            .querySelectorAll('.close-modal, .cancel-modal')
-            .forEach((btn) => {
-                btn.removeEventListener('click', closeModal);
-                btn.addEventListener('click', closeModal);
-            });
+        modal.querySelectorAll('.close-modal, .cancel-modal').forEach((btn) => {
+            btn.removeEventListener('click', closeModal);
+            btn.addEventListener('click', closeModal);
+        });
 
         const form = modal.querySelector('#extLinkForm');
         if (form) {
@@ -132,13 +166,11 @@ export function ensureExtLinkModal() {
         }
     }
 
-    // Убеждаемся, что обработчики закрытия прикреплены даже если модальное окно уже существует
-    const closeModal = (e) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+    const performClose = () => {
         elements.modal.classList.add('hidden');
+        deactivateModalFocus(elements.modal);
+        extLinkInitialFormState = null;
+        delete elements.modal.dataset.initialFormState;
         if (typeof removeEscapeHandler === 'function') {
             removeEscapeHandler(elements.modal);
         }
@@ -147,18 +179,37 @@ export function ensureExtLinkModal() {
             document.body.classList.remove('overflow-hidden');
         }
     };
-    elements.modal
-        .querySelectorAll('.close-modal, .cancel-modal')
-        .forEach((btn) => {
-            btn.removeEventListener('click', closeModal);
-            btn.addEventListener('click', closeModal);
-        });
+
+    const closeModal = async (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const form = elements.form;
+        const isDirty =
+            extLinkInitialFormState &&
+            form &&
+            typeof deepEqual === 'function' &&
+            !deepEqual(extLinkInitialFormState, getExtLinkFormState(form));
+        if (isDirty && typeof showUnsavedConfirmModal === 'function') {
+            const leave = await showUnsavedConfirmModal();
+            if (!leave) return;
+        }
+        performClose();
+    };
+    elements.modal.querySelectorAll('.close-modal, .cancel-modal').forEach((btn) => {
+        btn.removeEventListener('click', closeModal);
+        btn.addEventListener('click', closeModal);
+    });
 
     if (elements.modal && typeof addEscapeHandler === 'function') {
         addEscapeHandler(elements.modal);
     } else if (elements.modal) {
         console.warn('[ensureExtLinkModal] addEscapeHandler function not found.');
     }
+    enhanceModalAccessibility(elements.modal, {
+        labelledBy: 'extLinkModalTitle',
+    });
 
     const categorySelect = elements.categoryInput;
     if (categorySelect && !categorySelect.dataset.populated) {
@@ -189,7 +240,10 @@ export function showAddExtLinkModal() {
     form.reset();
     idInput.value = '';
     titleEl.textContent = 'Добавить внешний ресурс';
+    extLinkInitialFormState = getExtLinkFormState(form);
+    modal.dataset.initialFormState = JSON.stringify(extLinkInitialFormState || {});
     modal.classList.remove('hidden');
+    activateModalFocus(modal);
     form.elements.extLinkTitle?.focus();
 }
 
@@ -221,6 +275,8 @@ export async function showEditExtLinkModal(id) {
         urlInput.value = link.url || '';
         descriptionInput.value = link.description || '';
         categoryInput.value = link.category || '';
+        extLinkInitialFormState = getExtLinkFormState(form);
+        modal.dataset.initialFormState = JSON.stringify(extLinkInitialFormState || {});
 
         try {
             const categories = await getAllFromIndexedDB('extLinkCategories');
@@ -244,6 +300,7 @@ export async function showEditExtLinkModal(id) {
 
         modal.classList.remove('hidden');
         document.body.classList.add('modal-open');
+        activateModalFocus(modal);
         titleInput.focus();
     } catch (error) {
         console.error('Ошибка при загрузке данных ресурса:', error);
@@ -303,7 +360,7 @@ export async function showAddEditExtLinkModal(id = null, categoryId = null) {
                 modal.classList.add('hidden');
                 return;
             }
-        } catch (error) {
+        } catch {
             showNotification('Ошибка загрузки ресурса', 'error');
             modal.classList.add('hidden');
             return;
@@ -316,7 +373,11 @@ export async function showAddEditExtLinkModal(id = null, categoryId = null) {
         }
     }
 
+    extLinkInitialFormState = getExtLinkFormState(form);
+    modal.dataset.initialFormState = JSON.stringify(extLinkInitialFormState || {});
+
     modal.classList.remove('hidden');
     document.body.classList.add('modal-open');
+    activateModalFocus(modal);
     titleInput.focus();
 }

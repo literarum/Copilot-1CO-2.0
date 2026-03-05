@@ -18,6 +18,7 @@ css/
 ## Использование
 
 Основной файл стилей подключен в `index.html`:
+
 ```html
 <link rel="stylesheet" href="css/styles.css" />
 ```

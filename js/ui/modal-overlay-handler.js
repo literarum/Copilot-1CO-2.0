@@ -30,7 +30,6 @@ export function initModalOverlayHandler() {
 
         if (event.target === topmostModal) {
             const nonClosableModals = [
-                'customizeUIModal',
                 'bookmarkModal',
                 'extLinkModal',
                 'foldersModal',
@@ -51,9 +50,16 @@ export function initModalOverlayHandler() {
                 return;
             }
 
-            if (topmostModal.id === 'editModal' || topmostModal.id === 'addModal') {
+            if (
+                topmostModal.id === 'editModal' ||
+                topmostModal.id === 'addModal' ||
+                topmostModal.id === 'customizeUIModal'
+            ) {
                 if (typeof deps.requestCloseModal === 'function') {
-                    deps.requestCloseModal(topmostModal);
+                    if (deps.requestCloseModal(topmostModal) !== false) {
+                        topmostModal.classList.add('hidden');
+                        deps.removeEscapeHandler?.(topmostModal);
+                    }
                 } else {
                     topmostModal.classList.add('hidden');
                     deps.removeEscapeHandler?.(topmostModal);
@@ -89,7 +95,9 @@ export function initModalOverlayHandler() {
 
             if ((deps.getVisibleModals?.() ?? []).length === 0) {
                 document.body.classList.remove('modal-open');
-                if (!document.querySelector('div.fixed.inset-0.bg-black.bg-opacity-50:not(.hidden)')) {
+                if (
+                    !document.querySelector('div.fixed.inset-0.bg-black.bg-opacity-50:not(.hidden)')
+                ) {
                     document.body.classList.remove('overflow-hidden');
                 }
             }

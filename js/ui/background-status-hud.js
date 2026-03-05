@@ -16,6 +16,13 @@ export function initBackgroundStatusHUD() {
             checks: [],
             updatedAt: null,
         },
+        watchdog: {
+            statusText: 'Ожидание первого цикла watchdog...',
+            lastRunAt: null,
+            lastAutosaveAt: null,
+            running: false,
+            severity: 'running',
+        },
         hasShownCompletion: false,
         rafId: null,
         lastVisualPercent: 0,
@@ -24,10 +31,13 @@ export function initBackgroundStatusHUD() {
         pendingDismissAfterActivity: null,
         activityListenersRemoved: false,
         _onActivity: null,
+        watchdogInfoEl: null,
+        watchdogRunBtnEl: null,
+        watchdogRunNowHandler: null,
     };
 
     const DISMISS_AFTER_ACTIVITY_DELAY_MS = 2000;
-    const MAX_HUD_DISPLAY_TIME = 30000;
+    const _MAX_HUD_DISPLAY_TIME = 30000;
 
     function ensureStyles() {
         if (document.getElementById('bg-status-hud-styles')) return;
@@ -71,6 +81,54 @@ export function initBackgroundStatusHUD() {
       background-size: auto !important;
     }
     #bg-status-hud .hud-footer { display:flex; justify-content:flex-start; align-items:center; margin-top:8px; font-size:12px; opacity:.9; gap:8px; }
+    #bg-status-hud .hud-watchdog {
+      margin-top: 8px;
+      font-size: 12px;
+      opacity: .92;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #bg-status-hud .hud-watchdog-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    #bg-status-hud .hud-watchdog-info {
+      color: var(--color-text-primary, #111);
+      opacity: .9;
+    }
+    #bg-status-hud .hud-watchdog-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 6px;
+      font-weight: 600;
+    }
+    #bg-status-hud .hud-watchdog-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      display: inline-block;
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+    }
+    #bg-status-hud .hud-watchdog-dot.is-ok { background: var(--color-success, #16a34a); }
+    #bg-status-hud .hud-watchdog-dot.is-warn { background: #f59e0b; }
+    #bg-status-hud .hud-watchdog-dot.is-error { background: #dc2626; }
+    #bg-status-hud .hud-watchdog-dot.is-running { background: var(--color-primary, #2563eb); }
+    #bg-status-hud .hud-watchdog-run {
+      border: 1px solid var(--color-border, rgba(0,0,0,.12));
+      background: color-mix(in srgb, var(--color-surface-2, #fff) 85%, var(--color-text-primary, #111) 5%);
+      color: var(--color-text-primary, #111);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      opacity: .9;
+    }
+    #bg-status-hud .hud-watchdog-run:hover { opacity: 1; }
+    #bg-status-hud .hud-watchdog-run:disabled { opacity: .55; cursor: not-allowed; }
     #bg-status-hud .hud-details {
       border: 1px solid var(--color-border, rgba(0,0,0,.12));
       background: color-mix(in srgb, var(--color-surface-2, #fff) 85%, var(--color-text-primary, #111) 5%);
@@ -168,6 +226,12 @@ export function initBackgroundStatusHUD() {
       <div class="hud-title"><span class="dot"></span><span>Фоновая инициализация...</span></div>
       <div class="hud-sub" id="bg-hud-title">Подготовка…</div>
       <div class="hud-progress"><div class="hud-bar" id="bg-hud-bar"></div></div>
+      <div class="hud-watchdog">
+        <div id="bg-hud-watchdog-info" class="hud-watchdog-info">Watchdog: ожидание данных...</div>
+        <div class="hud-watchdog-row">
+          <button type="button" id="bg-hud-watchdog-run-btn" class="hud-watchdog-run">Проверить сейчас</button>
+        </div>
+      </div>
       <div class="hud-footer">
         <button type="button" id="bg-hud-details-btn" class="hud-details hidden">Подробнее</button>
       </div>
@@ -179,9 +243,60 @@ export function initBackgroundStatusHUD() {
         STATE.titleEl = root.querySelector('#bg-hud-title');
         STATE.percentEl = root.querySelector('#bg-hud-percent');
         STATE.detailsBtnEl = root.querySelector('#bg-hud-details-btn');
+        STATE.watchdogInfoEl = root.querySelector('#bg-hud-watchdog-info');
+        STATE.watchdogRunBtnEl = root.querySelector('#bg-hud-watchdog-run-btn');
         root.querySelector('#bg-hud-close').addEventListener('click', () => dismissAnimated());
         if (STATE.detailsBtnEl) {
             STATE.detailsBtnEl.addEventListener('click', () => openDiagnosticsModal());
+        }
+        if (STATE.watchdogRunBtnEl) {
+            STATE.watchdogRunBtnEl.addEventListener('click', () => {
+                if (typeof STATE.watchdogRunNowHandler === 'function') {
+                    STATE.watchdogRunNowHandler();
+                }
+            });
+        }
+        renderWatchdogInfo();
+    }
+
+    function watchdogStatusLabel(severity) {
+        switch (severity) {
+            case 'ok':
+                return 'OK';
+            case 'warn':
+                return 'WARN';
+            case 'error':
+                return 'ERROR';
+            default:
+                return 'RUN';
+        }
+    }
+
+    function renderWatchdogInfo() {
+        if (!STATE.watchdogInfoEl) return;
+        const status = STATE.watchdog.statusText || '—';
+        const lastRun = STATE.watchdog.lastRunAt
+            ? new Date(STATE.watchdog.lastRunAt).toLocaleTimeString('ru-RU')
+            : '—';
+        const lastAutosave = STATE.watchdog.lastAutosaveAt
+            ? new Date(STATE.watchdog.lastAutosaveAt).toLocaleTimeString('ru-RU')
+            : '—';
+        const severity = STATE.watchdog.severity || 'running';
+        const dotClass =
+            severity === 'error'
+                ? 'is-error'
+                : severity === 'warn'
+                  ? 'is-warn'
+                  : severity === 'ok'
+                    ? 'is-ok'
+                    : 'is-running';
+        STATE.watchdogInfoEl.innerHTML = `<span class="hud-watchdog-status"><span class="hud-watchdog-dot ${dotClass}"></span>${watchdogStatusLabel(
+            severity,
+        )}</span> ${status} | Прогон: ${lastRun} | Автосохранение: ${lastAutosave}`;
+        if (STATE.watchdogRunBtnEl) {
+            STATE.watchdogRunBtnEl.disabled = STATE.watchdog.running === true;
+            STATE.watchdogRunBtnEl.textContent =
+                STATE.watchdog.running === true ? 'Проверка...' : 'Проверить сейчас';
         }
     }
 
@@ -327,9 +442,7 @@ export function initBackgroundStatusHUD() {
         const others = Math.max(0, active.length - 1);
         const prefix = main.id === 'app-init' ? 'Выполняется' : 'Индексируется';
         STATE.titleEl.textContent =
-            others > 0
-                ? `${prefix}: ${main.label} + ещё ${others}`
-                : `${prefix}: ${main.label}`;
+            others > 0 ? `${prefix}: ${main.label} + ещё ${others}` : `${prefix}: ${main.label}`;
     }
 
     function showCompletionCard() {
@@ -404,6 +517,23 @@ export function initBackgroundStatusHUD() {
         };
 
         body.innerHTML = `
+            <div class="hud-modal-section">
+                <h4>Watchdog</h4>
+                <p class="text-xs opacity-80">Уровень: ${watchdogStatusLabel(
+                    STATE.watchdog.severity || 'running',
+                )}</p>
+                <p class="text-xs opacity-80">Статус: ${STATE.watchdog.statusText || '—'}</p>
+                <p class="text-xs opacity-80">Последний прогон: ${
+                    STATE.watchdog.lastRunAt
+                        ? new Date(STATE.watchdog.lastRunAt).toLocaleString('ru-RU')
+                        : '—'
+                }</p>
+                <p class="text-xs opacity-80">Последнее автосохранение: ${
+                    STATE.watchdog.lastAutosaveAt
+                        ? new Date(STATE.watchdog.lastAutosaveAt).toLocaleString('ru-RU')
+                        : '—'
+                }</p>
+            </div>
             <div class="hud-modal-section">
                 <h4>Ошибки</h4>
                 ${buildList(errors, 'Ошибок не обнаружено.')}
@@ -503,8 +633,21 @@ export function initBackgroundStatusHUD() {
             };
             updateDetailsButton();
         },
+        setWatchdogStatus(payload = {}) {
+            STATE.watchdog = {
+                ...STATE.watchdog,
+                ...payload,
+            };
+            renderWatchdogInfo();
+        },
+        setWatchdogRunNowHandler(handler) {
+            STATE.watchdogRunNowHandler = typeof handler === 'function' ? handler : null;
+            if (STATE.watchdogRunBtnEl) {
+                STATE.watchdogRunBtnEl.disabled =
+                    STATE.watchdog.running === true || !STATE.watchdogRunNowHandler;
+            }
+        },
     };
 
     return API;
 }
-
