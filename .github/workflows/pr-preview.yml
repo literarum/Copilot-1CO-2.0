@@ -3,6 +3,12 @@ name: PR Preview
 on:
   pull_request:
     types: [opened, reopened, synchronize, closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Номер PR (для ручного запуска)'
+        required: true
+        type: number
 
 permissions:
   contents: write
@@ -10,7 +16,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: pr-preview-${{ github.event.pull_request.number }}
+  group: pr-preview-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: true
 
 jobs:
@@ -19,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
 
       - name: Safety cleanup
         run: rm -rf pr-preview || true
@@ -39,13 +47,16 @@ jobs:
         uses: actions/github-script@v7
         env:
           PREVIEW_URL: ${{ steps.pr-preview.outputs.preview-url }}
+          ISSUE_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         with:
           script: |
             const url = process.env.PREVIEW_URL;
+            const issueNumber = process.env.ISSUE_NUMBER;
+            if (!issueNumber) return;
             const body = `## Ссылка на приложение (preview)\n\n**${url}**\n\n*(Развёрнуто из этого PR; обновляется при новых коммитах.)*`;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: parseInt(issueNumber, 10),
               body
             });
