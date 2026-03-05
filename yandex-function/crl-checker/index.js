@@ -12,8 +12,8 @@ const CRL_FETCH_ATTEMPTS = 2;
 const CRL_FETCH_TIMEOUT_MS = 25000;
 const CHECK_REVOCATION_BUDGET_MS = 35000;
 const MAX_CRL_BASE64_LENGTH = 4 * 1024 * 1024;
-/** Max size of CRL response body to load (avoids OOM; server may omit Content-Length) */
-const MAX_CRL_RESPONSE_BYTES = 8 * 1024 * 1024;
+/** Max size of CRL response body to load (avoids OOM; server may omit Content-Length). FNS CRLs can be ~25 MB. */
+const MAX_CRL_RESPONSE_BYTES = 32 * 1024 * 1024;
 const FNS_PREFER_HTTP_HOSTS = new Set(['pki.tax.gov.ru', 'uc.nalog.ru', 'cdp.tax.gov.ru']);
 const OPTIONAL_PROXY_BASE = process.env.REVOCATION_PROXY_URL || '';
 const LOCAL_HELPER_ALLOWLIST = new Set(['localhost', '127.0.0.1']);
@@ -356,7 +356,7 @@ async function checkRevocation(serial, listUrl, options = {}) {
     const attemptPath = [];
 
     for (const candidate of sourceCandidates) {
-        const candidateUrl = candidate.url;
+        let effectiveUrl = candidate.url;
         const candidateSource = candidate.source;
         if (Date.now() - startedAt > CHECK_REVOCATION_BUDGET_MS) {
             lastError = lastError || `timeout budget exceeded (${CHECK_REVOCATION_BUDGET_MS}ms)`;
@@ -366,34 +366,66 @@ async function checkRevocation(serial, listUrl, options = {}) {
 
         let res;
         try {
-            res = await fetchWithRetry(candidateUrl);
+            res = await fetchWithRetry(effectiveUrl);
         } catch (e) {
-            lastError = lastError || `${candidateUrl}: ${e.message}`;
+            lastError = lastError || `${effectiveUrl}: ${e.message}`;
             lastErrorCode = lastErrorCode || e?.code || 'crl_fetch_failed';
-            attemptPath.push({ url: candidateUrl, source: candidateSource, errorCode: lastErrorCode });
+            attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
             continue;
         }
 
         if (res.status >= 300 && res.status < 400) {
-            const location = res.headers?.get?.('location') || '';
+            const location = (res.headers?.get?.('location') || '').trim();
             if (location.startsWith('https://')) {
-                lastError = lastError || `${candidateUrl}: redirect → HTTPS (GOST TLS unsupported)`;
+                lastError = lastError || `${effectiveUrl}: redirect → HTTPS (GOST TLS unsupported)`;
                 lastErrorCode = lastErrorCode || 'crl_redirect_https';
-            } else if (location) {
-                lastError = lastError || `${candidateUrl}: redirect → ${location}`;
-                lastErrorCode = lastErrorCode || 'crl_redirect_other';
-            } else {
-                lastError = lastError || `${candidateUrl}: redirect ${res.status}`;
-                lastErrorCode = lastErrorCode || 'crl_redirect_unknown';
+                attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+                continue;
             }
-            attemptPath.push({ url: candidateUrl, source: candidateSource, errorCode: lastErrorCode });
-            continue;
+            if (location.startsWith('/')) {
+                try {
+                    const redirectUrl = new URL(location, new URL(effectiveUrl).origin).href;
+                    const redirectHost = new URL(redirectUrl).hostname.toLowerCase();
+                    const candidateHost = new URL(effectiveUrl).hostname.toLowerCase();
+                    if (redirectHost === candidateHost) {
+                        res = await fetchWithRetry(redirectUrl);
+                        if (res.status >= 200 && res.status < 300) {
+                            effectiveUrl = redirectUrl;
+                        } else {
+                            lastError = lastError || `${effectiveUrl}: redirect → ${location} returned ${res.status}`;
+                            lastErrorCode = lastErrorCode || 'crl_redirect_other';
+                            attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+                            continue;
+                        }
+                    } else {
+                        lastError = lastError || `${effectiveUrl}: redirect → ${location} (different host)`;
+                        lastErrorCode = lastErrorCode || 'crl_redirect_other';
+                        attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+                        continue;
+                    }
+                } catch (e) {
+                    lastError = lastError || `${effectiveUrl}: redirect → ${location} (${e?.message || 'invalid'})`;
+                    lastErrorCode = lastErrorCode || 'crl_redirect_other';
+                    attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+                    continue;
+                }
+            } else if (location) {
+                lastError = lastError || `${effectiveUrl}: redirect → ${location}`;
+                lastErrorCode = lastErrorCode || 'crl_redirect_other';
+                attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+                continue;
+            } else {
+                lastError = lastError || `${effectiveUrl}: redirect ${res.status}`;
+                lastErrorCode = lastErrorCode || 'crl_redirect_unknown';
+                attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+                continue;
+            }
         }
 
         if (!res.ok) {
-            lastError = lastError || `${candidateUrl}: HTTP ${res.status}`;
+            lastError = lastError || `${effectiveUrl}: HTTP ${res.status}`;
             lastErrorCode = lastErrorCode || 'crl_http_error';
-            attemptPath.push({ url: candidateUrl, source: candidateSource, errorCode: lastErrorCode });
+            attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
             continue;
         }
 
@@ -401,28 +433,28 @@ async function checkRevocation(serial, listUrl, options = {}) {
         if (contentLength != null) {
             const len = parseInt(contentLength, 10);
             if (!Number.isNaN(len) && len > MAX_CRL_RESPONSE_BYTES) {
-                lastError = lastError || `${candidateUrl}: CRL too large (${len} bytes, max ${MAX_CRL_RESPONSE_BYTES})`;
+                lastError = lastError || `${effectiveUrl}: CRL too large (${len} bytes, max ${MAX_CRL_RESPONSE_BYTES})`;
                 lastErrorCode = lastErrorCode || 'crl_too_large';
-                attemptPath.push({ url: candidateUrl, source: candidateSource, errorCode: lastErrorCode });
+                attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
                 continue;
             }
         }
 
         const contentType = (res.headers?.get?.('Content-Type') || '').toLowerCase();
         const buffer = await res.arrayBuffer();
-        const result = await processCrlResponse(buffer, contentType, candidateUrl, normalizedSerial);
+        const result = await processCrlResponse(buffer, contentType, effectiveUrl, normalizedSerial);
         if (result.error) {
             lastError = lastError || result.error;
             lastErrorCode = lastErrorCode || result.errorCode || 'crl_processing_failed';
-            attemptPath.push({ url: candidateUrl, source: candidateSource, errorCode: lastErrorCode });
+            attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
             continue;
         }
 
         return {
             ...result,
-            checkedUrl: candidateUrl,
+            checkedUrl: effectiveUrl,
             source: candidateSource,
-            viaProxy: isProxiedUrl(candidateUrl),
+            viaProxy: isProxiedUrl(effectiveUrl),
             attemptPath,
         };
     }
