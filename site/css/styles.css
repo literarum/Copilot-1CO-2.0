@@ -892,6 +892,32 @@ div:has(> #clearClientDataBtn) {
     opacity: 0;
 }
 
+/* Анализатор XML: состояния после анализа */
+.xml-analyzer-shell:not(.analysis-done) #xmlAnalyzerOutputContainer {
+    display: none !important;
+}
+.xml-analyzer-shell:not(.analysis-done) #xmlAnalyzerCertManagerWrapper {
+    display: none !important;
+}
+.xml-analyzer-shell.analysis-done #xmlAnalyzerOutputContainer {
+    display: flex !important;
+}
+.xml-analyzer-shell.analysis-done #xmlAnalyzerOutput {
+    display: block !important;
+}
+.xml-analyzer-shell.analysis-done.show-cert-manager #xmlAnalyzerCertManagerWrapper {
+    display: flex !important;
+}
+.xml-analyzer-shell .xml-analyzer-mode-btn.active {
+    background-color: var(--color-surface, #fff);
+    color: #0f172a;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+html.dark .xml-analyzer-shell .xml-analyzer-mode-btn.active {
+    background-color: #475569;
+    color: #f1f5f9;
+}
+
 :is(
     #mainTab,
     #programTab,

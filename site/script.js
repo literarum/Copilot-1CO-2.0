@@ -211,6 +211,9 @@ import {
 // FNS Certificate Revocation (PR11)
 import { initFNSCertificateRevocationSystem } from './js/features/fns-cert-revocation.js';
 
+// Анализатор XML для ТП 1СО
+import { initXmlAnalyzer } from './js/features/xml-analyzer.js';
+
 // UI Customization (PR11)
 import {
     setUICustomizationDependencies,
@@ -1372,6 +1375,16 @@ setOnloadHandlerDependencies({
             setTimeout(() => {
                 if (typeof loadBookmarksModule === 'function') loadBookmarksModule();
             }, 150);
+        },
+        () => {
+            const onTabShown = (e) => {
+                if (e?.detail?.tabId === 'xmlAnalyzer') {
+                    const root = document.getElementById('xmlAnalyzerContent');
+                    if (root && typeof initXmlAnalyzer === 'function') initXmlAnalyzer(root);
+                    document.removeEventListener('copilot1co:tabShown', onTabShown);
+                }
+            };
+            document.addEventListener('copilot1co:tabShown', onTabShown);
         },
     ],
 });

@@ -29,6 +29,7 @@ export const tabsConfig = [
         isSpecial: true,
     },
     { id: 'fnsCert', name: 'Проверка сертификата на отзыв', icon: 'fa-certificate' },
+    { id: 'xmlAnalyzer', name: 'Анализатор XML', icon: 'fa-file-code' },
 ];
 
 export const allPanelIdsForDefault = tabsConfig.map((t) => t.id);
