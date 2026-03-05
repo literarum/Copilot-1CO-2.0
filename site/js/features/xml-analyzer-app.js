@@ -17,6 +17,7 @@ const XML_ANALYZER_ID_MAP = {
     'modal-content-target': 'xmlAnalyzerModalContent',
     'mode-toggle-container': 'xmlAnalyzerModeToggle',
     'analyze-btn-content': 'xmlAnalyzerAnalyzeBtnContent',
+    'reset-input-btn': 'xmlAnalyzerResetInputBtn',
     'notification-container': 'xmlAnalyzerNotificationContainer',
     'sedo-raw-json-viewer': 'xmlAnalyzerSedoRawJsonViewer',
     'accordion-section-template': 'xmlAnalyzerAccordionSectionTemplate',
@@ -100,6 +101,7 @@ class ReportAnalyzerApp {
         this.inputArea = getEl('data-input');
         this.outputArea = getEl('output');
         this.analyzeBtn = getEl('analyze-btn');
+        this.resetInputBtn = getEl('reset-input-btn');
         this.dropZone = getEl('drop-zone');
         this.placeholder = getEl('placeholder');
 
@@ -144,6 +146,10 @@ class ReportAnalyzerApp {
             console.error('КРИТИЧЕСКАЯ ОШИБКА: Кнопка анализатора #analyze-btn не найдена в DOM! Основная функция не будет работать.');
         }
 
+        if (this.resetInputBtn) {
+            this.resetInputBtn.addEventListener('click', () => this.clearInput());
+        }
+
         if (this.reloadBtn) {
             this.reloadBtn.addEventListener('click', () => this.clearAnalysis());
         }
@@ -165,6 +171,7 @@ class ReportAnalyzerApp {
         }
 
         if (this.dataInputTextarea) {
+            this.dataInputTextarea.addEventListener('input', () => this.updateAnalyzeButtonState());
             this.dataInputTextarea.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
@@ -181,6 +188,7 @@ class ReportAnalyzerApp {
                 }
             });
             this.switchInputMode('text');
+            this.updateAnalyzeButtonState();
         }
 
         if (this.certSearchInput) {
@@ -217,6 +225,30 @@ class ReportAnalyzerApp {
             clearTimeout(timeout);
             timeout = setTimeout(() => func.apply(this, args), delay);
         };
+    }
+
+
+    updateAnalyzeButtonState() {
+        if (!this.dataInputTextarea) return;
+        const hasContent = this.dataInputTextarea.value.trim().length > 0;
+        if (this.resetInputBtn) {
+            this.resetInputBtn.disabled = !hasContent;
+        }
+        if (!this.analyzeBtn) return;
+        if (this.isAnalysisDone) {
+            this.analyzeBtn.disabled = false;
+            return;
+        }
+        this.analyzeBtn.disabled = !hasContent;
+    }
+
+
+    clearInput() {
+        if (this.dataInputTextarea) {
+            this.dataInputTextarea.value = '';
+        }
+        this.switchInputMode('text');
+        this.updateAnalyzeButtonState();
     }
 
 
@@ -447,6 +479,7 @@ class ReportAnalyzerApp {
         if (this.exportZipBtn) {
             this.exportZipBtn.disabled = true;
         }
+        this.updateAnalyzeButtonState();
     }
 
 
