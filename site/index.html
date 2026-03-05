@@ -927,7 +927,7 @@
                                     id="clientNotes"
                                     rows="20"
                                     placeholder="Здесь для удобства можно фиксировать всю информацию по обращению клиента..."
-                                    class="w-full p-1 resize-none bg-gray-50 dark:bg-gray-800 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100 custom-scrollbar"
+                                    class="w-full p-1 resize-y bg-gray-50 dark:bg-gray-800 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100 custom-scrollbar"
                                 ></textarea>
                             </div>
                         </div>
@@ -1552,16 +1552,16 @@
                 </div>
             </div>
 
-            <!-- Анализатор XML для ТП 1СО -->
+            <!-- XMLизатор -->
             <div id="xmlAnalyzerContent" class="tab-content hidden p-4" aria-labelledby="xmlAnalyzerTab">
                 <div class="xml-analyzer-shell h-full flex flex-col gap-4">
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Анализатор XML для ТП 1СО</h2>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">XMLизатор</h2>
                     <div class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
                         <div id="xmlAnalyzerInputContainer" class="flex flex-col flex-1 min-h-0 overflow-hidden">
                             <div id="xmlAnalyzerInitialView" class="flex flex-col flex-grow">
-                                <div id="xmlAnalyzerModeToggle" class="flex-shrink-0 mb-4 p-1 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center w-full">
-                                    <button type="button" data-mode="text" class="xml-analyzer-mode-btn w-1/2 py-2 rounded-md font-semibold transition-colors">Вставить текст</button>
-                                    <button type="button" data-mode="file" class="xml-analyzer-mode-btn w-1/2 py-2 rounded-md font-semibold transition-colors">Выбрать файл</button>
+                                <div id="xmlAnalyzerModeToggle" class="flex-shrink-0 mb-4 p-1 bg-gray-200 dark:bg-gray-700 rounded-lg grid grid-cols-2 gap-1 w-full">
+                                    <button type="button" data-mode="text" class="xml-analyzer-mode-btn min-w-0 py-2 rounded-md font-semibold transition-colors">Вставить текст</button>
+                                    <button type="button" data-mode="file" class="xml-analyzer-mode-btn min-w-0 py-2 rounded-md font-semibold transition-colors">Выбрать файл</button>
                                 </div>
                                 <div id="xmlAnalyzerFileMode" class="flex-grow hidden pb-4">
                                     <div id="xmlAnalyzerDropZone" class="w-full h-full min-h-[120px] border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer p-6">
@@ -1573,9 +1573,12 @@
                                 <div id="xmlAnalyzerTextMode" class="flex flex-col flex-grow min-h-0">
                                     <textarea id="xmlAnalyzerDataInput" class="w-full flex-grow min-h-[200px] p-4 border border-gray-300 dark:border-gray-600 rounded-xl resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" placeholder="Вставьте XML рег.файла, JSON СЭДО, XML ЕФС из 1С... (Ctrl+Enter для анализа)"></textarea>
                                 </div>
-                                <button type="button" id="xmlAnalyzerAnalyzeBtn" class="w-full font-bold py-2 rounded-lg bg-primary hover:bg-secondary text-white transition-colors mt-4">
-                                    <span id="xmlAnalyzerAnalyzeBtnContent">Анализировать</span>
-                                </button>
+                                <div class="flex gap-2 mt-4">
+                                    <button type="button" id="xmlAnalyzerResetInputBtn" class="px-4 py-2 rounded-lg font-semibold border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Сбросить ввод</button>
+                                    <button type="button" id="xmlAnalyzerAnalyzeBtn" class="flex-1 font-bold py-2 rounded-lg bg-primary hover:bg-secondary text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                        <span id="xmlAnalyzerAnalyzeBtnContent">Анализировать</span>
+                                    </button>
+                                </div>
                             </div>
                             <div id="xmlAnalyzerCertManagerWrapper" class="hidden flex-col h-full bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 p-4">
                                 <h3 class="text-lg font-bold mb-2">Менеджер сертификатов</h3>

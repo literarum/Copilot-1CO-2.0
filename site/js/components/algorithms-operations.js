@@ -391,6 +391,16 @@ export async function editAlgorithm(algorithmId, section = 'main') {
             if (typeof updateStepNumbers === 'function') {
                 updateStepNumbers(editStepsContainerElement);
             }
+            if (isMainAlgorithm) {
+                const groupsContainerAfter = document.getElementById('editMainAlgoGroups');
+                if (groupsContainerAfter) {
+                    renderMainAlgoGroupsPanel(
+                        groupsContainerAfter,
+                        algorithm,
+                        editStepsContainerElement,
+                    );
+                }
+            }
         }
 
         editStepsContainerElement.querySelectorAll('.step-header').forEach((header) => {

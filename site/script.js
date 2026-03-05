@@ -211,7 +211,7 @@ import {
 // FNS Certificate Revocation (PR11)
 import { initFNSCertificateRevocationSystem } from './js/features/fns-cert-revocation.js';
 
-// Анализатор XML для ТП 1СО
+// XMLизатор
 import { initXmlAnalyzer } from './js/features/xml-analyzer.js';
 
 // UI Customization (PR11)
@@ -1146,7 +1146,7 @@ const initViewToggles = initViewTogglesModule;
 // initUICustomization из PR11 модуля ui-customization.js
 const initUICustomization = initUICustomizationModule;
 
-// Адаптивное расширение полей ввода (textarea), кроме #clientNotes
+// Адаптивное расширение полей ввода (textarea), кроме #clientNotes — размер окна заметок фиксирован (rows), растягивание только вручную (resize-y)
 function initAutoExpandTextareas() {
     const expand = (el) => {
         if (!el || el.tagName !== 'TEXTAREA' || el.id === 'clientNotes') return;

@@ -2,7 +2,7 @@
 
 import { SEDO_CONFIG_KEY } from '../constants.js';
 import { NotificationService } from '../services/notification.js';
-import { getFromIndexedDB, saveToIndexedDB } from '../db/indexeddb.js';
+import { getFromIndexedDB, saveToIndexedDB, deleteFromIndexedDB } from '../db/indexeddb.js';
 import { escapeHtml, highlightTextInString } from '../utils/html.js';
 
 // ============================================================================
@@ -125,13 +125,13 @@ export const DEFAULT_SEDO_DATA = {
                 { code: '28', name: 'Фонд', in1C: '', desc: 'Перечень документов, обрабатываемых СЭДО' },
                 { code: '31', name: 'Фонд', in1C: '', desc: 'Уведомление о размере страховых взносов юридического лица' },
                 { code: '42', name: 'Страхователь', in1C: '', desc: 'Реестр сведений работников медицинских и социальных учреждений, являющихся получателями специальных социальных выплат' },
-                { code: '43', name: 'Фонд', in1C: '', desc: 'Результат обработки реестра сведений работников медицинских и социальных учреждений...' },
+                { code: '43', name: 'Фонд', in1C: '', desc: 'Результат обработки реестра сведений работников медицинских и социальных учреждений, являющихся получателями специальных социальных выплат' },
                 { code: '78', name: 'Страхователь', in1C: '', desc: 'Заявление на предоставление субсидии' },
                 { code: '79', name: 'Фонд', in1C: '', desc: 'Результат обработки заявления на предоставление субсидии' },
                 { code: '80', name: 'Страхователь', in1C: '', desc: 'Запрос статуса транша по заявлению на предоставление субсидии' },
                 { code: '81', name: 'Фонд', in1C: '', desc: 'Статус транша по заявлению на предоставление субсидии' },
                 { code: '82', name: 'Страхователь', in1C: '', desc: 'Заявление об отказе от субсидии, предоставляемой для стимулирования найма безработных граждан' },
-                { code: '83', name: 'Фонд', in1C: '', desc: 'Результат обработки заявления об отказе от субсидии...' },
+                { code: '83', name: 'Фонд', in1C: '', desc: 'Результат обработки заявления об отказе от субсидии, предоставляемой для стимулирования найма безработных граждан' },
                 { code: '84', name: 'Страхователь', in1C: '', desc: 'Запрос статуса выплаты пособия по временной нетрудоспособности и материнству' },
                 { code: '85', name: 'Фонд', in1C: '', desc: 'Статус выплаты пособия по временной нетрудоспособности и материнству' },
                 { code: '86', name: 'Страхователь', in1C: '', desc: 'Сведения о застрахованном лице' },
@@ -139,8 +139,8 @@ export const DEFAULT_SEDO_DATA = {
                 { code: '88', name: 'Фонд', in1C: '', desc: 'Информация о несоответствии сведений о застрахованном лице' },
                 { code: '90', name: 'Страхователь', in1C: '', desc: 'Запрос регистрационного номера страхователя по ИНН/КПП/ОГРН' },
                 { code: '91', name: 'Фонд', in1C: '', desc: 'Ответ на запрос регистрационного номера страхователя по ИНН/КПП/ОГРН' },
-                { code: '94', name: 'Страхователь', in1C: '', desc: 'Сведения для оплаты отпуска застрахованного лица (сверх ежегодного оплачиваемого отпуска)...' },
-                { code: '95', name: 'Фонд', in1C: '', desc: 'Результат обработки сведений для оплаты отпуска застрахованного лица...' },
+                { code: '94', name: 'Страхователь', in1C: '', desc: 'Сведения для оплаты отпуска застрахованного лица (сверх ежегодного оплачиваемого отпуска, установленного законодательством РФ) на весь период лечения и проезда к месту лечения и обратно' },
+                { code: '95', name: 'Фонд', in1C: '', desc: 'Результат обработки сведений для оплаты отпуска застрахованного лица (сверх ежегодного оплачиваемого отпуска, установленного законодательством РФ) на весь период лечения и проезда к месту лечения и обратно' },
                 { code: '100', name: 'Фонд', in1C: '', desc: 'Запрос на проверку, подтверждение, корректировку сведений проактивной выплаты страхового обеспечения' },
                 { code: '101', name: 'Страхователь', in1C: '', desc: 'Ответ на запрос на проверку проактивной выплаты' },
                 { code: '104', name: 'Страхователь', in1C: '', desc: 'Уведомление о прекращении отпуска по уходу за ребенком до полутора лет' },
@@ -154,7 +154,7 @@ export const DEFAULT_SEDO_DATA = {
                 { code: '120', name: 'Страхователь', in1C: '', desc: 'Заявление о возмещении расходов на оплату дополнительных выходных (с 06.10.2025 тип 12010)' },
                 { code: '121', name: 'Фонд', in1C: '', desc: 'Результат обработки заявления о возмещении расходов на доп. выходные для ухода за детьми-инвалидами (с 06.10.2025 тип 12110)' },
                 { code: '122', name: 'Фонд', in1C: '', desc: 'Решение об отказе в возмещении расходов на доп. выходные для ухода за детьми-инвалидами (с 06.10.2025 тип 12210)' },
-                { code: '124', name: 'Фонд', in1C: '', desc: 'Уведомление о том, что ответ на запрос недостающих сведений (101) не поступил в срок' },
+                { code: '124', name: 'Фонд', in1C: '', desc: 'Уведомление о том, что ответ на запрос недостающих сведений от страхователя (101) не поступил в сроки, установленные ПП РФ № 2010 от 23.11.2021 г.' },
                 { code: '200', name: 'Страхователь', in1C: '', desc: 'Создание доверенности' },
                 { code: '201', name: 'Страхователь', in1C: '', desc: 'Отзыв доверенности' },
                 { code: '202', name: 'Страхователь', in1C: '', desc: 'Запрос списка доверенностей' },
@@ -180,26 +180,26 @@ export const DEFAULT_SEDO_DATA = {
                 { code: '312', name: 'Фонд', in1C: 'Нет', desc: 'Требование о возмещении излишне понесенных расходов' },
                 { code: '313', name: 'Страхователь', in1C: '', desc: 'Ответ страхователя на запрос документов по камеральной проверке' },
                 { code: '314', name: 'Страхователь', in1C: '', desc: 'Ответ страхователя на запрос документов по выездной проверке' },
-                { code: '315', name: 'Фонд', in1C: 'Нет', desc: 'Уведомление о приеме (отказе в приеме)' },
-                { code: '316', name: 'Фонд', in1C: 'Нет', desc: 'Уведомление о приеме (отказе в приеме)' },
+                { code: '315', name: 'Фонд', in1C: 'Нет', desc: 'Уведомление о приеме (отказе в приеме) территориальным органом Фонда документов по камеральной проверке' },
+                { code: '316', name: 'Фонд', in1C: 'Нет', desc: 'Уведомление о приеме (отказе в приеме) территориальным органом Фонда документов по выездной проверке' },
                 { code: '317', name: 'Страхователь', in1C: '', desc: 'Заявление на формирование справки о расчетах' },
                 { code: '318', name: 'Фонд', in1C: 'Нет', desc: 'Результат регистрации заявления на формирование справки о расчетах' },
                 { code: '319', name: 'Фонд', in1C: 'Нет', desc: 'Справка о состоянии задолженности' },
                 { code: '320', name: 'Страхователь', in1C: '', desc: 'Запрос страхователя о получении от Фонда сведений о заработной плате застрахованного лица' },
                 { code: '321', name: 'Фонд', in1C: 'Нет', desc: 'Результат обработки запроса страхователя о получении от Фонда сведений о заработной плате застрахованного лица' },
-                { code: '322', name: 'Фонд', in1C: '', desc: 'Сведения, необходимые для исчисления страхователем первых трех дней пособия по ВНиМ' },
-                { code: '323', name: 'Фонд', in1C: 'Нет', desc: 'Акт проверки выполнения банком обязанностей по ФЗ № 125-ФЗ' },
+                { code: '322', name: 'Фонд', in1C: '', desc: 'Сведения, необходимые для исчисления страхователем первых трех дней пособия по временной нетрудоспособности и материнству' },
+                { code: '323', name: 'Фонд', in1C: 'Нет', desc: 'Акт проверки выполнения банком (иной кредитной организацией) обязанностей по ФЗ № 125-ФЗ' },
                 { code: '324', name: 'Фонд', in1C: 'Да', desc: 'Требование о предоставлении документов по проверке банка' },
                 { code: '325', name: 'Фонд', in1C: 'Нет', desc: 'Решение о привлечении банка к ответственности' },
                 { code: '326', name: 'Фонд', in1C: 'Нет', desc: 'Решение об отказе в привлечении банка к ответственности' },
                 { code: '327', name: 'Фонд', in1C: 'Нет', desc: 'Уведомление о приеме (отказе в приеме) документов по проверке банка' },
                 { code: '328', name: 'Фонд', in1C: 'Нет', desc: 'Ответ банка на запрос документов по проверке' },
-                { code: '329', name: 'Фонд', in1C: 'Нет', desc: 'Требование об уплате штрафов банками' },
+                { code: '329', name: 'Фонд', in1C: 'Нет', desc: 'Требование об уплате штрафов банками (иными кредитными организациями)' },
                 { code: '330', name: 'Страхователь', in1C: '', desc: 'Запрос исторических данных' },
                 { code: '331', name: 'Оператор', in1C: '', desc: 'Запрос исторических данных' },
                 { code: '332', name: 'Фонд', in1C: 'Нет', desc: 'Результат запроса исторических данных' },
                 { code: '333', name: 'Фонд', in1C: 'Нет', desc: 'Уведомление о факте излишней уплаты' },
-                { code: '334', name: 'Фонд', in1C: 'Нет', desc: 'Решение о взыскании штрафов за счет денежных средств банка' },
+                { code: '334', name: 'Фонд', in1C: 'Нет', desc: 'Решение о взыскании штрафов за счет денежных средств, находящихся на счетах банка (иных кредитных организаций)' },
                 { code: '335', name: 'Фонд', in1C: 'Нет', desc: 'Решение о зачете суммы излишне уплаченных (взысканных) страховых взносов, пеней и штрафов' },
                 { code: '336', name: 'Фонд', in1C: 'Нет', desc: 'Решение о возврате суммы излишне уплаченных (взысканных) страховых взносов, пеней и штрафов' },
                 { code: '342', name: 'Фонд', in1C: 'Да (корректировочный отчет ЕФС в течение 10 раб. дней)', desc: 'Требование о представлении пояснений или внесении исправлений в отчет' },
@@ -394,8 +394,16 @@ export function renderSedoTypesContent(data, isEditing, searchQuery = '') {
             toggleSedoEditMode(false);
         });
 
+        const resetBtn = document.createElement('button');
+        resetBtn.className =
+            'px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors';
+        resetBtn.innerHTML = '<i class="fas fa-undo mr-1"></i>Вернуть по умолчанию';
+        resetBtn.title = 'Удалить пользовательские правки и отобразить абсолютные данные из кода';
+        resetBtn.addEventListener('click', resetSedoToDefault);
+
         buttonsContainer.appendChild(saveBtn);
         buttonsContainer.appendChild(cancelBtn);
+        buttonsContainer.appendChild(resetBtn);
     } else {
         const editBtn = document.createElement('button');
         editBtn.id = 'editSedoTypesBtn';
@@ -513,9 +521,10 @@ export async function saveSedoChanges() {
         currentSedoData.tables[tableIndex].items = newItems;
     });
 
-    // Save to IndexedDB
+    // Save to IndexedDB (только при явном сохранении пользователем)
     try {
         currentSedoData.id = SEDO_CONFIG_KEY;
+        currentSedoData.userHasCustomSedo = true;
         await saveToIndexedDB('preferences', currentSedoData);
         console.log('[SedoSave V4] Данные СЭДО успешно сохранены в IndexedDB.');
         showNotification('Данные СЭДО успешно сохранены!', 'success');
@@ -543,28 +552,64 @@ export async function saveSedoChanges() {
 }
 
 /**
+ * Возвращает раздел СЭДО к абсолютным данным из кода: удаляет запись из БД и перерисовывает.
+ */
+async function resetSedoToDefault() {
+    try {
+        await deleteFromIndexedDB('preferences', SEDO_CONFIG_KEY);
+        currentSedoData = JSON.parse(JSON.stringify(DEFAULT_SEDO_DATA));
+        originalSedoDataBeforeEdit = JSON.parse(JSON.stringify(DEFAULT_SEDO_DATA));
+
+        if (typeof window.updateSearchIndex === 'function') {
+            try {
+                await window.updateSearchIndex(
+                    'preferences',
+                    SEDO_CONFIG_KEY,
+                    currentSedoData,
+                    'update',
+                );
+            } catch (e) {
+                console.warn('[SEDO Reset] Ошибка обновления поискового индекса:', e);
+            }
+        }
+
+        toggleSedoEditMode(false);
+        showNotification('Данные СЭДО возвращены к значениям по умолчанию из кода.', 'success');
+    } catch (error) {
+        console.error('Ошибка сброса данных СЭДО:', error);
+        showNotification('Ошибка сброса данных СЭДО.', 'error');
+    }
+}
+
+/**
  * Load SEDO data from IndexedDB
  */
+/**
+ * Загружает данные СЭДО. По умолчанию всегда возвращаются абсолютные данные из кода (DEFAULT_SEDO_DATA).
+ * Данные из IndexedDB используются только если пользователь ранее сохранял правки (userHasCustomSedo === true).
+ */
 export async function loadSedoData() {
-    const currentDefault = JSON.parse(JSON.stringify(DEFAULT_SEDO_DATA));
-    let dataToOperateWith;
+    const dataFromCode = JSON.parse(JSON.stringify(DEFAULT_SEDO_DATA));
 
     try {
         const loadedData = await getFromIndexedDB('preferences', SEDO_CONFIG_KEY);
+        const hasUserCustom =
+            loadedData &&
+            typeof loadedData === 'object' &&
+            loadedData.userHasCustomSedo === true &&
+            Array.isArray(loadedData.tables) &&
+            loadedData.tables.length > 0;
 
-        if (loadedData && typeof loadedData === 'object' && loadedData.tables) {
-            console.log('Данные СЭДО загружены из IndexedDB.');
-            dataToOperateWith = loadedData;
-        } else {
-            console.log('Данные СЭДО не найдены в IndexedDB. Используются данные по умолчанию.');
-            dataToOperateWith = currentDefault;
+        if (hasUserCustom) {
+            console.log('Данные СЭДО загружены из IndexedDB (пользовательские правки).');
+            return loadedData;
         }
     } catch (error) {
         console.error('Ошибка загрузки данных СЭДО:', error);
-        dataToOperateWith = currentDefault;
     }
 
-    return dataToOperateWith;
+    console.log('Данные СЭДО: используются абсолютные значения из кода.');
+    return dataFromCode;
 }
 
 /**
