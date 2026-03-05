@@ -1074,6 +1074,91 @@ mark {
     cursor: pointer;
 }
 
+/* Главный алгоритм: компактная плотность */
+.main-algo-density-compact #mainAlgorithm .algorithm-step {
+    padding: 0.4rem 0.5rem;
+    margin-bottom: 0.35rem;
+}
+.main-algo-density-compact #mainAlgorithm .algorithm-step h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+.main-algo-density-compact #mainAlgorithm .algorithm-step .collapsible-body,
+.main-algo-density-compact #mainAlgorithm .algorithm-step .text-gray-700 {
+    font-size: 0.8rem;
+}
+.main-algo-density-compact #mainAlgorithm .algorithm-step .additional-info-top,
+.main-algo-density-compact #mainAlgorithm .algorithm-step .additional-info-bottom {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+}
+.main-algo-density-compact #mainAlgorithm .algorithm-step .mt-2.p-2 {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Режим «только заголовки»: по умолчанию тело скрыто */
+#mainAlgorithm .algorithm-step.headers-only-step .collapsible-body {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+}
+#mainAlgorithm .algorithm-step.headers-only-step.is-expanded .collapsible-body {
+    max-height: 2000px;
+    opacity: 1;
+}
+#mainAlgorithm .algorithm-step.headers-only-step h3 {
+    cursor: pointer;
+}
+
+/* Группы главного алгоритма (аккордеон) */
+.main-algo-group {
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--color-border, rgba(0,0,0,0.1));
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: var(--color-surface-2, #f9fafb);
+}
+.main-algo-group-header {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--color-surface-2, #f3f4f6);
+    color: var(--color-text-primary, #111827);
+}
+.main-algo-group-header:hover {
+    background: var(--color-surface-3, #e5e7eb);
+}
+.main-algo-group-header .fa-chevron-down {
+    transition: transform 0.2s ease;
+}
+.main-algo-group.is-closed .main-algo-group-header .fa-chevron-down {
+    transform: rotate(-90deg);
+}
+.main-algo-group-body {
+    overflow: hidden;
+    max-height: 5000px;
+    transition: max-height 0.3s ease;
+}
+.main-algo-group.is-closed .main-algo-group-body {
+    max-height: 0 !important;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
+}
+.main-algo-group-body .algorithm-step {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
 /* ----------------------------------- */
 /*         2.6. Color Picker           */
 /* ----------------------------------- */

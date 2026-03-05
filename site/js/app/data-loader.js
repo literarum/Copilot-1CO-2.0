@@ -118,6 +118,7 @@ export async function loadFromIndexedDB() {
                 }
                 algorithms.main = loadedAlgoData.main;
                 if (!algorithms.main.id) algorithms.main.id = 'main';
+                if (!Array.isArray(algorithms.main.groups)) algorithms.main.groups = [];
                 if (Array.isArray(algorithms.main.steps)) {
                     algorithms.main.steps = algorithms.main.steps.map((step) => {
                         if (!step || typeof step !== 'object') {

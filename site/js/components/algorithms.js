@@ -394,6 +394,17 @@ export function createStepElementHTML(stepNumber, isMainAlgorithm, includeScreen
     `
         : '';
 
+    const groupSelectHTML = isMainAlgorithm
+        ? `
+        <div class="mt-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Группа</label>
+            <select class="step-group-id w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm">
+                <option value="">Без группы</option>
+            </select>
+        </div>
+    `
+        : '';
+
     return `
         <div class="step-header flex justify-between items-center mb-2 cursor-pointer bg-gray-100 dark:bg-gray-700/50 p-2 -m-2 rounded-t-lg">
             <div class="flex items-center flex-grow min-w-0">
@@ -421,6 +432,7 @@ export function createStepElementHTML(stepNumber, isMainAlgorithm, includeScreen
             ${isCopyableCheckboxHTML}
             ${isCollapsibleCheckboxHTML}
             ${noInnHelpCheckboxHTML}
+            ${groupSelectHTML}
             ${additionalInfoHTML}
             ${screenshotHTML}
         </div>
@@ -618,6 +630,22 @@ export function addEditStep() {
 
     editStepsContainer.appendChild(stepDiv);
 
+    if (isMainAlgorithm) {
+        const groupList = document.getElementById('editMainAlgoGroupsList');
+        const groupSelect = stepDiv.querySelector('.step-group-id');
+        if (groupList && groupSelect) {
+            Array.from(groupList.children).forEach((row) => {
+                const id = row.dataset.groupId || '';
+                const input = row.querySelector('.main-algo-group-title');
+                const title = (input && input.value && input.value.trim()) || id || 'Группа';
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = title;
+                groupSelect.appendChild(opt);
+            });
+        }
+    }
+
     const stepNumbersHandler = updateStepNumbers || window.updateStepNumbers;
     if (typeof stepNumbersHandler === 'function') {
         stepNumbersHandler(editStepsContainer);
@@ -707,6 +735,7 @@ export function extractStepsDataFromEditForm(containerElement, isMainAlgorithm =
         const noInnHelpCheckbox = isMainAlgorithm
             ? stepDiv.querySelector('.step-no-inn-help-checkbox')
             : null;
+        const groupIdSelect = isMainAlgorithm ? stepDiv.querySelector('.step-group-id') : null;
 
         const title = titleInput ? titleInput.value.trim() : '';
         const description = descInput ? descInput.value.trim() : '';
@@ -760,6 +789,8 @@ export function extractStepsDataFromEditForm(containerElement, isMainAlgorithm =
             if (isCopyable !== undefined) step.isCopyable = isCopyable;
             if (isCollapsible !== undefined) step.isCollapsible = isCollapsible;
             if (showNoInnHelp !== undefined) step.showNoInnHelp = showNoInnHelp;
+            if (groupIdSelect && groupIdSelect.value && groupIdSelect.value.trim())
+                step.groupId = groupIdSelect.value.trim();
         }
 
         if (isMainAlgorithm && exampleInput) {

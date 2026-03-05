@@ -43,6 +43,25 @@ export function setAlgorithmsSaveDependencies(deps) {
 }
 
 // ============================================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================================
+
+/**
+ * Читает список групп главного алгоритма из формы редактирования
+ * @returns {Array<{id: string, title: string}>}
+ */
+function getMainAlgoGroupsFromForm() {
+    const list = document.getElementById('editMainAlgoGroupsList');
+    if (!list || !list.children.length) return [];
+    return Array.from(list.children).map((row) => {
+        const id = row.dataset.groupId || `gr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const input = row.querySelector('.main-algo-group-title');
+        const title = (input && input.value && input.value.trim()) || id;
+        return { id, title };
+    });
+}
+
+// ============================================================================
 // ОСНОВНЫЕ ФУНКЦИИ СОХРАНЕНИЯ
 // ============================================================================
 
@@ -653,9 +672,11 @@ export async function saveAlgorithm() {
         let targetAlgorithmObject;
         const timestamp = new Date().toISOString();
         if (isMainAlgo) {
+            const groupsFromForm = getMainAlgoGroupsFromForm();
             if (!algorithms.main) algorithms.main = { id: 'main' };
             algorithms.main.title = finalTitle;
             algorithms.main.steps = finalSteps;
+            algorithms.main.groups = Array.isArray(groupsFromForm) ? groupsFromForm : [];
             algorithms.main.dateUpdated = timestamp;
             if (!algorithms.main.dateAdded) algorithms.main.dateAdded = timestamp;
             targetAlgorithmObject = algorithms.main;
