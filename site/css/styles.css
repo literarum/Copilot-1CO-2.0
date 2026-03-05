@@ -139,24 +139,49 @@ html.dark .fns-cert-header-danger {
     border-bottom-color: rgba(252, 165, 165, 1) !important;
 }
 
+/* Таблица данных сертификата в стиле Apple: воздух, тонкие разделители, читаемая типографика */
+.fns-cert-table {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
 .fns-cert-table dt,
 .fns-cert-table dd {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding: 0.625rem 0.75rem;
+    margin: 0;
+    line-height: 1.4;
 }
 
 .fns-cert-table dt {
-    font-size: 0.7rem;
-    text-transform: none;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(107, 114, 128, 1);
+    letter-spacing: 0.01em;
+}
+
+html.dark .fns-cert-table dt {
+    color: rgba(156, 163, 175, 1);
 }
 
 .fns-cert-table dd {
-    font-size: 0.85rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+    font-size: 0.9375rem;
+    font-weight: 400;
+    color: rgba(17, 24, 39, 1);
+    border-bottom: 1px solid rgba(229, 231, 235, 0.9);
 }
 
 html.dark .fns-cert-table dd {
-    border-bottom-color: rgba(51, 65, 85, 0.9);
+    color: rgba(243, 244, 246, 1);
+    border-bottom-color: rgba(55, 65, 81, 0.8);
+}
+
+.fns-cert-table dd:last-of-type {
+    border-bottom: none;
+}
+
+.fns-cert-table .font-mono {
+    font-variant-numeric: tabular-nums;
 }
 
 html.dark .fns-cert-shell-danger {

@@ -506,7 +506,6 @@ function extractCdpUrlsFromBytes(bytes) {
 
 function renderCertificateInfo(certInfo, certInfoData, fileName) {
     certInfo.innerHTML = '';
-    const certExpired = isCertificateExpired(certInfoData);
 
     const card = document.createElement('div');
     card.className =
@@ -518,9 +517,9 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
     header.className =
         'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600 flex flex-col gap-2';
     header.setAttribute('data-fns-cert-header', '');
-    const initialStatusChip = certExpired
-        ? '<span data-fns-cert-status-badge class="inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Истёк</span>'
-        : '<span data-fns-cert-status-badge class="inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">Ожидает проверки</span>';
+    /* Бейдж статуса обновляется только после завершения проверки отзыва (см. runCheck). */
+    const initialStatusChip =
+        '<span data-fns-cert-status-badge class="inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">Ожидание проверки</span>';
     header.innerHTML = `<span class="inline-flex items-center gap-2"><i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span></span>${initialStatusChip}`;
     card.appendChild(header);
 
