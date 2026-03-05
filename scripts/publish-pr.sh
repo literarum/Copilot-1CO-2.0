@@ -138,13 +138,16 @@ create_pr_via_gh() {
   info "Предупреждение: не удалось создать PR с автоматически собранным title/body. Пробую fallback через --fill..."
   info "$output"
 
-  output="$(
-    gh pr create \
-      --base "$BASE_BRANCH" \
-      --head "${owner}:${remote_branch}" \
-      --fill 2>&1
-  )"
-  printf '%s\n' "$output"
+  output=""
+  if output="$(gh pr create \
+    --base "$BASE_BRANCH" \
+    --head "${owner}:${remote_branch}" \
+    --fill 2>&1)"; then
+    printf '%s\n' "$output"
+    return 0
+  fi
+  printf '%s\n' "$output" >&2
+  return 1
 }
 
 # Открывает в браузере указанный URL PR (иначе gh pr view откроет PR текущей ветки, а не только что созданный).
@@ -213,6 +216,15 @@ auto_commit_if_needed
 
 # Подтягиваем base-ветку для формирования тела PR
 ensure_base_remote_ref
+
+# Проверяем, что есть хотя бы один коммит вперёд base (иначе GitHub отклонит PR)
+if git rev-parse --verify "origin/${BASE_BRANCH}" >/dev/null 2>&1; then
+  ahead="$(git rev-list --count "origin/${BASE_BRANCH}..HEAD" 2>/dev/null || echo 0)"
+  if [[ "${ahead:-0}" -eq 0 ]]; then
+    err "нет коммитов относительно origin/${BASE_BRANCH}. Сделайте коммиты в текущей ветке и запустите скрипт снова."
+    exit 1
+  fi
+fi
 
 # Получаем owner/repo
 REPO_OWNER="$(get_repo_owner)"
