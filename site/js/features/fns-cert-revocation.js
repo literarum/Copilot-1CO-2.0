@@ -516,10 +516,11 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
 
     const header = document.createElement('div');
     header.className =
-        'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2';
+        'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600 flex flex-col gap-2';
+    header.setAttribute('data-fns-cert-header', '');
     const initialStatusChip = certExpired
-        ? '<span data-fns-cert-status-badge class="block sm:inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Истёк</span>'
-        : '<span data-fns-cert-status-badge class="block sm:inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">Ожидает проверки</span>';
+        ? '<span data-fns-cert-status-badge class="inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Истёк</span>'
+        : '<span data-fns-cert-status-badge class="inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">Ожидает проверки</span>';
     header.innerHTML = `<span class="inline-flex items-center gap-2"><i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span></span>${initialStatusChip}`;
     card.appendChild(header);
 
@@ -529,7 +530,7 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
 
     const mainTable = document.createElement('dl');
     mainTable.className =
-        'grid grid-cols-1 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] gap-x-6 gap-y-3 text-sm';
+        'fns-cert-table grid grid-cols-1 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] gap-x-6 gap-y-3 text-sm';
 
     const addRow = (label, value, options = {}) => {
         const rowLabel = document.createElement('dt');
@@ -1272,17 +1273,21 @@ export function initFNSCertificateRevocationSystem() {
                 if (contentShell) {
                     contentShell.classList.toggle('fns-cert-shell-danger', Boolean(isRevoked));
                 }
+                const certHeaderEl = certInfo.querySelector('[data-fns-cert-header]');
+                if (certHeaderEl) {
+                    certHeaderEl.classList.toggle('fns-cert-header-danger', Boolean(isRevoked));
+                }
 
                 const statusBadge = certInfo.querySelector('[data-fns-cert-status-badge]');
                 if (statusBadge) {
                     if (isRevoked) {
                         statusBadge.textContent = isExpiredOnly ? 'Истёк' : 'Отозван';
                         statusBadge.className =
-                            'block sm:inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+                            'inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
                     } else {
                         statusBadge.textContent = 'Не отозван';
                         statusBadge.className =
-                            'block sm:inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+                            'inline-flex w-full items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
                     }
                 }
                 const usedLocalHelperFromBrowser =
