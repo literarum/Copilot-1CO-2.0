@@ -258,7 +258,11 @@ if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; the
   if [[ -n "$PR_NUM" ]]; then
     PREVIEW_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/pr-preview/pr-${PR_NUM}/"
     info "Ссылка на приложение (preview): $PREVIEW_URL"
-    info "Если в PR «0 Checks» и нет комментария — в main ещё нет workflow. Влейте этот PR в main один раз или: Actions → PR Preview → Run workflow → номер PR $PR_NUM."
+    if gh workflow run "PR Preview" -f pr_number="$PR_NUM" 2>/dev/null; then
+      info "Workflow PR Preview запущен; после завершения в PR появится комментарий со ссылкой."
+    else
+      info "Запустить превью вручную: Actions → PR Preview → Run workflow → номер PR $PR_NUM."
+    fi
   fi
   info "Готово."
   open_pr_in_browser_if_possible "$NEW_PR_URL"
