@@ -4,8 +4,8 @@
 // API ПРОВЕРКИ ОТЗЫВА СЕРТИФИКАТОВ (Yandex Cloud Functions / любой внешний backend)
 // ============================================================================
 // Пустая строка = тот же origin (если API проксируется через тот же домен).
-// Для Yandex Cloud Functions укажите invoke URL функции (без завершающего слэша).
-export const REVOCATION_API_BASE_URL = 'https://functions.yandexcloud.net/d4ek2is78822funrr85b';
+// API Gateway crl-api (обязательно для path /api/health и /api/revocation/check). Без завершающего слэша.
+export const REVOCATION_API_BASE_URL = 'https://d5do82fppanabn9naecn.kf69zffa.apigw.yandexcloud.net';
 
 // ============================================================================
 // КОНФИГУРАЦИЯ ВКЛАДОК

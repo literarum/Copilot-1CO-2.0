@@ -2,9 +2,29 @@
 
 ## Архитектура
 
-- Backend: Yandex Cloud Function `crl-checker` (Node.js 22).
+- Backend: Yandex Cloud Function `crl-checker` (Node.js 22) **за API Gateway**.
+- API Gateway: маршруты `/api/health` и `/api/revocation/check` проксируются в функцию; без шлюза запросы с путём дают 400.
 - Frontend: Object Storage static hosting.
-- Связка фронта и API: `site/js/config.js -> REVOCATION_API_BASE_URL`.
+- Связка фронта и API: `site/js/config.js -> REVOCATION_API_BASE_URL` — **обязательно URL API Gateway**, не прямой URL функции.
+
+## 0) API Gateway (обязательно для вызова по path)
+
+Прямой URL функции (`https://functions.yandexcloud.net/<FUNCTION_ID>`) **не поддерживает path**: запросы вида `.../api/health` или `.../api/revocation/check` приводят к 400 и блокировке CORS. Нужен API Gateway перед функцией.
+
+**Пошагово:**
+
+1. Откройте [Yandex Cloud Console](https://console.cloud.yandex.ru) → каталог с функцией → **API Gateway**.
+2. Нажмите **Создать API Gateway**. Имя, например: `copilot-1co-revocation`.
+3. В поле спецификации вставьте содержимое файла `yandex-function/api-gateway-openapi.yaml` из репозитория.
+4. Замените во вставленной спецификации все вхождения **`<FUNCTION_ID>`** на идентификатор вашей функции (например `d4ek2is78822funrr85b`). Сохраните.
+5. После создания скопируйте **URL шлюза** (вид `https://<id>.apigw.yandexcloud.net` или указанный домен).
+6. В `site/js/config.js` задайте:
+   ```js
+   export const REVOCATION_API_BASE_URL = 'https://<id>.apigw.yandexcloud.net';
+   ```
+   (без завершающего слэша).
+
+Проверка после деплоя: `curl "https://<id>.apigw.yandexcloud.net/api/health"` должен вернуть `{"ok":true,...}`.
 
 ## 1) Обновить функцию `crl-checker`
 
@@ -16,30 +36,32 @@
     - Timeout: `60s`
     - Memory: `512 MB`
 6. Опубликуйте новую версию.
-7. Включите публичный доступ (Allow unauthenticated invoke). Для вызова с сайта (в т.ч. GitHub Pages) нужен именно HTTP-триггер с публичным доступом — иначе возможны 400 и блокировка CORS при preflight.
+7. Включите публичный доступ (Allow unauthenticated invoke). Вызов с сайта идёт через API Gateway (см. шаг 0), не по прямому URL функции.
 
-## 2) Проверить function URL
+## 2) Проверить URL API Gateway
+
+Используйте **URL шлюза** (не прямой URL функции):
 
 Проверка health:
 
 ```bash
-curl "https://functions.yandexcloud.net/<FUNCTION_ID>/api/health"
+curl "https://<API_GATEWAY_ID>.apigw.yandexcloud.net/api/health"
 ```
 
 Проверка API:
 
 ```bash
-curl --request POST "https://functions.yandexcloud.net/<FUNCTION_ID>/api/revocation/check" \
+curl --request POST "https://<API_GATEWAY_ID>.apigw.yandexcloud.net/api/revocation/check" \
   --header "Content-Type: application/json" \
   --data '{"serial":"01AB","listUrl":"https://pki.tax.gov.ru/cdp/test.crl"}'
 ```
 
 ## 3) Настроить фронтенд
 
-В `site/js/config.js` укажите:
+В `site/js/config.js` укажите **URL API Gateway** (из шага 0):
 
 ```js
-export const REVOCATION_API_BASE_URL = 'https://functions.yandexcloud.net/<FUNCTION_ID>';
+export const REVOCATION_API_BASE_URL = 'https://<API_GATEWAY_ID>.apigw.yandexcloud.net';
 ```
 
 ## 4) Деплой статики в Object Storage

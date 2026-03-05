@@ -4,6 +4,8 @@
 
 - `yandex-function/crl-checker/index.js`
 
+**Важно:** прямой URL функции (`https://functions.yandexcloud.net/<ID>`) не передаёт в handler path и method — запросы к `.../api/health` и `.../api/revocation/check` дают 400. Нужен **API Gateway**: используйте спецификацию `yandex-function/api-gateway-openapi.yaml` и инструкции в корневом `DEPLOY_INSTRUCTIONS.md` (раздел 0).
+
 ## Что поддерживает функция
 
 - `OPTIONS /api/revocation/check` (CORS preflight)
