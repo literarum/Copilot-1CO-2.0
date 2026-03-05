@@ -12,6 +12,8 @@ const CRL_FETCH_ATTEMPTS = 2;
 const CRL_FETCH_TIMEOUT_MS = 25000;
 const CHECK_REVOCATION_BUDGET_MS = 35000;
 const MAX_CRL_BASE64_LENGTH = 4 * 1024 * 1024;
+/** Max size of CRL response body to load (avoids OOM; server may omit Content-Length) */
+const MAX_CRL_RESPONSE_BYTES = 8 * 1024 * 1024;
 const FNS_PREFER_HTTP_HOSTS = new Set(['pki.tax.gov.ru', 'uc.nalog.ru', 'cdp.tax.gov.ru']);
 const OPTIONAL_PROXY_BASE = process.env.REVOCATION_PROXY_URL || '';
 const LOCAL_HELPER_ALLOWLIST = new Set(['localhost', '127.0.0.1']);
@@ -393,6 +395,17 @@ async function checkRevocation(serial, listUrl, options = {}) {
             lastErrorCode = lastErrorCode || 'crl_http_error';
             attemptPath.push({ url: candidateUrl, source: candidateSource, errorCode: lastErrorCode });
             continue;
+        }
+
+        const contentLength = res.headers?.get?.('Content-Length');
+        if (contentLength != null) {
+            const len = parseInt(contentLength, 10);
+            if (!Number.isNaN(len) && len > MAX_CRL_RESPONSE_BYTES) {
+                lastError = lastError || `${candidateUrl}: CRL too large (${len} bytes, max ${MAX_CRL_RESPONSE_BYTES})`;
+                lastErrorCode = lastErrorCode || 'crl_too_large';
+                attemptPath.push({ url: candidateUrl, source: candidateSource, errorCode: lastErrorCode });
+                continue;
+            }
         }
 
         const contentType = (res.headers?.get?.('Content-Type') || '').toLowerCase();
