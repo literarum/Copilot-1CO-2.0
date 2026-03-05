@@ -166,14 +166,14 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
             <span class="folder-badge inline-block px-2 py-0.5 rounded text-xs whitespace-nowrap ${badgeClasses}" title="Папка: ${escapeHtml(
                 categoryData.name,
             )}">
-                <i class="fas fa-tag mr-1 opacity-75"></i>${escapeHtml(categoryData.name)}
+                ${escapeHtml(categoryData.name)}
             </span>`;
     } else if (categoryDisplayName) {
         categoryBadgeHTML = `
              <span class="folder-badge inline-block px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" title="Категория с ID: ${escapeHtml(
                  String(link.category),
              )} не найдена в списке">
-                <i class="fas fa-tag mr-1 opacity-75"></i>${escapeHtml(categoryDisplayName)}
+                ${escapeHtml(categoryDisplayName)}
             </span>`;
     }
 

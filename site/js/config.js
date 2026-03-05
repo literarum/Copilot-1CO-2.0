@@ -298,6 +298,7 @@ export function getDefaultUISettings(allPanelIdsForDefault) {
                   )
                 : [],
         disableForcedBackupOnImport: false,
+        staticHeader: false,
     };
 }
 

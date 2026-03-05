@@ -69,6 +69,7 @@ export function closeAnimatedModal(modalElement) {
 
     modalElement.classList.add('modal-transition');
     modalElement.classList.remove('modal-visible');
+    modalElement.style.pointerEvents = 'none';
 
     if (deps.removeEscapeHandler && typeof deps.removeEscapeHandler === 'function') {
         deps.removeEscapeHandler(modalElement);
@@ -77,6 +78,7 @@ export function closeAnimatedModal(modalElement) {
     const handleTransitionEnd = (event) => {
         if (event.target === modalElement && event.propertyName === 'opacity') {
             modalElement.classList.add('hidden');
+            modalElement.style.pointerEvents = '';
             document.body.classList.remove('modal-open');
             deactivateModalFocus(modalElement);
             modalElement.removeEventListener('transitionend', handleTransitionEnd);
@@ -119,6 +121,7 @@ export function closeAnimatedModal(modalElement) {
                 `[closeAnimatedModal] Transitionend fallback triggered for #${modalElement.id}`,
             );
             modalElement.classList.add('hidden');
+            modalElement.style.pointerEvents = '';
             document.body.classList.remove('modal-open');
             deactivateModalFocus(modalElement);
             modalElement.removeEventListener('transitionend', handleTransitionEnd);

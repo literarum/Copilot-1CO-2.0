@@ -946,7 +946,7 @@
                                 data-algorithm-export="programAlgorithms"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition"
                             >
-                                Экспорт PDF
+                                Экспорт всех алгоритмов в PDF
                             </button>
                             <button
                                 id="addProgramAlgorithmBtn"
@@ -996,7 +996,7 @@
                                 data-algorithm-export="skziAlgorithms"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition"
                             >
-                                Экспорт PDF
+                                Экспорт всех алгоритмов в PDF
                             </button>
                             <button
                                 id="addSkziAlgorithmBtn"
@@ -1046,7 +1046,7 @@
                                 data-algorithm-export="lk1cAlgorithms"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition"
                             >
-                                Экспорт PDF
+                                Экспорт всех алгоритмов в PDF
                             </button>
                             <button
                                 id="addLk1cAlgorithmBtn"
@@ -1096,7 +1096,7 @@
                                 data-algorithm-export="webRegAlgorithms"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition"
                             >
-                                Экспорт PDF
+                                Экспорт всех алгоритмов в PDF
                             </button>
                             <button
                                 id="addWebRegAlgorithmBtn"
@@ -1491,7 +1491,7 @@
             <!-- Проверка сертификата на отзыв: зона загрузки, кнопка сброса, результат -->
             <div id="fnsCertContent" class="tab-content hidden" aria-labelledby="fnsCertTab">
                 <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md fns-cert-shell">
-                    <h2 class="text-2xl font-bold mb-3 text-gray-900 dark:text-gray-100">Проверка сертификата</h2>
+                    <h2 class="text-2xl font-bold mb-3 text-gray-900 dark:text-gray-100">Проверка сертификата (БЕТА)</h2>
                     <div id="fnsCertProbeStatus" class="hidden mb-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm">
                         <span class="inline-block w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" aria-hidden="true"></span>
                         <span class="text-sm text-gray-600 dark:text-gray-300">Проверяем подключение…</span>
@@ -1515,7 +1515,7 @@
                             </div>
                             <div id="fnsCertInfo" class="text-sm text-gray-700 dark:text-gray-200"></div>
                             <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-300 hidden"></div>
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                            <div class="flex flex-col sm:flex-row sm:items-stretch gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                                 <button
                                     type="button"
                                     id="fnsCertResetBtn"
@@ -1524,7 +1524,7 @@
                                     <i class="fas fa-rotate-left mr-2"></i>
                                     <span>Сброс</span>
                                 </button>
-                                <div id="fnsCrlStatus" class="flex-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 min-h-[1.5rem] leading-relaxed">
+                                <div id="fnsCrlStatus" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 min-h-[2.5rem] leading-relaxed">
                                 </div>
                             </div>
                         </div>
@@ -2212,6 +2212,32 @@
                                                 автоматически создавать резервную копию текущей базы
                                                 данных перед импортом новой. Используйте с
                                                 осторожностью.
+                                            </p>
+                                        </div>
+
+                                        <div
+                                            class="pt-content-sm border-t border-gray-200 dark:border-gray-600"
+                                        >
+                                            <label
+                                                for="toggleStaticHeader"
+                                                class="flex items-center cursor-pointer"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    id="toggleStaticHeader"
+                                                    name="staticHeader"
+                                                    class="form-checkbox h-5 w-5 text-primary focus:ring-primary border-gray-300 dark:border-gray-600 rounded"
+                                                />
+                                                <span
+                                                    class="ml-3 text-sm text-gray-700 dark:text-gray-300"
+                                                    >Статичная панель</span
+                                                >
+                                            </label>
+                                            <p
+                                                class="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-8"
+                                            >
+                                                При включении шапка приложения остаётся закреплённой
+                                                сверху при прокрутке страницы.
                                             </p>
                                         </div>
                                     </div>

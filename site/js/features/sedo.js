@@ -183,8 +183,9 @@ export function renderSedoTypesContent(data, isEditing, searchQuery = '') {
         buttonsContainer.appendChild(cancelBtn);
     } else {
         const editBtn = document.createElement('button');
+        editBtn.id = 'editSedoTypesBtn';
         editBtn.className =
-            'px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors';
+            'px-3 py-1.5 text-sm bg-primary hover:bg-secondary text-white rounded-md transition-colors flex items-center';
         editBtn.innerHTML = '<i class="fas fa-edit mr-1"></i>Редактировать';
         editBtn.addEventListener('click', () => toggleSedoEditMode(true));
         buttonsContainer.appendChild(editBtn);
@@ -449,16 +450,16 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                         <th class="px-3 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-300 dark:border-gray-600">Значение</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr class="bg-white dark:bg-gray-800/90">
-                        <td class="px-3 py-2 border-b border-gray-200 dark:border-gray-700">Назначение</td>
-                        <td class="px-3 py-2 border-b border-gray-200 dark:border-gray-700">Обмен сообщениями с СФР (ФСС) по пособиям и выплатам.</td>
+                <tbody class="text-gray-900 dark:text-gray-100">
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <td class="px-3 py-2">Назначение</td>
+                        <td class="px-3 py-2">Обмен сообщениями с СФР (ФСС) по пособиям и выплатам.</td>
                     </tr>
-                    <tr class="bg-gray-50 dark:bg-gray-700/60">
-                        <td class="px-3 py-2 border-b border-gray-200 dark:border-gray-700">Ключевые сущности</td>
-                        <td class="px-3 py-2 border-b border-gray-200 dark:border-gray-700">Код сообщения, название, место отображения в 1С.</td>
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <td class="px-3 py-2">Ключевые сущности</td>
+                        <td class="px-3 py-2">Код сообщения, название, место отображения в 1С.</td>
                     </tr>
-                    <tr class="bg-white dark:bg-gray-800/90">
+                    <tr>
                         <td class="px-3 py-2">Что искать</td>
                         <td class="px-3 py-2">Коды (10, 11, 87 и др.), ключевые слова, типы входящих/исходящих.</td>
                     </tr>
@@ -616,10 +617,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                 tableData.items.forEach((item, rowIndex) => {
                     const row = document.createElement('tr');
                     row.className =
-                        rowIndex % 2 === 0
-                            ? 'bg-white dark:bg-gray-800/90 text-gray-900 dark:text-gray-100'
-                            : 'bg-gray-50/60 dark:bg-gray-700/55 text-gray-900 dark:text-gray-100';
-                    row.classList.add('hover:bg-gray-50', 'dark:hover:bg-gray-700/70');
+                        'text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/70';
 
                     fields.forEach((field, colIndex) => {
                         if (colIndex >= columns.length) return;

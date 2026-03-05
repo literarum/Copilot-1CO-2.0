@@ -187,4 +187,14 @@ export async function applyPreviewSettings(settings) {
 
     const density = Number.isFinite(settings?.contentDensity) ? settings.contentDensity : 3;
     root.style.setProperty('--content-spacing', `${density * 0.25}rem`);
+
+    const appContent = document.getElementById('appContent');
+    const header = appContent?.querySelector('header');
+    if (header) {
+        if (settings?.staticHeader === true) {
+            header.classList.add('header-sticky');
+        } else {
+            header.classList.remove('header-sticky');
+        }
+    }
 }

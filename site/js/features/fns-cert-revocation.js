@@ -1039,7 +1039,7 @@ export function initFNSCertificateRevocationSystem() {
     let activeRunId = 0;
 
     const setStatus = (text, tone = 'neutral', showSpinner = false) => {
-        const baseClass = `rounded-md border p-3 text-sm flex items-center gap-3 transition-opacity duration-200 ${STATUS_TONE_CLASSES[tone] || STATUS_TONE_CLASSES.neutral}`;
+        const baseClass = `flex-1 rounded-md border py-2 px-3 text-sm flex items-center gap-3 transition-opacity duration-200 ${STATUS_TONE_CLASSES[tone] || STATUS_TONE_CLASSES.neutral}`;
         if (showSpinner) {
             const spinnerHtml =
                 '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin shrink-0" aria-hidden="true"></span>';

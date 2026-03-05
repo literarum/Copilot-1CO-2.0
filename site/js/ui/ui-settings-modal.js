@@ -87,6 +87,11 @@ export function populateModalControls(settings) {
         disableForcedBackupToggle.checked = settings.disableForcedBackupOnImport ?? false;
     }
 
+    const staticHeaderToggle = modal.querySelector('#toggleStaticHeader');
+    if (staticHeaderToggle) {
+        staticHeaderToggle.checked = settings.staticHeader ?? false;
+    }
+
     const fontSizeLabel = modal.querySelector('#fontSizeLabel');
     if (fontSizeLabel) fontSizeLabel.textContent = (settings.fontSize ?? 100) + '%';
 
@@ -153,6 +158,7 @@ export function getSettingsFromModal() {
 
     const showBlacklistWarningToggle = modal.querySelector('#toggleBlacklistWarning');
     const disableForcedBackupToggle = modal.querySelector('#toggleDisableForcedBackup');
+    const staticHeaderToggle = modal.querySelector('#toggleStaticHeader');
 
     const primaryColor =
         State.currentPreviewSettings.primaryColor || DEFAULT_UI_SETTINGS.primaryColor;
@@ -186,6 +192,7 @@ export function getSettingsFromModal() {
         disableForcedBackupOnImport: disableForcedBackupToggle
             ? disableForcedBackupToggle.checked
             : false,
+        staticHeader: staticHeaderToggle ? staticHeaderToggle.checked : false,
     };
 }
 

@@ -2180,6 +2180,7 @@ const triggerSelectors = [
     '#deleteAlgorithmBtn',
     '#addProgramAlgorithmBtn',
     '#addSkziAlgorithmBtn',
+    '#addLk1cAlgorithmBtn',
     '#addWebRegAlgorithmBtn',
     '#customizeUIBtn',
     '#addBookmarkBtn',
@@ -4166,6 +4167,7 @@ setAlgorithmModalControlDependencies({
     ExportService,
     closeAnimatedModal: closeAnimatedModalModule,
     showAppConfirm: showAppConfirmModule,
+    showAddModal: showAddModalModule,
 });
 
 // Algorithms PDF Export Dependencies (PR11) — algorithms, ExportService, showNotification задаются после загрузки данных

@@ -7,6 +7,7 @@ let deps = {
     ExportService: null,
     closeAnimatedModal: null,
     showAppConfirm: null,
+    showAddModal: null,
 };
 
 export function setAlgorithmModalControlDependencies(dependencies) {
@@ -113,4 +114,28 @@ export function initAlgorithmModalControls() {
     }
     deleteAlgorithmBtn.addEventListener('click', clickHandler);
     deleteAlgorithmBtn._clickHandler = clickHandler;
+
+    // Кнопки «Добавить» в разделах алгоритмов (Программа 1С, СКЗИ, 1СО ЛК, Веб-Регистратор)
+    const addButtonSections = [
+        { id: 'addProgramAlgorithmBtn', section: 'program' },
+        { id: 'addSkziAlgorithmBtn', section: 'skzi' },
+        { id: 'addLk1cAlgorithmBtn', section: 'lk1c' },
+        { id: 'addWebRegAlgorithmBtn', section: 'webReg' },
+    ];
+    for (const { id, section } of addButtonSections) {
+        const btn = document.getElementById(id);
+        if (!btn) continue;
+        if (btn._addAlgorithmHandler) {
+            btn.removeEventListener('click', btn._addAlgorithmHandler);
+        }
+        const handler = async () => {
+            if (typeof deps.showAddModal === 'function') {
+                await deps.showAddModal(section);
+            } else {
+                console.error('showAddModal не найден для кнопки', id);
+            }
+        };
+        btn.addEventListener('click', handler);
+        btn._addAlgorithmHandler = handler;
+    }
 }

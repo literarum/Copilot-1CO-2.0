@@ -38,6 +38,8 @@
     --scrollbar-track-color-dark: rgba(255, 255, 255, 0.05);
     --scrollbar-thumb-opacity: 0.65;
     --scrollbar-thumb-hover-opacity: 0.85;
+    /* Ховер карточек: закладки, алгоритмы, ресурсы, регламенты — переопределяется в .dark */
+    --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -106,6 +108,17 @@ header,
 
 #appContent {
     flex-grow: 1;
+}
+
+/* Статичная панель: хэдер остаётся сверху при прокрутке */
+#appContent header.header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--override-background-light, #ffffff);
+}
+html.dark #appContent header.header-sticky {
+    background: var(--override-background-dark, #111827);
 }
 
 /* Специализированные состояния зоны проверки сертификата ФНС */
@@ -290,15 +303,23 @@ header button {
     -webkit-backdrop-filter: none !important;
 }
 
-/* Доступность: чёткий фокус для клавиатурной навигации */
+/* Доступность: чёткий фокус для клавиатурной навигации (кнопки, ссылки, tabindex) */
 button:focus-visible,
 a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
 [tabindex]:focus-visible {
     outline: 2px solid var(--color-primary, #9933ff);
     outline-offset: 2px;
+}
+
+/* Поля ввода: без обводки и ring при фокусе по запросу */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 /* =================================================================== */
@@ -1101,7 +1122,7 @@ mark {
     cursor: pointer !important;
 }
 
-/* Лёгкий ховер для карточек: закладки, ссылки, алгоритмы, регламенты */
+/* Лёгкий ховер для карточек: закладки, ссылки, алгоритмы, регламенты — через переменные темы и кастома */
 #appContent .view-item {
     transition:
         box-shadow 0.2s ease,
@@ -1109,10 +1130,8 @@ mark {
         transform 0.2s ease;
 }
 #appContent .view-item:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-html.dark #appContent .view-item:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    background-color: var(--color-hover-subtle);
+    box-shadow: var(--card-hover-shadow);
 }
 
 /* Таймер */
@@ -1277,6 +1296,7 @@ input.timer-input-active {
     );
     --color-input-bg: var(--override-input-bg-dark, var(--default-input-bg-dark));
     --color-hover-subtle: var(--override-hover-dark, var(--default-hover-subtle-dark));
+    --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* --- Оригинал: тёмная тема под скрин --- */
@@ -1418,8 +1438,7 @@ html.dark #moreTabsDropdown {
 }
 #moreTabsDropdown .overflow-dropdown-item:hover,
 #moreTabsDropdown a:hover {
-    background-color: var(--color-surface-1) !important;
-    transform: translateX(1px);
+    background-color: var(--color-hover-subtle) !important;
 }
 #moreTabsDropdown .overflow-dropdown-item:hover *,
 #moreTabsDropdown a:hover *,
