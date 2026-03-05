@@ -1,4 +1,5 @@
 'use strict';
+/* global html2pdf */
 
 import { NotificationService } from './notification.js';
 import { getFromIndexedDB } from '../db/indexeddb.js';
@@ -66,6 +67,9 @@ export const ExportService = {
             border: 1px solid #e5e7eb;
             box-shadow: none;
             background-color: #f9fafb;
+        }
+        .export-to-pdf-content .algorithm-step {
+            break-inside: avoid-page;
         }
         .export-to-pdf-content code, .export-to-pdf-content pre {
              background-color: #f3f4f6 !important;
@@ -182,6 +186,7 @@ export const ExportService = {
                             for (const screenshot of screenshots) {
                                 if (screenshot.blob instanceof Blob) {
                                     const imageLoadPromise = new Promise(
+                                        // eslint-disable-next-line no-async-promise-executor
                                         async (resolve, reject) => {
                                             try {
                                                 const base64Data = await blobToBase64(
@@ -246,19 +251,29 @@ export const ExportService = {
             );
             console.log('[PDF Export] Render frame has passed, proceeding to generate PDF.');
 
+            const estimatedStepCount = clone.querySelectorAll('.algorithm-step').length;
+            const bigDocument =
+                estimatedStepCount > 35 ||
+                clone.textContent.length > 120000 ||
+                clone.scrollHeight > 14000;
+
             const opt = {
                 margin: [10, 7, 10, 7],
                 filename: finalFilename,
-                image: { type: 'jpeg', quality: 0.98 },
+                image: { type: 'jpeg', quality: bigDocument ? 0.95 : 0.98 },
                 html2canvas: {
-                    scale: 2,
+                    scale: bigDocument ? 1.5 : 2,
                     useCORS: true,
                     logging: false,
                     scrollY: 0,
                     backgroundColor: '#ffffff',
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'avoid-all'], before: '.page-break-before' },
+                pagebreak: {
+                    mode: bigDocument ? ['css', 'legacy'] : ['css', 'avoid-all'],
+                    before: '.page-break-before',
+                    avoid: '.algorithm-step',
+                },
             };
 
             await html2pdf().from(clone).set(opt).save();

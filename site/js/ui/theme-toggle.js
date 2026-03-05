@@ -17,15 +17,9 @@ export function setThemeToggleDependencies(dependencies) {
 export function initThemeToggle() {
     const themeToggleBtn = document.getElementById('themeToggle');
     themeToggleBtn?.addEventListener('click', async () => {
-        if (!deps.State?.userPreferences) {
-            console.error('State.userPreferences не инициализирован. Невозможно переключить тему.');
-            deps.showNotification?.('Ошибка: Не удалось загрузить настройки пользователя.', 'error');
-            return;
-        }
-
         const currentAppTheme =
             document.documentElement.dataset.theme ||
-            deps.State.userPreferences.theme ||
+            deps.State?.userPreferences?.theme ||
             deps.DEFAULT_UI_SETTINGS?.themeMode;
         let nextTheme;
 
@@ -37,11 +31,15 @@ export function initThemeToggle() {
             nextTheme = 'dark';
         }
 
-        if (typeof deps.setTheme === 'function') {
-            deps.setTheme(nextTheme);
-        } else {
+        if (typeof deps.setTheme !== 'function') {
             console.error('Функция setTheme не найдена!');
             deps.showNotification?.('Ошибка: Не удалось применить тему.', 'error');
+            return;
+        }
+        deps.setTheme(nextTheme);
+
+        if (!deps.State?.userPreferences) {
+            deps.showNotification?.('Тема применена. Настройки сохранятся после загрузки.', 'info');
             return;
         }
 
@@ -50,7 +48,10 @@ export function initThemeToggle() {
             prefsSaved = await deps.saveUserPreferences();
         } else {
             console.error('Функция saveUserPreferences не найдена!');
-            deps.showNotification?.('Ошибка: Не удалось сохранить настройки пользователя.', 'error');
+            deps.showNotification?.(
+                'Ошибка: Не удалось сохранить настройки пользователя.',
+                'error',
+            );
             if (typeof deps.setTheme === 'function') deps.setTheme(currentAppTheme);
             return;
         }
@@ -72,8 +73,10 @@ export function initThemeToggle() {
                     deps.State.originalUISettings.themeMode = nextTheme;
                 }
 
-                if (typeof deps.getSettingsFromModal === 'function' &&
-                    typeof deps.deepEqual === 'function') {
+                if (
+                    typeof deps.getSettingsFromModal === 'function' &&
+                    typeof deps.deepEqual === 'function'
+                ) {
                     deps.State.isUISettingsDirty = !deps.deepEqual(
                         deps.State.originalUISettings,
                         deps.getSettingsFromModal(),

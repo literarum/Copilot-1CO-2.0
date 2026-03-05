@@ -4,6 +4,8 @@
 // BOOKMARKS DOM OPERATIONS (вынос из script.js)
 // ============================================================================
 
+import { getAllFromIndexedDB } from '../db/indexeddb.js';
+
 let createBookmarkElement = null;
 let applyCurrentView = null;
 let removeFromFavoritesDB = null;
@@ -12,6 +14,21 @@ let renderFavoritesPage = null;
 let State = null;
 let SECTION_GRID_COLS = null;
 let CARD_CONTAINER_CLASSES = null;
+
+async function buildBookmarkFolderMap() {
+    try {
+        const folders = await getAllFromIndexedDB('bookmarkFolders');
+        return (folders || []).reduce((map, folder) => {
+            if (folder && typeof folder.id !== 'undefined') {
+                map[folder.id] = folder;
+            }
+            return map;
+        }, {});
+    } catch (error) {
+        console.warn('buildBookmarkFolderMap: не удалось загрузить папки:', error);
+        return {};
+    }
+}
 
 export function setBookmarksDomDependencies(deps) {
     createBookmarkElement = deps.createBookmarkElement;
@@ -45,7 +62,8 @@ export async function addBookmarkToDOM(bookmarkData) {
         }
     }
 
-    const newElement = await createBookmarkElement(bookmarkData);
+    const folderMap = await buildBookmarkFolderMap();
+    const newElement = await createBookmarkElement(bookmarkData, folderMap);
     if (!newElement) {
         console.error(
             'addBookmarkToDOM: Не удалось создать DOM-элемент для закладки:',
@@ -78,7 +96,8 @@ export async function updateBookmarkInDOM(bookmarkData) {
         return;
     }
 
-    const newElement = await createBookmarkElement(bookmarkData);
+    const folderMap = await buildBookmarkFolderMap();
+    const newElement = await createBookmarkElement(bookmarkData, folderMap);
     if (!newElement) {
         console.error(
             `updateBookmarkInDOM: Не удалось создать обновленный элемент для закладки ID ${bookmarkData.id}.`,
@@ -111,7 +130,10 @@ export async function removeBookmarkFromDOM(bookmarkId) {
                 if (typeof updateFavoriteStatusUI === 'function') {
                     await updateFavoriteStatusUI(bookmarkId, 'bookmark', false);
                 }
-                if (typeof State.currentSection !== 'undefined' && State.currentSection === 'favorites') {
+                if (
+                    typeof State.currentSection !== 'undefined' &&
+                    State.currentSection === 'favorites'
+                ) {
                     if (typeof renderFavoritesPage === 'function') {
                         await renderFavoritesPage();
                     }
@@ -168,7 +190,10 @@ export async function removeBookmarkFromDOM(bookmarkId) {
             if (typeof updateFavoriteStatusUI === 'function') {
                 await updateFavoriteStatusUI(bookmarkId, 'bookmark', false);
             }
-            if (typeof State.currentSection !== 'undefined' && State.currentSection === 'favorites') {
+            if (
+                typeof State.currentSection !== 'undefined' &&
+                State.currentSection === 'favorites'
+            ) {
                 if (typeof renderFavoritesPage === 'function') {
                     await renderFavoritesPage();
                 }

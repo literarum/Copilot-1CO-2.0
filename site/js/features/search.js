@@ -5,7 +5,7 @@
  * Содержит всю логику полнотекстового поиска, индексации и обработки результатов
  */
 
-import { 
+import {
     DB_VERSION,
     SEDO_CONFIG_KEY,
     ARCHIVE_FOLDER_ID,
@@ -19,7 +19,12 @@ import {
 
 import { tabsConfig, categoryDisplayInfo as categoryDisplayInfoImported } from '../config.js';
 
-import { escapeHtml, truncateText, highlightTextInString, highlightElement } from '../utils/html.js';
+import {
+    escapeHtml,
+    truncateText,
+    highlightTextInString,
+    highlightElement,
+} from '../utils/html.js';
 
 import { formatExampleForTextarea, getSectionName } from '../utils/helpers.js';
 
@@ -35,11 +40,7 @@ import {
     performDBOperation,
 } from '../db/indexeddb.js';
 
-import { 
-    fetchGoogleDocs, 
-    parseShablonyContent, 
-    getOriginalShablonyData 
-} from './google-docs.js';
+import { fetchGoogleDocs, parseShablonyContent, getOriginalShablonyData } from './google-docs.js';
 
 // ============================================================================
 // СОСТОЯНИЕ МОДУЛЯ
@@ -64,6 +65,10 @@ let showReglamentDetail = null;
 let showReglamentsForCategory = null;
 let loadingOverlayManager = null;
 let debounce = null;
+let highlightClientNotesWindow = null;
+let isClientNotesWindowOpen = null;
+
+const isSearchBuildDebug = () => typeof window !== 'undefined' && window.__DEBUG_SEARCH__ === true;
 
 // ============================================================================
 // УСТАНОВКА ЗАВИСИМОСТЕЙ
@@ -77,12 +82,19 @@ export function setSearchDependencies(deps) {
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
     if (deps.setActiveTab !== undefined) setActiveTab = deps.setActiveTab;
     if (deps.showAlgorithmDetail !== undefined) showAlgorithmDetail = deps.showAlgorithmDetail;
-    if (deps.showBookmarkDetailModal !== undefined) showBookmarkDetailModal = deps.showBookmarkDetailModal;
+    if (deps.showBookmarkDetailModal !== undefined)
+        showBookmarkDetailModal = deps.showBookmarkDetailModal;
     if (deps.showReglamentDetail !== undefined) showReglamentDetail = deps.showReglamentDetail;
-    if (deps.showReglamentsForCategory !== undefined) showReglamentsForCategory = deps.showReglamentsForCategory;
-    if (deps.loadingOverlayManager !== undefined) loadingOverlayManager = deps.loadingOverlayManager;
+    if (deps.showReglamentsForCategory !== undefined)
+        showReglamentsForCategory = deps.showReglamentsForCategory;
+    if (deps.loadingOverlayManager !== undefined)
+        loadingOverlayManager = deps.loadingOverlayManager;
     if (deps.debounce !== undefined) debounce = deps.debounce;
     if (deps.categoryDisplayInfo !== undefined) categoryDisplayInfo = deps.categoryDisplayInfo;
+    if (deps.highlightClientNotesWindow !== undefined)
+        highlightClientNotesWindow = deps.highlightClientNotesWindow;
+    if (deps.isClientNotesWindowOpen !== undefined)
+        isClientNotesWindowOpen = deps.isClientNotesWindowOpen;
     if (deps.highlightAndScrollSedoItem !== undefined) {
         // Сохраняем ссылку на функцию из SEDO модуля
         window._highlightAndScrollSedoItem = deps.highlightAndScrollSedoItem;
@@ -165,7 +177,7 @@ export function sanitizeQuery(query) {
         return '';
     }
 
-    let sanitized = query.replace(/[<>\"'&]/g, '').trim();
+    let sanitized = query.replace(/[<>"'&]/g, '').trim();
     sanitized = sanitized.toLowerCase().replace(/ё/g, 'е');
 
     const MAX_QUERY_LENGTH = 200;
@@ -185,12 +197,24 @@ export function sanitizeQuery(query) {
  */
 export function determineSearchContext(normalizedQuery) {
     const FNS_KEYWORDS = new Set([
-        'фнс', 'налог', 'ифнс', 'егрюл', 'егрип', 'егрн', 'кнд', 'декларац',
+        'фнс',
+        'налог',
+        'ифнс',
+        'егрюл',
+        'егрип',
+        'егрн',
+        'кнд',
+        'декларац',
     ]);
     const SEDO_KEYWORDS = new Set(['сэдо', 'пвсо', 'сфр', 'фсс', 'извещение', 'элн', 'сообщение']);
     const PFR_KEYWORDS = new Set(['пфр', 'пенсион', 'снилс', 'сзв', 'опс']);
     const SKZI_KEYWORDS = new Set([
-        'скзи', 'крипто', 'шифр', 'эцп', 'электронная подпись', 'сертификат',
+        'скзи',
+        'крипто',
+        'шифр',
+        'эцп',
+        'электронная подпись',
+        'сертификат',
     ]);
 
     if (FNS_KEYWORDS.has(normalizedQuery)) return 'fns';
@@ -230,21 +254,23 @@ export function getCachedResults(query) {
     return null;
 }
 
+const MAX_SEARCH_CACHE_SIZE = 100;
+
 /**
- * Кэширует результаты поиска
+ * Кэширует результаты поиска (LRU: при переполнении удаляем самый старый по обращению).
  */
 export function cacheResults(query, results) {
+    // LRU: повторная вставка перемещает ключ в конец Map
+    searchCache.delete(query);
     searchCache.set(query, {
         results: results,
         timestamp: Date.now(),
     });
 
-    if (searchCache.size > 100) {
-        const entries = Array.from(searchCache.entries());
-        const toDelete = entries
-            .filter(([, data]) => Date.now() - data.timestamp > CACHE_TTL)
-            .slice(0, 50);
-        toDelete.forEach(([key]) => searchCache.delete(key));
+    while (searchCache.size > MAX_SEARCH_CACHE_SIZE) {
+        const oldestKey = searchCache.keys().next().value;
+        if (oldestKey === undefined) break;
+        searchCache.delete(oldestKey);
     }
 }
 
@@ -260,7 +286,7 @@ export function getAlgorithmText(algoData) {
     if (!algoData || typeof algoData !== 'object') {
         return texts;
     }
-    
+
     const cleanHtml = (text) =>
         typeof text === 'string'
             ? text
@@ -335,7 +361,9 @@ export function getAlgorithmText(algoData) {
                             } else if (item && typeof item === 'object') {
                                 try {
                                     itemText = cleanHtml(JSON.stringify(item));
-                                } catch (e) {}
+                                } catch {
+                                    // ignore malformed object serialization inside index preparation
+                                }
                             }
                             if (itemText) stepsTextParts.push(itemText);
                         });
@@ -368,8 +396,14 @@ export function getAlgorithmText(algoData) {
             typeof algoData[key] === 'string'
         ) {
             const excludedKeys = [
-                'id', 'title', 'description', 'section', 'dateAdded', 
-                'dateUpdated', 'type', 'aggregated_steps_content',
+                'id',
+                'title',
+                'description',
+                'section',
+                'dateAdded',
+                'dateUpdated',
+                'type',
+                'aggregated_steps_content',
             ];
             if (!excludedKeys.includes(key) && texts[key] === undefined && !key.startsWith('_')) {
                 const cleanedValue = cleanHtml(algoData[key]);
@@ -447,7 +481,7 @@ export function getTextForItem(storeName, itemData) {
                     }
                     if (urlObj.pathname && urlObj.pathname !== '/') {
                         const pathParts = urlObj.pathname
-                            .split(/[\/\-_.]+/)
+                            .split(/[/_.-]+/)
                             .filter((p) => p && p.length > 2);
                         pathParts.forEach((part, i) => {
                             textsByField[`url_path_${i}`] = part;
@@ -464,7 +498,7 @@ export function getTextForItem(storeName, itemData) {
                             );
                         }
                     }
-                } catch (e) {
+                } catch {
                     textsByField.url_fallback_text = itemData.url.replace(/[.:/?=&#%@_]/g, ' ');
                 }
             }
@@ -503,7 +537,7 @@ export function getTextForItem(storeName, itemData) {
                 if (urlObjExt.hostname) {
                     textsByField.url_hostname = urlObjExt.hostname.replace(/^www\./, '');
                 }
-            } catch (e) {
+            } catch {
                 textsByField.url_fallback_text = itemData.url.replace(/[.:/?=&#%@_]/g, ' ');
             }
             if (itemData.description) textsByField.description = cleanHtml(itemData.description);
@@ -512,7 +546,9 @@ export function getTextForItem(storeName, itemData) {
                 typeof State.extLinkCategoryInfo === 'object' &&
                 State.extLinkCategoryInfo[itemData.category]
             ) {
-                textsByField.categoryName = cleanHtml(State.extLinkCategoryInfo[itemData.category].name);
+                textsByField.categoryName = cleanHtml(
+                    State.extLinkCategoryInfo[itemData.category].name,
+                );
             }
             break;
 
@@ -526,31 +562,63 @@ export function getTextForItem(storeName, itemData) {
             if (itemData.name) textsByField.name = cleanHtml(itemData.name);
             break;
 
-        case 'preferences':
+        case 'extLinkCategories':
+            if (itemData.name) textsByField.name = cleanHtml(itemData.name);
+            if (itemData.color) textsByField.color = cleanHtml(String(itemData.color));
+            break;
+
+        case 'preferences': {
             const sedoKey = SEDO_CONFIG_KEY;
             if (itemData.id === sedoKey) {
                 textsByField.name = 'Типы сообщений СЭДО СФР ФСС';
                 let allSedoTextParts = [
-                    'типы сообщений сэдо', 'сфр', 'фсс', 'пвсо', 'извещение', 'элн',
-                    'уведомление', 'запрос', 'ответ', 'результат', 'регистрация',
-                    'проактивное назначение пособий', 'прямые выплаты',
-                    'электронный документооборот', 'социальный фонд', 'входящие', 'исходящие',
+                    'типы сообщений сэдо',
+                    'сфр',
+                    'фсс',
+                    'пвсо',
+                    'извещение',
+                    'элн',
+                    'уведомление',
+                    'запрос',
+                    'ответ',
+                    'результат',
+                    'регистрация',
+                    'проактивное назначение пособий',
+                    'прямые выплаты',
+                    'электронный документооборот',
+                    'социальный фонд',
+                    'входящие',
+                    'исходящие',
                 ];
 
                 if (itemData.articleLinks && Array.isArray(itemData.articleLinks)) {
                     itemData.articleLinks.forEach((linkItem) => {
                         if (linkItem && typeof linkItem === 'object') {
-                            if (linkItem.url && typeof linkItem.url === 'string' && linkItem.url.trim()) {
+                            if (
+                                linkItem.url &&
+                                typeof linkItem.url === 'string' &&
+                                linkItem.url.trim()
+                            ) {
                                 allSedoTextParts.push(
-                                    linkItem.url.trim().toLowerCase().replace(/[.:/?=&#%@_]/g, ' '),
+                                    linkItem.url
+                                        .trim()
+                                        .toLowerCase()
+                                        .replace(/[.:/?=&#%@_]/g, ' '),
                                 );
                             }
-                            if (linkItem.text && typeof linkItem.text === 'string' && linkItem.text.trim()) {
+                            if (
+                                linkItem.text &&
+                                typeof linkItem.text === 'string' &&
+                                linkItem.text.trim()
+                            ) {
                                 allSedoTextParts.push(linkItem.text.trim().toLowerCase());
                             }
                         } else if (typeof linkItem === 'string' && linkItem.trim()) {
                             allSedoTextParts.push(
-                                linkItem.trim().toLowerCase().replace(/[.:/?=&#%@_]/g, ' '),
+                                linkItem
+                                    .trim()
+                                    .toLowerCase()
+                                    .replace(/[.:/?=&#%@_]/g, ' '),
                             );
                         }
                     });
@@ -612,13 +680,26 @@ export function getTextForItem(storeName, itemData) {
                 }
             }
             break;
+        }
 
         default:
             Object.keys(itemData).forEach((key) => {
                 const excludedKeys = [
-                    'id', 'category', 'section', 'color', 'icon', 'link', 'url',
-                    '_originalStore', '_sectionKey', 'blob', 'parentId', 'parentType',
-                    'stepIndex', 'screenshotIds', 'folder',
+                    'id',
+                    'category',
+                    'section',
+                    'color',
+                    'icon',
+                    'link',
+                    'url',
+                    '_originalStore',
+                    '_sectionKey',
+                    'blob',
+                    'parentId',
+                    'parentType',
+                    'stepIndex',
+                    'screenshotIds',
+                    'folder',
                 ];
                 if (
                     typeof itemData[key] === 'string' &&
@@ -652,7 +733,14 @@ export function getTextForItem(storeName, itemData) {
 /**
  * Добавляет слово в поисковый индекс
  */
-export async function addToSearchIndex(word, type, id, field, weight = 1, originalRefDetails = null) {
+export async function addToSearchIndex(
+    word,
+    type,
+    id,
+    field,
+    weight = 1,
+    originalRefDetails = null,
+) {
     if (!State.db) {
         console.warn(`[addToSearchIndex V2] DB not ready. Word: ${word}, Type: ${type}, ID: ${id}`);
         return Promise.resolve();
@@ -876,7 +964,13 @@ export async function removeFromSearchIndex(itemId, itemType) {
 /**
  * Обновляет поисковый индекс для элемента
  */
-export async function updateSearchIndex(storeName, itemId, newItemData, operation, oldItemData = null) {
+export async function updateSearchIndex(
+    storeName,
+    itemId,
+    newItemData,
+    operation,
+    oldItemData = null,
+) {
     const LOG_PREFIX_USI = `[updateSearchIndex V4 - Google Docs Logic]`;
 
     if (storeName === 'shablony') {
@@ -1249,7 +1343,7 @@ export async function updateSearchIndexForItem(itemData, storeName, docId = null
                     Array.isArray(itemData.tables) && itemData.tables[refDetails.tableIndex]
                         ? itemData.tables[refDetails.tableIndex].title || null
                         : null;
-            } catch (_) {
+            } catch {
                 refDetails.tableTitle = null;
             }
         }
@@ -1304,6 +1398,30 @@ export async function cleanAndRebuildSearchIndex() {
         if (showNotification) {
             showNotification('Ошибка при перестроении поискового индекса.', 'error');
         }
+    }
+}
+
+/**
+ * Проверяет и при необходимости строит поисковый индекс (обёртка для app-init и др.).
+ */
+export async function ensureSearchIndexIsBuilt() {
+    console.log('Вызов ensureSearchIndexIsBuilt для проверки и построения поискового индекса.');
+    if (!State.db) {
+        console.warn(
+            'ensureSearchIndexIsBuilt: База данных не инициализирована. Проверка индекса невозможна.',
+        );
+        return;
+    }
+    try {
+        await checkAndBuildIndex();
+        console.log(
+            'ensureSearchIndexIsBuilt: Проверка и построение индекса завершены (или не требовались).',
+        );
+    } catch (error) {
+        console.error(
+            'ensureSearchIndexIsBuilt: Ошибка во время проверки/построения поискового индекса:',
+            error,
+        );
     }
 }
 
@@ -1409,10 +1527,14 @@ export async function checkAndBuildIndex(
                     window.BackgroundStatusHUD &&
                     typeof window.BackgroundStatusHUD.startTask === 'function'
                 ) {
-                    window.BackgroundStatusHUD.startTask('search-index-build', 'Индексация контента', {
-                        weight: 0.6,
-                        total: 100,
-                    });
+                    window.BackgroundStatusHUD.startTask(
+                        'search-index-build',
+                        'Индексация контента',
+                        {
+                            weight: 0.6,
+                            total: 100,
+                        },
+                    );
                 }
                 await buildInitialSearchIndex(actualProgressCallback);
             } catch (e) {
@@ -1471,7 +1593,8 @@ export async function buildInitialSearchIndex(progressCallback) {
         if (progressCallback) progressCallback(0, 0, true);
         return;
     }
-    console.log(`${LOG_PREFIX_BUILD} Starting to build initial search index with BATCHING...`);
+    if (isSearchBuildDebug())
+        console.log(`${LOG_PREFIX_BUILD} Starting to build initial search index with BATCHING...`);
 
     let overallSuccess = true;
     let processedItems = 0;
@@ -1479,15 +1602,17 @@ export async function buildInitialSearchIndex(progressCallback) {
     const indexData = new Map();
 
     try {
-        console.log(`${LOG_PREFIX_BUILD} Clearing existing search index...`);
+        if (isSearchBuildDebug())
+            console.log(`${LOG_PREFIX_BUILD} Clearing existing search index...`);
         await clearIndexedDBStore('searchIndex');
-        console.log(`${LOG_PREFIX_BUILD} Existing search index cleared.`);
+        if (isSearchBuildDebug()) console.log(`${LOG_PREFIX_BUILD} Existing search index cleared.`);
 
         const sourcesToProcess = [
             { name: 'algorithms', type: 'algorithms' },
             { name: 'reglaments', type: 'reglaments' },
             { name: 'links', type: 'links' },
             { name: 'extLinks', type: 'extLinks' },
+            { name: 'extLinkCategories', type: 'extLinkCategories' },
             { name: 'bookmarks', type: 'bookmarks' },
             { name: 'bookmarkFolders', type: 'bookmarkFolders' },
             { name: 'clientData', type: 'clientData' },
@@ -1533,9 +1658,10 @@ export async function buildInitialSearchIndex(progressCallback) {
             }
         }
         totalItemsToEstimate += 2;
-        console.log(
-            `${LOG_PREFIX_BUILD} Estimated total items for indexing: ${totalItemsToEstimate}`,
-        );
+        if (isSearchBuildDebug())
+            console.log(
+                `${LOG_PREFIX_BUILD} Estimated total items for indexing: ${totalItemsToEstimate}`,
+            );
         if (progressCallback) progressCallback(processedItems, totalItemsToEstimate, false);
 
         let bookmarkFoldersMap = new Map();
@@ -1553,6 +1679,9 @@ export async function buildInitialSearchIndex(progressCallback) {
             let indexableId = itemData.id;
             if (storeName === 'clientData') indexableId = 'current';
             if (storeName === 'algorithms' && itemData.id === 'main') indexableId = 'main';
+            if (storeName === 'shablony') {
+                indexableId = itemData._shablonyDocId ?? itemData.id;
+            }
 
             if (Object.keys(textsByField).length === 0) return;
 
@@ -1571,6 +1700,13 @@ export async function buildInitialSearchIndex(progressCallback) {
                     field: fieldKey,
                     weight: fieldWeight,
                 };
+
+                if (storeName === 'shablony') {
+                    const blockIdx = itemData._internal_block_index ?? itemData.originalIndex;
+                    if (blockIdx !== undefined && blockIdx !== null) {
+                        refDetails.blockIndex = Number(blockIdx);
+                    }
+                }
 
                 if (storeName === 'preferences' && itemData.id === SEDO_CONFIG_KEY) {
                     const parts = fieldKey.split('_');
@@ -1592,7 +1728,22 @@ export async function buildInitialSearchIndex(progressCallback) {
                         continue;
                     if (!indexData.has(token)) indexData.set(token, []);
                     const refs = indexData.get(token);
-                    if (refs.length < MAX_REFS_PER_WORD) {
+                    const refAlreadyAdded = refs.some(
+                        (r) =>
+                            r.store === refDetails.store &&
+                            r.id === refDetails.id &&
+                            r.field === refDetails.field &&
+                            (r.blockIndex === undefined
+                                ? refDetails.blockIndex === undefined
+                                : r.blockIndex === refDetails.blockIndex) &&
+                            (r.tableIndex === undefined
+                                ? refDetails.tableIndex === undefined
+                                : r.tableIndex === refDetails.tableIndex) &&
+                            (r.rowIndex === undefined
+                                ? refDetails.rowIndex === undefined
+                                : r.rowIndex === refDetails.rowIndex),
+                    );
+                    if (!refAlreadyAdded && refs.length < MAX_REFS_PER_WORD) {
                         refs.push(refDetails);
                     }
                 }
@@ -1600,7 +1751,8 @@ export async function buildInitialSearchIndex(progressCallback) {
         };
 
         for (const source of sourcesToProcess) {
-            console.log(`${LOG_PREFIX_BUILD} Processing source: ${source.name}`);
+            if (isSearchBuildDebug())
+                console.log(`${LOG_PREFIX_BUILD} Processing source: ${source.name}`);
             if (source.name === 'algorithms') {
                 const algoContainer = await getFromIndexedDB('algorithms', 'all');
                 if (algoContainer && algoContainer.data) {
@@ -1644,8 +1796,15 @@ export async function buildInitialSearchIndex(progressCallback) {
                 }
             } else {
                 const items = await getAllFromIndexedDB(source.name);
+                if (!Array.isArray(items)) {
+                    continue;
+                }
                 for (const item of items) {
-                    if (item && (item.id !== undefined || source.name === 'clientData')) {
+                    if (
+                        item &&
+                        typeof item === 'object' &&
+                        (item.id !== undefined || source.name === 'clientData')
+                    ) {
                         if (source.name === 'bookmarks') {
                             if (item.folder === ARCHIVE_FOLDER_ID) {
                                 processedItems++;
@@ -1674,42 +1833,33 @@ export async function buildInitialSearchIndex(progressCallback) {
             const blocks = parseShablonyContent(data);
             blocks.forEach((block) =>
                 processItemInMemory(
-                    { ...block, _internal_block_index: block.originalIndex },
+                    {
+                        ...block,
+                        _internal_block_index: block.originalIndex,
+                        _shablonyDocId: SHABLONY_DOC_ID,
+                    },
                     'shablony',
                 ),
             );
             processedItems++;
             if (progressCallback) progressCallback(processedItems, totalItemsToEstimate, false);
         } catch (error) {
-            console.error(
-                `${LOG_PREFIX_BUILD} Error processing Google Doc shablony:`,
-                error,
-            );
+            console.error(`${LOG_PREFIX_BUILD} Error processing Google Doc shablony:`, error);
             overallSuccess = false;
             processedItems++;
             if (progressCallback) progressCallback(processedItems, totalItemsToEstimate, false);
         }
 
-        console.log(
-            `${LOG_PREFIX_BUILD} In-memory index created with ${indexData.size} unique tokens. Starting batch write to IndexedDB.`,
-        );
+        if (isSearchBuildDebug())
+            console.log(
+                `${LOG_PREFIX_BUILD} In-memory index created with ${indexData.size} unique tokens. Starting batch write to IndexedDB.`,
+            );
         const transaction = State.db.transaction(['searchIndex'], 'readwrite');
         const store = transaction.objectStore('searchIndex');
-        let writePromises = [];
 
         for (const [word, refs] of indexData.entries()) {
-            const request = store.put({ word, refs });
-            writePromises.push(
-                new Promise((resolve, reject) => {
-                    request.onsuccess = resolve;
-                    request.onerror = (e) =>
-                        reject(`Failed to put word '${word}': ${e.target.error}`);
-                }),
-            );
+            store.put({ word, refs });
         }
-
-        await Promise.all(writePromises);
-        console.log(`${LOG_PREFIX_BUILD} All put requests have been sent within the transaction.`);
 
         await new Promise((resolve, reject) => {
             transaction.oncomplete = resolve;
@@ -1736,7 +1886,8 @@ export async function buildInitialSearchIndex(progressCallback) {
                 timestamp: Date.now(),
                 error: null,
             });
-            console.log(`${LOG_PREFIX_BUILD} Initial search index built successfully.`);
+            if (isSearchBuildDebug())
+                console.log(`${LOG_PREFIX_BUILD} Initial search index built successfully.`);
         }
 
         if (progressCallback)
@@ -1833,7 +1984,7 @@ export async function performSearch(query) {
             return;
         }
 
-        let candidateDocs = await searchCandidates(queryTokens, searchContext, query);
+        let candidateDocs = await searchCandidates(queryTokens, searchContext);
 
         const filteredCandidateDocs = new Map();
         for (const [key, value] of candidateDocs.entries()) {
@@ -1847,7 +1998,28 @@ export async function performSearch(query) {
 
         const combinedResults = [...sectionMatches, ...finalResults];
         const sortedResults = sortSearchResults(combinedResults);
-        const limitedResults = sortedResults.slice(0, 15);
+        const MAX_SEARCH_RESULTS_DISPLAY = 50;
+        let limitedResults = sortedResults.slice(0, MAX_SEARCH_RESULTS_DISPLAY);
+
+        // Fallback-аудит: если индекс не дал результата, делаем медленный скан по хранилищам,
+        // чтобы не терять навигацию для элементов, которые еще не попали в индекс.
+        if (limitedResults.length === 0 && query.trim().length >= 2) {
+            try {
+                const fallbackRegex = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const fallbackResults = await searchWithRegex(fallbackRegex);
+                if (Array.isArray(fallbackResults) && fallbackResults.length > 0) {
+                    limitedResults = fallbackResults
+                        .map((item) => ({
+                            ...item,
+                            highlightTerm: query,
+                            query,
+                        }))
+                        .slice(0, MAX_SEARCH_RESULTS_DISPLAY);
+                }
+            } catch (fallbackError) {
+                console.warn('[performSearch] Fallback regex search failed:', fallbackError);
+            }
+        }
         const endTime = performance.now();
         const executionTime = endTime - startTime;
 
@@ -1909,7 +2081,7 @@ export function debouncedSearch(query, delay = 300) {
 /**
  * Ищет кандидатов в индексе
  */
-async function searchCandidates(queryTokens, searchContext, normalizedQuery) {
+async function searchCandidates(queryTokens, searchContext) {
     const candidateDocs = new Map();
     try {
         const transaction = State.db.transaction(['searchIndex'], 'readonly');
@@ -1928,9 +2100,25 @@ async function searchCandidates(queryTokens, searchContext, normalizedQuery) {
 
                         if (indexEntry.refs && Array.isArray(indexEntry.refs)) {
                             indexEntry.refs.forEach((ref) => {
-                                if (!ref.store || !ref.id) return;
+                                if (
+                                    !ref ||
+                                    typeof ref !== 'object' ||
+                                    !ref.store ||
+                                    ref.id == null
+                                ) {
+                                    return;
+                                }
+                                if (String(ref.id) === 'undefined' || String(ref.id) === '') {
+                                    return;
+                                }
+                                if (
+                                    ref.store === 'shablony' &&
+                                    (ref.blockIndex === undefined || ref.blockIndex === null)
+                                ) {
+                                    return;
+                                }
 
-                                if (!isRelevantForContext(ref, searchContext, actualToken)) {
+                                if (!isRelevantForContext(ref, searchContext)) {
                                     return;
                                 }
 
@@ -1972,7 +2160,7 @@ async function searchCandidates(queryTokens, searchContext, normalizedQuery) {
 /**
  * Проверяет релевантность для контекста
  */
-function isRelevantForContext(ref, searchContext, actualToken) {
+function isRelevantForContext(ref, searchContext) {
     if (searchContext === 'general') {
         return true;
     }
@@ -2011,6 +2199,9 @@ function isRelevantForContext(ref, searchContext, actualToken) {
  * Генерирует ключ документа
  */
 function generateDocKey(ref) {
+    if (!ref || typeof ref !== 'object' || ref.store == null || ref.id == null) {
+        return 'invalid:legacy-ref';
+    }
     let docKey = `${ref.store}:${ref.id}`;
     if (ref.tableIndex !== undefined) docKey += `#t${ref.tableIndex}`;
     if (ref.rowIndex !== undefined) docKey += `#r${ref.rowIndex}`;
@@ -2152,11 +2343,21 @@ async function loadFullDataForResults(docEntries) {
     const storeGroups = new Map();
 
     docEntries.forEach((entry) => {
+        if (!entry || !entry.ref || typeof entry.ref !== 'object') {
+            return;
+        }
         const storeName = entry.ref.store;
+        const refId = entry.ref.id;
+        if (storeName == null || storeName === '' || refId == null) {
+            return;
+        }
+        if (String(refId) === 'undefined' || String(refId) === '') {
+            return;
+        }
         if (!storeGroups.has(storeName)) {
             storeGroups.set(storeName, new Set());
         }
-        storeGroups.get(storeName).add(entry.ref.id);
+        storeGroups.get(storeName).add(refId);
     });
 
     const loadedData = new Map();
@@ -2214,9 +2415,19 @@ async function loadFullDataForResults(docEntries) {
     const resultsWithData = [];
 
     docEntries.forEach((entry) => {
-        const storeData = loadedData.get(entry.ref.store);
+        if (!entry || !entry.ref || typeof entry.ref !== 'object') {
+            return;
+        }
+        const ref = entry.ref;
+        if (
+            ref.store === 'shablony' &&
+            (ref.id == null || String(ref.id) === 'undefined' || ref.blockIndex === undefined)
+        ) {
+            return;
+        }
+        const storeData = loadedData.get(ref.store);
         if (storeData) {
-            const itemData = storeData.get(String(entry.ref.id));
+            const itemData = storeData.get(String(ref.id));
             if (itemData) {
                 resultsWithData.push({
                     ...entry,
@@ -2248,12 +2459,23 @@ async function processSearchResults(candidateDocs, normalizedQuery, originalQuer
 
     const groupedByActualItem = new Map();
     fullResults.forEach((entry) => {
-        if (!entry || !entry.ref || !entry.itemData || entry.ref.id === undefined) {
+        if (!entry || !entry.ref || !entry.itemData) {
+            return;
+        }
+        const ref = entry.ref;
+        if (
+            ref.id === undefined ||
+            ref.id === null ||
+            String(ref.id) === 'undefined' ||
+            String(ref.id) === ''
+        ) {
+            return;
+        }
+        if (ref.store === 'shablony' && (ref.blockIndex === undefined || ref.blockIndex === null)) {
             return;
         }
 
         let groupKey;
-        const ref = entry.ref;
         const itemData = entry.itemData;
 
         if (ref.store === 'shablony' && ref.blockIndex !== undefined) {
@@ -2286,7 +2508,7 @@ async function processSearchResults(candidateDocs, normalizedQuery, originalQuer
     });
 
     const searchResults = [];
-    for (const [groupKey, group] of groupedByActualItem.entries()) {
+    for (const [, group] of groupedByActualItem.entries()) {
         if (!group.refsForConversion || group.refsForConversion.length === 0) {
             continue;
         }
@@ -2385,6 +2607,16 @@ async function processSearchResults(candidateDocs, normalizedQuery, originalQuer
  * Конвертирует элемент в результат поиска
  */
 function convertItemToSearchResult(ref, itemData, score) {
+    if (!ref || typeof ref !== 'object') {
+        return null;
+    }
+    if (ref.store == null || ref.id == null) {
+        return null;
+    }
+    if (String(ref.id) === 'undefined' || String(ref.id) === '') {
+        return null;
+    }
+
     const storeName = ref.store;
     const itemIdFromRef = ref.id;
 
@@ -2468,6 +2700,9 @@ function convertItemToSearchResult(ref, itemData, score) {
     } else if (storeName === 'bookmarkFolders') {
         finalItemId = String(itemData.id || itemIdFromRef);
         finalSection = 'bookmarks';
+    } else if (storeName === 'extLinkCategories') {
+        finalItemId = String(itemData.id || itemIdFromRef);
+        finalSection = 'extLinks';
     } else if (storeName === 'preferences') {
         if (itemIdFromRef === SEDO_CONFIG_KEY) {
             finalSection = 'sedoTypes';
@@ -2531,6 +2766,16 @@ function convertItemToSearchResult(ref, itemData, score) {
             break;
         case 'extLinks':
             result.type = 'extLink';
+            break;
+        case 'extLinkCategories':
+            result.type = 'extLinkCategory';
+            result.title = itemData.name
+                ? `Категория: ${itemData.name}`
+                : 'Категория внешних ресурсов';
+            result.description = itemData.color
+                ? `Цвет категории: ${itemData.color}`
+                : 'Категория внешних ресурсов';
+            result.categoryId = String(itemData.id || itemIdFromRef);
             break;
         case 'clientData':
             result.type = 'clientNote';
@@ -2732,12 +2977,18 @@ export function renderSearchResults(results, query) {
             exactMatchBadge.className = 'ml-2 px-1.5 py-0.5 text-xs font-semibold rounded-full';
             if (result.isDirectPvsoOrCodeMatch) {
                 exactMatchBadge.classList.add(
-                    'bg-green-100', 'text-green-700', 'dark:bg-green-700', 'dark:text-green-100',
+                    'bg-green-100',
+                    'text-green-700',
+                    'dark:bg-green-700',
+                    'dark:text-green-100',
                 );
                 exactMatchBadge.textContent = 'Совпадение';
             } else {
                 exactMatchBadge.classList.add(
-                    'bg-blue-100', 'text-blue-700', 'dark:bg-blue-700', 'dark:text-blue-100',
+                    'bg-blue-100',
+                    'text-blue-700',
+                    'dark:bg-blue-700',
+                    'dark:text-blue-100',
                 );
                 exactMatchBadge.textContent = 'Совпадение';
             }
@@ -2812,18 +3063,40 @@ export async function handleSearchResultClick(result) {
     if (searchResultsContainer) searchResultsContainer.classList.add('hidden');
 
     async function tryScrollAndHighlight(tabId, itemSelector, highlightTerm) {
-        if (typeof setActiveTab === 'function' && State.currentSection !== tabId) {
+        const tabSwitched = typeof setActiveTab === 'function' && State.currentSection !== tabId;
+        if (tabSwitched && setActiveTab) {
             setActiveTab(tabId);
             await new Promise((resolve) => setTimeout(resolve, 350));
         }
+        const findAndHighlight = () => {
+            const element = document.querySelector(itemSelector);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (typeof highlightElement === 'function')
+                    highlightElement(element, highlightTerm);
+                return true;
+            }
+            return false;
+        };
         return new Promise((resolve) => {
             requestAnimationFrame(() => {
-                const element = document.querySelector(itemSelector);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    if (typeof highlightElement === 'function')
-                        highlightElement(element, highlightTerm);
+                if (findAndHighlight()) {
                     resolve({ success: true, elementFound: true });
+                    return;
+                }
+                if (tabSwitched) {
+                    setTimeout(() => {
+                        requestAnimationFrame(() => {
+                            if (findAndHighlight()) {
+                                resolve({ success: true, elementFound: true });
+                            } else {
+                                console.warn(
+                                    `[tryScrollAndHighlight] Element ${itemSelector} not found (after retry).`,
+                                );
+                                resolve({ success: false, elementFound: false });
+                            }
+                        });
+                    }, 250);
                 } else {
                     console.warn(`[tryScrollAndHighlight] Element ${itemSelector} not found.`);
                     resolve({ success: false, elementFound: false });
@@ -2845,7 +3118,7 @@ export async function handleSearchResultClick(result) {
                 );
                 break;
             case 'algorithm':
-            case 'main':
+            case 'main': {
                 const algoId = result.type === 'main' ? 'main' : result.id;
                 const algoSection = result.section;
                 if (algoId !== 'main') {
@@ -2861,6 +3134,7 @@ export async function handleSearchResultClick(result) {
                         : algorithms?.[algoSection]?.find((a) => String(a.id) === String(algoId));
                 if (algoData && showAlgorithmDetail) showAlgorithmDetail(algoData, algoSection);
                 break;
+            }
             case 'bookmark':
             case 'bookmark_note':
                 await tryScrollAndHighlight(
@@ -2870,18 +3144,52 @@ export async function handleSearchResultClick(result) {
                 );
                 if (showBookmarkDetailModal) showBookmarkDetailModal(parseInt(result.id, 10));
                 break;
-            case 'reglament':
+            case 'reglament': {
                 const reglamentData = await getFromIndexedDB('reglaments', parseInt(result.id, 10));
                 if (reglamentData && reglamentData.category) {
                     if (setActiveTab) await setActiveTab('reglaments');
-                    if (showReglamentsForCategory) await showReglamentsForCategory(reglamentData.category);
-                    await tryScrollAndHighlight(
-                        null,
-                        `.reglament-item[data-id="${result.id}"]`,
-                        result.highlightTerm || result.title,
-                    );
+                    if (showReglamentsForCategory)
+                        await showReglamentsForCategory(reglamentData.category);
+                    await new Promise((r) => setTimeout(r, 350));
                 }
+                await tryScrollAndHighlight(
+                    'reglaments',
+                    `.reglament-item[data-id="${result.id}"]`,
+                    result.highlightTerm || result.title,
+                );
                 if (showReglamentDetail) showReglamentDetail(parseInt(result.id, 10));
+                break;
+            }
+            case 'extLink':
+                if (setActiveTab) await setActiveTab('extLinks');
+                await tryScrollAndHighlight(
+                    'extLinks',
+                    `.ext-link-item[data-id="${result.id}"]`,
+                    result.highlightTerm || result.title,
+                );
+                break;
+            case 'extLinkCategory':
+                if (setActiveTab) await setActiveTab('extLinks');
+                {
+                    const categoryFilter = document.getElementById('extLinkCategoryFilter');
+                    const searchInput = document.getElementById('extLinkSearchInput');
+                    if (searchInput && searchInput.value) {
+                        searchInput.value = '';
+                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    if (categoryFilter) {
+                        categoryFilter.value = String(result.categoryId || result.id || '');
+                        categoryFilter.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+                break;
+            case 'link':
+                if (setActiveTab) await setActiveTab('links');
+                await tryScrollAndHighlight(
+                    'links',
+                    `.cib-link-item[data-id="${result.id}"]`,
+                    result.highlightTerm || result.title,
+                );
                 break;
             case 'sedoInfoItem':
                 if (setActiveTab) await setActiveTab('sedoTypes');
@@ -2894,15 +3202,24 @@ export async function handleSearchResultClick(result) {
                     );
                 }
                 break;
-            case 'clientNote':
+            case 'clientNote': {
                 if (setActiveTab) await setActiveTab('main');
                 const textarea = document.getElementById('clientNotes');
                 if (textarea) {
                     textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     textarea.focus();
-                    highlightElement(textarea, result.highlightTerm);
+                    if (typeof highlightElement === 'function')
+                        highlightElement(textarea, result.highlightTerm);
+                }
+                if (
+                    typeof isClientNotesWindowOpen === 'function' &&
+                    isClientNotesWindowOpen() &&
+                    typeof highlightClientNotesWindow === 'function'
+                ) {
+                    highlightClientNotesWindow(result.highlightTerm || result.query);
                 }
                 break;
+            }
             case 'section_link':
                 if (result.section && setActiveTab) {
                     setActiveTab(result.section);
@@ -2955,38 +3272,40 @@ export function initSearchSystem() {
         );
     }
 
-    const debouncedSearchHandler = debounce 
+    const debouncedSearchHandler = debounce
         ? debounce(async () => {
-            try {
-                if (!searchInput) {
-                    return;
-                }
+              try {
+                  if (!searchInput) {
+                      return;
+                  }
 
-                const searchQueryValue = sanitizeQuery(searchInput.value);
+                  const searchQueryValue = sanitizeQuery(searchInput.value);
 
-                console.log(`[initSearchSystem] Executing search for query: "${searchQueryValue}"`);
+                  console.log(
+                      `[initSearchSystem] Executing search for query: "${searchQueryValue}"`,
+                  );
 
-                if (searchQueryValue.length >= 1) {
-                    await performSearch(searchQueryValue);
-                } else if (searchResultsContainer) {
-                    searchResultsContainer.innerHTML = '';
-                    searchResultsContainer.classList.add('hidden');
-                }
-            } catch (error) {
-                console.error('[initSearchSystem] Ошибка при выполнении поиска:', error);
-                if (searchResultsContainer) {
-                    searchResultsContainer.innerHTML =
-                        '<div class="p-3 text-center text-red-500">Ошибка при поиске.</div>';
-                    searchResultsContainer.classList.remove('hidden');
-                }
-            }
-        }, 300)
+                  if (searchQueryValue.length >= 1) {
+                      await performSearch(searchQueryValue);
+                  } else if (searchResultsContainer) {
+                      searchResultsContainer.innerHTML = '';
+                      searchResultsContainer.classList.add('hidden');
+                  }
+              } catch (error) {
+                  console.error('[initSearchSystem] Ошибка при выполнении поиска:', error);
+                  if (searchResultsContainer) {
+                      searchResultsContainer.innerHTML =
+                          '<div class="p-3 text-center text-red-500">Ошибка при поиске.</div>';
+                      searchResultsContainer.classList.remove('hidden');
+                  }
+              }
+          }, 300)
         : async () => {
-            const searchQueryValue = sanitizeQuery(searchInput.value);
-            if (searchQueryValue.length >= 1) {
-                await performSearch(searchQueryValue);
-            }
-        };
+              const searchQueryValue = sanitizeQuery(searchInput.value);
+              if (searchQueryValue.length >= 1) {
+                  await performSearch(searchQueryValue);
+              }
+          };
 
     const handleInput = () => {
         debouncedSearchHandler();

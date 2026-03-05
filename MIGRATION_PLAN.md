@@ -9,11 +9,13 @@
 ## 📊 Текущее состояние
 
 ### Статистика:
+
 - **script.js:** 4,048 строк (было 12,416 строк)
 - **Прогресс миграции:** ~70%
 - **Осталось мигрировать:** ~1,000+ строк крупных функций
 
 ### Структура script.js:
+
 - **Импорты:** ~400 строк
 - **Обертки (wrappers):** ~200 строк
 - **Крупные функции:** ~1,000+ строк
@@ -26,33 +28,36 @@
 ### 🔴 Высокий приоритет (крупные функции, >100 строк)
 
 #### 1. `showNotification` (~207 строк)
+
 - **Расположение:** `script.js:1401-1607`
 - **Размер:** ~207 строк
 - **Описание:** Функция показа уведомлений с анимацией и управлением жизненным циклом
-- **Зависимости:** 
-  - `ensureNotificationIconlessStyles()` (заглушка)
-  - DOM API
+- **Зависимости:**
+    - `ensureNotificationIconlessStyles()` (заглушка)
+    - DOM API
 - **Целевой модуль:** `js/services/notification.js` (расширение)
 - **Приоритет:** ⭐⭐⭐⭐⭐
 - **Сложность:** Средняя
 - **Примечания:** NotificationService уже существует, но `showNotification` осталась в script.js
 
 #### 2. `initClientDataSystem` (~275 строк)
+
 - **Расположение:** `script.js:3115-3389`
 - **Размер:** ~275 строк
 - **Описание:** Инициализация системы данных клиента с обработчиками событий, превью ИНН, debounce
 - **Зависимости:**
-  - `ensureInnPreviewStyles()`
-  - `createClientNotesInnPreview()` (нужно найти)
-  - `saveClientData()`, `checkForBlacklistedInn()`
-  - `copyToClipboard()`, `debounce()`
-  - `getFromIndexedDB()`, `applyClientNotesFontSize()`
+    - `ensureInnPreviewStyles()`
+    - `createClientNotesInnPreview()` (нужно найти)
+    - `saveClientData()`, `checkForBlacklistedInn()`
+    - `copyToClipboard()`, `debounce()`
+    - `getFromIndexedDB()`, `applyClientNotesFontSize()`
 - **Целевой модуль:** `js/features/client-data-init.js` (новый)
 - **Приоритет:** ⭐⭐⭐⭐⭐
 - **Сложность:** Высокая
 - **Примечания:** Очень большая функция с множеством обработчиков событий
 
 #### 3. `ensureInnPreviewStyles` (~20+ строк)
+
 - **Расположение:** `script.js:3391-3412+`
 - **Размер:** ~20+ строк
 - **Описание:** Создание стилей для превью ИНН
@@ -66,26 +71,28 @@
 ### 🟡 Средний приоритет (средние функции, 30-100 строк)
 
 #### 4. `saveUISettings` (~64 строки)
+
 - **Расположение:** `script.js:1271-1334`
 - **Размер:** ~64 строки
 - **Описание:** Сохранение настроек UI с валидацией и применением
 - **Зависимости:**
-  - `getSettingsFromModal()` (из `js/ui/ui-settings-modal.js`)
-  - `saveUserPreferences()`, `applyPreviewSettings()`
-  - `applyPanelOrderAndVisibility()` (из `js/components/tabs.js`)
-  - `showNotification()`, `State`
+    - `getSettingsFromModal()` (из `js/ui/ui-settings-modal.js`)
+    - `saveUserPreferences()`, `applyPreviewSettings()`
+    - `applyPanelOrderAndVisibility()` (из `js/components/tabs.js`)
+    - `showNotification()`, `State`
 - **Целевой модуль:** `js/ui/ui-settings.js` (расширение)
 - **Приоритет:** ⭐⭐⭐⭐
 - **Сложность:** Средняя
 - **Примечания:** Логически связана с `loadUISettings`
 
 #### 5. `loadUISettings` (~27 строк)
+
 - **Расположение:** `script.js:1243-1269`
 - **Размер:** ~27 строк
 - **Описание:** Загрузка настроек UI для модального окна
 - **Зависимости:**
-  - `loadUserPreferences()`, `applyPreviewSettings()`
-  - `State`
+    - `loadUserPreferences()`, `applyPreviewSettings()`
+    - `State`
 - **Целевой модуль:** `js/ui/ui-settings.js` (расширение)
 - **Приоритет:** ⭐⭐⭐
 - **Сложность:** Низкая
@@ -96,38 +103,42 @@
 ### 🟢 Низкий приоритет (малые функции, <30 строк)
 
 #### 6. `saveCategoryInfo` (~20 строк)
+
 - **Расположение:** `script.js:1177-1196`
 - **Размер:** ~20 строк
 - **Описание:** Сохранение информации о категориях регламентов
 - **Зависимости:**
-  - `saveToIndexedDB()`, `populateReglamentCategoryDropdowns()`
-  - `showNotification()`, `State`, `categoryDisplayInfo`
+    - `saveToIndexedDB()`, `populateReglamentCategoryDropdowns()`
+    - `showNotification()`, `State`, `categoryDisplayInfo`
 - **Целевой модуль:** `js/components/reglaments.js` (расширение)
 - **Приоритет:** ⭐⭐⭐
 - **Сложность:** Низкая
 
 #### 7. `loadCategoryInfo` (~14 строк)
+
 - **Расположение:** `script.js:1162-1175`
 - **Размер:** ~14 строк
 - **Описание:** Загрузка информации о категориях регламентов
 - **Зависимости:**
-  - `getFromIndexedDB()`, `State`, `categoryDisplayInfo`
+    - `getFromIndexedDB()`, `State`, `categoryDisplayInfo`
 - **Целевой модуль:** `js/components/reglaments.js` (расширение)
 - **Приоритет:** ⭐⭐⭐
 - **Сложность:** Низкая
 
 #### 8. `ensureSearchIndexIsBuilt` (~20 строк)
+
 - **Расположение:** `script.js:1141-1160`
 - **Размер:** ~20 строк
 - **Описание:** Проверка и построение поискового индекса
 - **Зависимости:**
-  - `checkAndBuildIndex()` (из `js/features/search.js`)
-  - `State`
+    - `checkAndBuildIndex()` (из `js/features/search.js`)
+    - `State`
 - **Целевой модуль:** `js/features/search.js` (расширение)
 - **Приоритет:** ⭐⭐
 - **Сложность:** Низкая
 
 #### 9. `_applyThemeClass` (~15 строк)
+
 - **Расположение:** `script.js:2104-2118`
 - **Размер:** ~15 строк
 - **Описание:** Применение класса темы к документу
@@ -137,6 +148,7 @@
 - **Сложность:** Низкая
 
 #### 10. `_onSystemThemeChange` (~3 строки)
+
 - **Расположение:** `script.js:2119-2121`
 - **Размер:** ~3 строки
 - **Описание:** Обработчик изменения системной темы
@@ -150,9 +162,11 @@
 ## 📋 План выполнения по этапам
 
 ### Этап 1: Миграция уведомлений (Приоритет: Высокий)
+
 **Цель:** Мигрировать `showNotification` в `js/services/notification.js`
 
 **Шаги:**
+
 1. ✅ Проверить текущий `NotificationService` в `js/services/notification.js`
 2. ⬜ Добавить `showNotification` в `NotificationService` или создать отдельную функцию
 3. ⬜ Экспортировать функцию из модуля
@@ -166,9 +180,11 @@
 ---
 
 ### Этап 2: Миграция системы данных клиента (Приоритет: Высокий)
+
 **Цель:** Мигрировать `initClientDataSystem` и связанные функции
 
 **Шаги:**
+
 1. ⬜ Найти `createClientNotesInnPreview()` и другие вспомогательные функции
 2. ⬜ Создать модуль `js/features/client-data-init.js`
 3. ⬜ Мигрировать `initClientDataSystem` в модуль
@@ -185,9 +201,11 @@
 ---
 
 ### Этап 3: Миграция настроек UI (Приоритет: Средний)
+
 **Цель:** Мигрировать `loadUISettings` и `saveUISettings` в `js/ui/ui-settings.js`
 
 **Шаги:**
+
 1. ⬜ Открыть `js/ui/ui-settings.js`
 2. ⬜ Добавить `loadUISettings` в модуль
 3. ⬜ Добавить `saveUISettings` в модуль
@@ -220,9 +238,11 @@
 ---
 
 ### Этап 4: Миграция функций категорий (Приоритет: Средний)
+
 **Цель:** Мигрировать `loadCategoryInfo` и `saveCategoryInfo` в `js/components/reglaments.js`
 
 **Шаги:**
+
 1. ⬜ Открыть `js/components/reglaments.js`
 2. ⬜ Добавить `loadCategoryInfo` в модуль
 3. ⬜ Добавить `saveCategoryInfo` в модуль
@@ -237,9 +257,11 @@
 ---
 
 ### Этап 5: Миграция функций темы (Приоритет: Низкий)
+
 **Цель:** Мигрировать `_applyThemeClass` и `_onSystemThemeChange` в `js/components/theme.js`
 
 **Шаги:**
+
 1. ⬜ Открыть `js/components/theme.js`
 2. ⬜ Добавить `_applyThemeClass` в модуль (переименовать в `applyThemeClass`)
 3. ⬜ Добавить `_onSystemThemeChange` в модуль (переименовать в `onSystemThemeChange`)
@@ -253,9 +275,11 @@
 ---
 
 ### Этап 6: Миграция функции поиска (Приоритет: Низкий)
+
 **Цель:** Мигрировать `ensureSearchIndexIsBuilt` в `js/features/search.js`
 
 **Шаги:**
+
 1. ⬜ Открыть `js/features/search.js`
 2. ⬜ Добавить `ensureSearchIndexIsBuilt` в модуль
 3. ⬜ Настроить dependency injection для зависимостей
@@ -271,13 +295,16 @@
 ## 📈 Ожидаемые результаты
 
 ### После завершения всех этапов:
+
 - **Удалено из script.js:** ~665+ строк
 - **Создано в модулях:** ~700+ строк (с учетом dependency injection)
 - **Новый размер script.js:** ~3,383 строки
 - **Прогресс миграции:** ~75-80%
 
 ### Дополнительные возможности:
+
 После завершения основных этапов можно продолжить миграцию:
+
 - Event listeners и инициализация (~2,400 строк)
 - Мелкие вспомогательные функции
 - Оставшиеся обертки (wrappers)
@@ -291,15 +318,16 @@
 1. `showOverlayForFixedDuration` (~5 строк) - возможно, стоит оставить в script.js
 2. `ensureNotificationIconlessStyles` (~3 строки) - заглушка, можно удалить
 3. Вспомогательные функции внутри `initClientDataSystem`:
-   - `getInnAtCursor` - нужно найти и проанализировать
-   - `createClientNotesInnPreview` - нужно найти и проанализировать
-   - `__acquireCopyLock` - нужно найти и проанализировать
+    - `getInnAtCursor` - нужно найти и проанализировать
+    - `createClientNotesInnPreview` - нужно найти и проанализировать
+    - `__acquireCopyLock` - нужно найти и проанализировать
 
 ---
 
 ## ✅ Критерии успешной миграции
 
 Для каждой мигрированной функции:
+
 1. ✅ Функция работает идентично оригиналу
 2. ✅ Все зависимости правильно инжектированы
 3. ✅ Функция экспортируется из модуля

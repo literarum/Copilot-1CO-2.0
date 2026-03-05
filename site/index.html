@@ -9,7 +9,49 @@
             href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><title>SOS Icon (Red)</title><defs><style>.sos-text{font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";font-size:12px;font-weight:bold;text-anchor:middle;dominant-baseline:central;fill:%23DC2626;letter-spacing:-0.5px}.frame{fill:none;stroke:%23DC2626;stroke-width:2}</style></defs><rect x="4" y="4" width="24" height="24" rx="4" class="frame"/><text x="16" y="16" class="sos-text">SOS</text></svg>'
         />
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <script type="text/javascript">
+            window.__loadTailwindCDN = function() {
+                var s = document.createElement('script');
+                s.src = 'https://cdn.tailwindcss.com';
+                s.onload = function() {
+                    if (typeof tailwind !== 'undefined') {
+                        var tailwindConfig = {
+                            darkMode: 'class',
+                            theme: {
+                                extend: {
+                                    colors: {
+                                        primary: 'var(--color-primary, #9933FF)',
+                                        secondary: 'var(--color-secondary, #7B2FDF)',
+                                        blue: { 'DEFAULT': 'var(--color-primary, #5D5CDE)' }
+                                    },
+                                    borderRadius: {
+                                        none: '0px',
+                                        sm: 'calc(var(--border-radius, 8px) * 0.5)',
+                                        'DEFAULT': 'var(--border-radius, 8px)',
+                                        md: 'calc(var(--border-radius, 8px) * 0.75)',
+                                        lg: 'calc(var(--border-radius, 8px) * 1.25)',
+                                        xl: 'calc(var(--border-radius, 8px) * 1.75)',
+                                        '2xl': 'calc(var(--border-radius, 8px) * 2.25)',
+                                        '3xl': 'calc(var(--border-radius, 8px) * 3.0)',
+                                        full: '9999px'
+                                    },
+                                    spacing: {
+                                        content: 'var(--content-spacing, 1rem)',
+                                        'content-sm': 'calc(var(--content-spacing, 1rem) * 0.75)',
+                                        'content-lg': 'calc(var(--content-spacing, 1rem) * 1.5)'
+                                    }
+                                }
+                            },
+                            plugins: []
+                        };
+                        tailwind.config = tailwindConfig;
+                    }
+                };
+                document.head.appendChild(s);
+            };
+        </script>
+        <!-- Production: use built CSS (npm run build:css). CDN only as fallback when built file is missing. -->
+        <link id="tailwind-built" rel="stylesheet" href="css/tailwind.generated.css" onerror="window.__loadTailwindCDN && window.__loadTailwindCDN()">
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
             integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
@@ -17,53 +59,6 @@
             referrerpolicy="no-referrer"
         ></script>
         <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-        <script>
-            tailwind.config = {
-                darkMode: 'class',
-                theme: {
-                    extend: {
-                        colors: {
-                            primary: 'var(--color-primary, #9933FF)',
-                            secondary: 'var(--color-secondary, #7B2FDF)',
-                            blue: {
-                                ...tailwind.colors.blue,
-                                DEFAULT: 'var(--color-primary, #5D5CDE)',
-                            },
-                        },
-
-                        borderRadius: {
-                            none: '0px',
-                            sm: 'calc(var(--border-radius, 8px) * 0.5)',
-                            DEFAULT: 'var(--border-radius, 8px)',
-                            md: 'calc(var(--border-radius, 8px) * 0.75)',
-                            lg: 'calc(var(--border-radius, 8px) * 1.25)',
-                            xl: 'calc(var(--border-radius, 8px) * 1.75)',
-                            '2xl': 'calc(var(--border-radius, 8px) * 2.25)',
-                            '3xl': 'calc(var(--border-radius, 8px) * 3.0)',
-                            full: '9999px',
-                        },
-
-                        spacing: {
-                            content: 'var(--content-spacing, 1rem)',
-                            'content-sm': 'calc(var(--content-spacing, 1rem) * 0.75)',
-                            'content-lg': 'calc(var(--content-spacing, 1rem) * 1.5)',
-                        },
-
-                        gap: (theme) => ({
-                            ...theme('spacing'),
-                        }),
-
-                        padding: (theme) => ({
-                            ...theme('spacing'),
-                        }),
-
-                        margin: (theme) => ({
-                            ...theme('spacing'),
-                        }),
-                    },
-                },
-            };
-        </script>
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -154,7 +149,7 @@
                 background: linear-gradient(90deg, #8A2BE2, #A020F0, #4B0082, #A020F0, #8A2BE2);
                 background-size: 300% 100%;
                 border-radius: 3px;
-                transition: width 0.15s linear;
+                transition: width 0.25s ease-out;
                 animation: progress-gradient-flow 2s linear infinite;
             }
             @keyframes progress-gradient-flow {
@@ -215,8 +210,21 @@
             let globalTime = 0;
             let rotationX = 0;
             let rotationY = 0;
+            let lastFrameTime = null;
+            /* Скорость вращения: при 60fps (16ms/кадр) даёт те же значения, что и раньше — плавно при любой частоте кадров */
+            const ROTATION_DELTA_NORM = 1 / 16;
+            let exitScaleStartTime = 0;
+            const EXIT_DURATION_MS = 700;
+            const EXIT_MAX_SCALE = 4;
             
             const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+            
+            function getCurrentExitScale() {
+                if (!exitScaleStartTime) return 1;
+                const elapsed = performance.now() - exitScaleStartTime;
+                const t = Math.min(elapsed / EXIT_DURATION_MS, 1);
+                return 1 + (EXIT_MAX_SCALE - 1) * easeOutCubic(t);
+            }
             
             // Палитра цветов по умолчанию с весами (долями)
             const colorPaletteWithWeights = [
@@ -251,8 +259,7 @@
             }
 
             const config = {
-                // Уменьшено количество частиц для лучшей производительности
-                particleCount: 1200,
+                particleCount: 2200,
                 sphereBaseRadius: 4,
                 focalLength: 250,
                 rotationSpeedX: 0.0003,
@@ -261,16 +268,16 @@
                 breathSpeed: 0.01,
                 petalCount: 15,
                 petalStrength: 0.2,
-                baseParticleMinSize: 0.5,
-                baseParticleMaxSize: 1,
+                baseParticleMinSize: 0.45,
+                baseParticleMaxSize: 1.1,
                 colorPalette: [
-                    [140, 70, 200, 1],
-                    [170, 90, 220, 0.9],
-                    [110, 50, 180, 0.9],
-                    [190, 100, 230, 0.95],
-                    [100, 100, 230, 1],
-                    [70, 70, 190, 0.95],
-                    [220, 150, 240, 0.85],
+                    [160, 90, 220, 1],
+                    [190, 110, 245, 0.95],
+                    [130, 60, 200, 0.95],
+                    [210, 120, 250, 1],
+                    [120, 120, 240, 1],
+                    [90, 90, 210, 0.95],
+                    [235, 170, 255, 0.9],
                 ],
                 backgroundColor: 'rgba(0, 0, 0, 0)',
             };
@@ -324,7 +331,8 @@
                     let tempZ_rotX = y * Math.sin(rotationX) + z * Math.cos(rotationX);
                     y = tempY_rotX;
                     z = tempZ_rotX;
-                    const dynamicSphereRadius = currentSphereRadius * (1 + breathPulse * config.breathAmplitude);
+                    const exitScale = getCurrentExitScale();
+                    const dynamicSphereRadius = currentSphereRadius * (1 + breathPulse * config.breathAmplitude) * exitScale;
                     const perspectiveFactor = config.focalLength / (config.focalLength - z * dynamicSphereRadius * 0.8);
                     this.screenX = centerX + x * dynamicSphereRadius * perspectiveFactor;
                     this.screenY = centerY + y * dynamicSphereRadius * perspectiveFactor;
@@ -341,37 +349,39 @@
                     if (mainAlpha <= 0.02) return;
                     const mainSize = this.currentDisplaySize;
                     
-                    // Оптимизированная отрисовка: используем простые круги с прозрачностью
-                    // вместо создания градиентов для каждой частицы
-                    // Это значительно быстрее, особенно при большом количестве частиц
-                    
                     const haloLayers = [
-                        { sizeFactor: 3.5, alphaFactor: 0.15 },
-                        { sizeFactor: 2.2, alphaFactor: 0.25 },
+                        { sizeFactor: 5, alphaFactor: 0.12 },
+                        { sizeFactor: 3.5, alphaFactor: 0.18 },
+                        { sizeFactor: 2.2, alphaFactor: 0.28 },
                     ];
                     
-                    // Рисуем halo слои простыми кругами с прозрачностью
                     for (const layer of haloLayers) {
                         const haloSize = mainSize * layer.sizeFactor;
                         const haloAlpha = mainAlpha * layer.alphaFactor;
                         if (haloAlpha <= 0.01 || haloSize <= 0.2) continue;
-                        
-                        // Используем простой круг вместо градиента для производительности
-                        ctx.globalAlpha = haloAlpha * 0.3;
-                        ctx.fillStyle = `rgb(${this.color_r}, ${this.color_g}, ${this.color_b})`;
+                        const gradient = ctx.createRadialGradient(
+                            this.screenX, this.screenY, haloSize * 0.1,
+                            this.screenX, this.screenY, haloSize
+                        );
+                        gradient.addColorStop(0, `rgba(${this.color_r}, ${this.color_g}, ${this.color_b}, ${haloAlpha})`);
+                        gradient.addColorStop(0.6, `rgba(${this.color_r}, ${this.color_g}, ${this.color_b}, ${haloAlpha * 0.4})`);
+                        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.fillStyle = gradient;
                         ctx.beginPath();
                         ctx.arc(this.screenX, this.screenY, haloSize, 0, Math.PI * 2);
                         ctx.fill();
                     }
                     
-                    // Рисуем ядро частицы
-                    ctx.globalAlpha = mainAlpha;
-                    ctx.fillStyle = `rgb(${this.color_r}, ${this.color_g}, ${this.color_b})`;
+                    const coreGradient = ctx.createRadialGradient(
+                        this.screenX, this.screenY, 0,
+                        this.screenX, this.screenY, mainSize
+                    );
+                    coreGradient.addColorStop(0, `rgba(${this.color_r}, ${this.color_g}, ${this.color_b}, ${mainAlpha})`);
+                    coreGradient.addColorStop(1, `rgba(${this.color_r}, ${this.color_g}, ${this.color_b}, 0)`);
+                    ctx.fillStyle = coreGradient;
                     ctx.beginPath();
                     ctx.arc(this.screenX, this.screenY, mainSize, 0, Math.PI * 2);
                     ctx.fill();
-                    
-                    // Восстанавливаем глобальную прозрачность
                     ctx.globalAlpha = 1.0;
                 }
             }
@@ -386,7 +396,7 @@
                 ctx.scale(dpr, dpr);
                 centerX = width / 2;
                 centerY = height / 2;
-                config.sphereBaseRadius = Math.min(width, height) * 0.22;
+                config.sphereBaseRadius = Math.min(width, height) * 0.1584;
             }
             
             function init() {
@@ -397,10 +407,14 @@
                 }
             }
             
-            function animate() {
+            function animate(now) {
+                now = now || performance.now();
+                const delta = lastFrameTime != null ? Math.min(now - lastFrameTime, 50) : 16;
+                lastFrameTime = now;
                 globalTime++;
-                rotationX += config.rotationSpeedX;
-                rotationY += config.rotationSpeedY;
+                const d = delta * ROTATION_DELTA_NORM;
+                rotationX += config.rotationSpeedX * d;
+                rotationY += config.rotationSpeedY * d;
                 
                 ctx.fillStyle = config.backgroundColor;
                 ctx.clearRect(0, 0, width, height);
@@ -416,6 +430,16 @@
                 }
                 
                 animationFrameId = requestAnimationFrame(animate);
+            }
+            
+            function setExitStartTime() {
+                exitScaleStartTime = performance.now();
+            }
+            
+            function getExitPromise() {
+                return new Promise(function(resolve) {
+                    setTimeout(resolve, EXIT_DURATION_MS + 100);
+                });
             }
             
             function resizeHandler() {
@@ -434,6 +458,7 @@
                 if (!animationFrameId) {
                     animationFrameId = requestAnimationFrame(animate);
                 }
+                if (window._earlySphereAnimation) window._earlySphereAnimation.isRunning = true;
             }
             
             function stop() {
@@ -441,6 +466,7 @@
                     cancelAnimationFrame(animationFrameId);
                     animationFrameId = null;
                 }
+                if (window._earlySphereAnimation) window._earlySphereAnimation.isRunning = false;
             }
             
             function getState() {
@@ -462,11 +488,13 @@
             
             // Сохраняем ссылку для плавного перехода к основной анимации
             window._earlySphereAnimation = {
+                isRunning: false,
                 start: start,
                 stop: stop,
                 resize: resizeHandler,
                 getState: getState,
-                isRunning: true
+                setExitStartTime: setExitStartTime,
+                getExitPromise: getExitPromise
             };
         })();
         </script>
@@ -739,7 +767,15 @@
                         aria-controls="fnsCertContent"
                     >
                         <i class="fas fa-certificate mr-1"></i>
-                        <span class="hidden sm:inline">Проверка сертификата ФНС</span>
+                        <span class="hidden sm:inline">Проверка сертификата на отзыв</span>
+                    </button>
+                    <button
+                        id="xmlAnalyzerTab"
+                        class="tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base"
+                        aria-controls="xmlAnalyzerContent"
+                    >
+                        <i class="fas fa-file-code mr-1"></i>
+                        <span class="hidden sm:inline">Анализатор XML</span>
                     </button>
                     <div class="relative group ml-auto md:ml-1 shrink-0">
                         <button
@@ -760,7 +796,7 @@
             <div id="mainContent" class="tab-content">
                 <div class="p-content rounded-lg shadow-md">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-content">
-                        <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md">
+                        <div id="mainAlgoCard" class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md">
                             <div
                                 class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-content-sm"
                             >
@@ -776,6 +812,18 @@
                                     <i class="fas fa-edit fa-xs lg:mr-1"></i>
                                     <span class="hidden lg:inline">Редактировать</span>
                                 </button>
+                            </div>
+                            <div id="mainAlgoToolbar" class="flex flex-wrap items-center gap-2 mb-2 text-sm text-gray-600 dark:text-gray-400">
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="mainAlgoHeadersOnly" class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 dark:border-gray-600">
+                                    <span>Только заголовки</span>
+                                </label>
+                                <span class="text-gray-400 dark:text-gray-500">|</span>
+                                <span class="flex items-center gap-2">
+                                    <span>Вид:</span>
+                                    <button type="button" id="mainAlgoDensityNormal" class="main-algo-density-btn px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600" data-density="normal">Обычный</button>
+                                    <button type="button" id="mainAlgoDensityCompact" class="main-algo-density-btn px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600" data-density="compact">Компактный</button>
+                                </span>
                             </div>
                             <div id="mainAlgorithm" class="space-y-content-sm">
                                 <div
@@ -850,13 +898,21 @@
 
                         <div class="bg-gray-100 dark:bg-gray-800 p-content-sm rounded-lg shadow-md">
                             <div
-                                class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-content-sm"
+                                class="flex flex-row flex-nowrap justify-between items-center gap-3 mb-content-sm"
                             >
-                                <h2 class="text-lg font-bold">Информация по обращению</h2>
-                                <div class="flex justify-end gap-2 p-2">
+                                <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100 flex-shrink-0">Информация по обращению</h2>
+                                <div class="flex flex-row flex-nowrap items-center justify-end gap-2 flex-shrink-0">
+                                    <button
+                                        type="button"
+                                        id="openClientNotesWindowBtn"
+                                        class="p-2 lg:px-3 lg:py-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 rounded-md transition text-sm flex items-center justify-center shrink-0"
+                                        title="Открыть в отдельном окне"
+                                    >
+                                        <i class="fas fa-window-restore"></i>
+                                    </button>
                                     <button
                                         id="clearClientDataBtn"
-                                        class="p-2 lg:px-3 lg:py-1.5 bg-primary hover:bg-secondary text-white rounded-md transition text-sm flex items-center border-b"
+                                        class="p-2 lg:px-3 lg:py-1.5 bg-primary hover:bg-secondary text-white rounded-md transition text-sm flex items-center justify-center shrink-0"
                                         title="Очистить"
                                     >
                                         <i class="fas fa-trash"></i>
@@ -910,7 +966,7 @@
                                 data-algorithm-export="programAlgorithms"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition"
                             >
-                                Экспорт PDF
+                                Экспорт всех алгоритмов в PDF
                             </button>
                             <button
                                 id="addProgramAlgorithmBtn"
@@ -960,7 +1016,7 @@
                                 data-algorithm-export="skziAlgorithms"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition"
                             >
-                                Экспорт PDF
+                                Экспорт всех алгоритмов в PDF
                             </button>
                             <button
                                 id="addSkziAlgorithmBtn"
@@ -1010,7 +1066,7 @@
                                 data-algorithm-export="lk1cAlgorithms"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition"
                             >
-                                Экспорт PDF
+                                Экспорт всех алгоритмов в PDF
                             </button>
                             <button
                                 id="addLk1cAlgorithmBtn"
@@ -1060,7 +1116,7 @@
                                 data-algorithm-export="webRegAlgorithms"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition"
                             >
-                                Экспорт PDF
+                                Экспорт всех алгоритмов в PDF
                             </button>
                             <button
                                 id="addWebRegAlgorithmBtn"
@@ -1236,14 +1292,16 @@
                                 role="group"
                             >
                                 <button
-                                    class="view-toggle p-1.5 rounded"
+                                    type="button"
+                                    class="view-toggle p-1.5 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-300"
                                     data-view="cards"
                                     title="Вид карточек"
                                 >
                                     <i class="fas fa-th-large"></i>
                                 </button>
                                 <button
-                                    class="view-toggle p-1.5 rounded"
+                                    type="button"
+                                    class="view-toggle p-1.5 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-300"
                                     data-view="list"
                                     title="Вид списка"
                                 >
@@ -1251,16 +1309,16 @@
                                 </button>
                             </div>
                             <button
-                                id="addBookmarkBtn"
-                                class="px-3 py-1.5 bg-primary hover:bg-secondary text-white rounded-md transition flex items-center"
-                            >
-                                <i class="fas fa-plus mr-2"></i>Добавить
-                            </button>
-                            <button
                                 id="organizeBookmarksBtn"
                                 class="px-3 py-1.5 bg-primary hover:bg-secondary text-white rounded-md transition flex items-center"
                             >
                                 <i class="fas fa-folder mr-2"></i>Управление папками
+                            </button>
+                            <button
+                                id="addBookmarkBtn"
+                                class="px-3 py-1.5 bg-primary hover:bg-secondary text-white rounded-md transition flex items-center"
+                            >
+                                <i class="fas fa-plus mr-2"></i>Добавить
                             </button>
                         </div>
                     </div>
@@ -1359,7 +1417,7 @@
                         class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-content"
                     >
                         <h2 class="text-2xl font-bold">Внешние ресурсы</h2>
-                        <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
                             <div
                                 class="flex items-center space-x-1 border border-gray-300 dark:border-gray-600 rounded-md p-0.5"
                             >
@@ -1380,7 +1438,8 @@
                             </div>
                             <button
                                 id="addExtLinkBtn"
-                                class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition"
+                                type="button"
+                                class="min-w-[7rem] px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md transition inline-flex items-center justify-center"
                             >
                                 <i class="fas fa-plus mr-2"></i>Добавить
                             </button>
@@ -1449,46 +1508,130 @@
                 </div>
             </div>
 
-            <!-- Проверка сертификатов ФНС (отзыв по CRL) -->
-            <div id="fnsCertContent" class="tab-content hidden p-4" aria-labelledby="fnsCertTab">
-                <div class="max-w-4xl space-y-6">
-                    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-                        Проверка сертификата ФНС по спискам отзыва (CRL)
-                    </h2>
-                    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg space-y-4">
-                        <div>
-                            <label for="fnsCertFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сертификат (PEM или DER)</label>
-                            <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
-                            <div id="fnsCertInfo" class="mt-2 text-sm text-gray-600 dark:text-gray-400 min-h-[2rem]"></div>
+            <!-- Проверка сертификата на отзыв: зона загрузки, кнопка сброса, результат -->
+            <div id="fnsCertContent" class="tab-content hidden" aria-labelledby="fnsCertTab">
+                <div class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md fns-cert-shell">
+                    <h2 class="text-2xl font-bold mb-3 text-gray-900 dark:text-gray-100">Проверка сертификата (БЕТА)</h2>
+                    <div id="fnsCertProbeStatus" class="hidden mb-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm">
+                        <span class="inline-block w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" aria-hidden="true"></span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Проверяем подключение…</span>
+                    </div>
+                    <div id="fnsCertInstallGate" class="hidden"></div>
+                    <div id="fnsCertMainBlock" class="hidden">
+                        <p id="fnsCertWelcome" class="text-gray-700 dark:text-gray-300 text-sm sm:text-base mb-2 max-w-3xl">
+                            Перетащите файл или выберите его вручную по клику на поле ниже.
+                        </p>
+                        <p class="text-sm sm:text-base text-green-700 dark:text-green-400 mb-4 flex items-center gap-2">
+                            <i class="fas fa-shield-alt text-base sm:text-lg"></i>
+                            <span>Сертификат остается только на вашем компьютере и не загружается на сервер.</span>
+                        </p>
+                        <div class="bg-white dark:bg-gray-700 p-6 rounded-xl border border-gray-200 dark:border-gray-600 space-y-4">
+                            <div id="fnsCertDropZone" class="fns-drop-zone border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-gray-50/50 dark:hover:bg-gray-600/30 transition-colors duration-200">
+                                <input type="file" id="fnsCertFileInput" accept=".pem,.cer,.crt,.der" class="hidden" />
+                                <p id="fnsCertDropZoneHint" class="text-gray-600 dark:text-gray-400 text-sm transition-colors duration-150">
+                                    <i class="fas fa-certificate mr-2 text-gray-400"></i>
+                                    Перетащите сертификат сюда или нажмите для выбора
+                                </p>
+                            </div>
+                            <div id="fnsCertInfo" class="text-sm text-gray-700 dark:text-gray-200"></div>
+                            <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-300 hidden"></div>
+                            <div class="flex flex-col sm:flex-row sm:items-stretch gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                <button
+                                    type="button"
+                                    id="fnsCertResetBtn"
+                                    class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-primary hover:bg-secondary text-white shadow-sm transition-colors"
+                                >
+                                    <i class="fas fa-rotate-left mr-2"></i>
+                                    <span>Сброс</span>
+                                </button>
+                                <div id="fnsCrlStatus" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 min-h-[2.5rem] leading-relaxed">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="fnsCrlUrls" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL списков отзыва (CRL), по одному на строку</label>
-                            <textarea id="fnsCrlUrls" rows="3" class="block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 text-sm" placeholder="https://..."></textarea>
-                        </div>
-                        <div>
-                            <label for="fnsCrlFileInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Или загрузить CRL-файлы</label>
-                            <input type="file" id="fnsCrlFileInput" accept=".crl,.der" multiple class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-primary file:text-white" />
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <button type="button" id="fnsCertCheckBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md text-sm">
-                                <i class="fas fa-check-circle mr-2"></i>Проверить
-                            </button>
-                            <button type="button" id="fnsCertResetBtn" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 text-white rounded-md text-sm">
-                                <i class="fas fa-undo mr-2"></i>Сбросить
-                            </button>
-                        </div>
-                        <div id="fnsCrlStatus" class="text-sm"></div>
-                        <div id="fnsCrlDetails" class="text-sm text-gray-600 dark:text-gray-400"></div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Анализатор XML для ТП 1СО -->
+            <div id="xmlAnalyzerContent" class="tab-content hidden p-4" aria-labelledby="xmlAnalyzerTab">
+                <div class="xml-analyzer-shell h-full flex flex-col gap-4">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Анализатор XML для ТП 1СО</h2>
+                    <div class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+                        <div id="xmlAnalyzerInputContainer" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+                            <div id="xmlAnalyzerInitialView" class="flex flex-col flex-grow">
+                                <div id="xmlAnalyzerModeToggle" class="flex-shrink-0 mb-4 p-1 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center w-full">
+                                    <button type="button" data-mode="text" class="xml-analyzer-mode-btn w-1/2 py-2 rounded-md font-semibold transition-colors">Вставить текст</button>
+                                    <button type="button" data-mode="file" class="xml-analyzer-mode-btn w-1/2 py-2 rounded-md font-semibold transition-colors">Выбрать файл</button>
+                                </div>
+                                <div id="xmlAnalyzerFileMode" class="flex-grow hidden pb-4">
+                                    <div id="xmlAnalyzerDropZone" class="w-full h-full min-h-[120px] border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer p-6">
+                                        <i class="fas fa-file-alt text-2xl text-gray-400 dark:text-gray-500 mb-2"></i>
+                                        <p class="font-semibold text-gray-700 dark:text-gray-300">Перетащите файл сюда</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">или нажмите, чтобы выбрать (.xml, .json, .txt)</p>
+                                    </div>
+                                </div>
+                                <div id="xmlAnalyzerTextMode" class="flex flex-col flex-grow min-h-0">
+                                    <textarea id="xmlAnalyzerDataInput" class="w-full flex-grow min-h-[200px] p-4 border border-gray-300 dark:border-gray-600 rounded-xl resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" placeholder="Вставьте XML рег.файла, JSON СЭДО, XML ЕФС из 1С... (Ctrl+Enter для анализа)"></textarea>
+                                </div>
+                                <button type="button" id="xmlAnalyzerAnalyzeBtn" class="w-full font-bold py-2 rounded-lg bg-primary hover:bg-secondary text-white transition-colors mt-4">
+                                    <span id="xmlAnalyzerAnalyzeBtnContent">Анализировать</span>
+                                </button>
+                            </div>
+                            <div id="xmlAnalyzerCertManagerWrapper" class="hidden flex-col h-full bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 p-4">
+                                <h3 class="text-lg font-bold mb-2">Менеджер сертификатов</h3>
+                                <input type="search" id="xmlAnalyzerCertSearch" placeholder="Поиск по ИНН, названию, ФИО..." class="w-full p-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 mb-4">
+                                <div id="xmlAnalyzerCertList" class="flex-grow overflow-y-auto space-y-2 min-h-[100px]"></div>
+                                <div id="xmlAnalyzerCertPlaceholder" class="hidden text-center text-gray-500 dark:text-gray-400 py-4">Сертификаты не найдены.</div>
+                                <button type="button" id="xmlAnalyzerExportZipBtn" class="w-full mt-4 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-semibold disabled:opacity-50" disabled>Экспортировать все в ZIP</button>
+                            </div>
+                        </div>
+                        <div id="xmlAnalyzerOutputContainer" class="flex-1 min-h-0 hidden bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 overflow-y-auto">
+                            <div id="xmlAnalyzerPlaceholder" class="flex flex-col items-center justify-center text-center p-8 text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-file-code text-4xl mb-4"></i>
+                                <p class="font-semibold">Готов к анализу</p>
+                                <p class="text-sm mt-1">Вставьте текст или выберите файл слева</p>
+                            </div>
+                            <div id="xmlAnalyzerOutput" class="p-6 hidden"></div>
+                        </div>
+                    </div>
+                    <div id="xmlAnalyzerNotificationContainer" class="fixed bottom-5 right-5 max-w-sm space-y-3 z-50 pointer-events-none"></div>
+                </div>
+                <div id="xmlAnalyzerCertModalOverlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center p-4 z-[60]">
+                    <div id="xmlAnalyzerCertModal" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                        <header class="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                            <h3 class="text-xl font-bold">Свойства сертификата</h3>
+                            <button type="button" id="xmlAnalyzerModalClose" class="h-8 w-8 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600">×</button>
+                        </header>
+                        <div id="xmlAnalyzerModalContent" class="flex-grow p-6 overflow-y-auto"></div>
+                    </div>
+                </div>
+                <div id="xmlAnalyzerSedoRawJsonViewer" class="hidden p-4 mt-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600"><pre class="text-xs overflow-auto max-h-64 whitespace-pre-wrap"></pre></div>
+                <template id="xmlAnalyzerAccordionSectionTemplate">
+                    <details class="overflow-hidden p-0 border border-gray-200 dark:border-gray-600 rounded-xl mb-3">
+                        <summary class="text-lg font-semibold cursor-pointer list-none flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><span class="accordion-title"></span><span class="accordion-toggle-container"><svg class="w-6 h-6 text-gray-500 accordion-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span></summary>
+                        <div class="accordion-content p-4 rounded-b-xl border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50"></div>
+                    </details>
+                </template>
+                <template id="xmlAnalyzerInfoRowTemplate">
+                    <div class="flex justify-between items-start border-b border-dashed border-gray-200 dark:border-gray-700 py-2"><span class="info-key font-bold text-gray-600 dark:text-gray-400 pr-4"></span><span class="info-value text-right text-gray-800 dark:text-gray-200"></span></div>
+                </template>
+                <template id="xmlAnalyzerSedoRowTemplate">
+                    <tr class="sedo-message-row border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer" title="Нажмите, чтобы увидеть полные данные"><td class="p-2 align-top"><span class="font-mono font-bold sedo-type"></span></td><td class="p-2 align-top"><span class="font-semibold sedo-sender"></span></td><td class="p-2 align-top"><p class="font-semibold text-gray-800 dark:text-gray-100 sedo-title"></p><p class="mt-1 text-xs sedo-status"></p></td><td class="p-2 align-top font-mono text-xs"><div class="sedo-date"></div><div class="sedo-delivered-at"></div></td></tr>
+                </template>
+                <template id="xmlAnalyzerCertListItemTemplate">
+                    <div class="cert-list-item flex items-center justify-between gap-4 p-3 rounded-lg hover:bg-sky-500/10 transition-colors cursor-pointer" title="Нажмите для просмотра деталей"><div class="cert-info flex-grow min-w-0"><p class="cert-org font-semibold truncate"></p><p class="cert-fio text-sm text-gray-500 dark:text-gray-400 truncate"></p><p class="cert-thumbprint text-xs font-mono text-gray-400 dark:text-gray-500 truncate"></p></div><div class="download-button-container flex-shrink-0"></div></div>
+                </template>
+                <template id="xmlAnalyzerLogEntryTemplate">
+                    <div class="log-entry p-3 rounded-lg bg-black/5 dark:bg-white/5"><div class="flex justify-between items-center"><span class="log-event font-semibold text-gray-800 dark:text-gray-200"></span><span class="log-date text-xs text-gray-500"></span></div><p class="log-level text-sm"></p><div class="log-comment-wrapper"></div></div>
+                </template>
             </div>
 
             <!-- Модальные окна -->
             <div
                 id="algorithmModal"
-                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto p-4"
             >
-                <div class="flex items-center justify-center min-h-full">
+                <div class="flex items-center justify-center min-h-full py-6">
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-7xl w-full">
                         <div class="p-content border-b border-gray-200 dark:border-gray-700">
                             <div
@@ -1529,7 +1672,7 @@
                         </div>
                         <div
                             id="algorithmSteps"
-                            class="p-content space-y-content-sm overflow-y-auto max-h-[calc(90vh-150px)]"
+                            class="p-content space-y-3 overflow-y-auto max-h-[calc(90vh-150px)]"
                         ></div>
                     </div>
                 </div>
@@ -1540,7 +1683,7 @@
                 id="editModal"
                 class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4 overflow-y-auto"
             >
-                <div class="flex items-center justify-center min-h-full">
+                <div class="flex items-center justify-center min-h-full py-6">
                     <div
                         class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-5xl w-full max-h-[95vh] flex flex-col"
                     >
@@ -1588,8 +1731,8 @@
                                 >
                                 <textarea
                                     id="algorithmDescription"
-                                    rows="3"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    rows="6"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 modal-description-field min-h-[10rem]"
                                 ></textarea>
                             </div>
                             <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-gray-200">
@@ -1633,7 +1776,7 @@
             >
                 <div class="flex items-center justify-center min-h-full">
                     <div
-                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col"
                     >
                         <div class="p-content border-b border-gray-200 dark:border-gray-700">
                             <div class="flex justify-between items-center">
@@ -1680,8 +1823,8 @@
                                 >
                                 <textarea
                                     id="newAlgorithmDesc"
-                                    rows="3"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    rows="6"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 modal-description-field min-h-[10rem]"
                                 ></textarea>
                             </div>
 
@@ -1735,17 +1878,18 @@
                                     <div class="relative">
                                         <span
                                             id="employeeExtensionDisplay"
-                                            class="inline-block px-4 py-2 text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[180px] text-center align-middle"
+                                            class="inline-block px-4 py-2.5 text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[220px] text-center align-middle"
                                             title="Клик для редактирования"
                                         >
                                         </span>
                                         <input
                                             type="text"
                                             id="employeeExtensionInput"
-                                            class="inline-block px-4 py-2 text-base border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-900 hidden min-w-[180px] align-middle"
+                                            class="inline-block px-4 py-2.5 text-base border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-900 hidden min-w-[220px] align-middle"
                                             maxlength="4"
                                             pattern="\d*"
-                                            title="Введите доб. номер"
+                                            placeholder="Введите свой добавочный"
+                                            title="Введите свой добавочный"
                                         />
                                     </div>
                                     <button
@@ -2164,6 +2308,32 @@
                                                 осторожностью.
                                             </p>
                                         </div>
+
+                                        <div
+                                            class="pt-content-sm border-t border-gray-200 dark:border-gray-600"
+                                        >
+                                            <label
+                                                for="toggleStaticHeader"
+                                                class="flex items-center cursor-pointer"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    id="toggleStaticHeader"
+                                                    name="staticHeader"
+                                                    class="form-checkbox h-5 w-5 text-primary focus:ring-primary border-gray-300 dark:border-gray-600 rounded"
+                                                />
+                                                <span
+                                                    class="ml-3 text-sm text-gray-700 dark:text-gray-300"
+                                                    >Статичная панель</span
+                                                >
+                                            </label>
+                                            <p
+                                                class="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-8"
+                                            >
+                                                При включении шапка приложения остаётся закреплённой
+                                                сверху при прокрутке страницы.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2279,28 +2449,85 @@
                 </div>
             </div>
 
+            <!-- Модальное окно подтверждения выхода без сохранения -->
+            <div
+                id="unsavedConfirmModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-[70] p-4 overflow-y-auto"
+                aria-modal="true"
+                role="dialog"
+                aria-labelledby="unsavedConfirmModalTitle"
+            >
+                <div class="flex items-center justify-center min-h-full">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full border border-gray-200 dark:border-gray-700">
+                        <div class="p-content border-b border-gray-200 dark:border-gray-700">
+                            <h2 id="unsavedConfirmModalTitle" class="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                <i class="fas fa-exclamation-circle mr-2 text-amber-500"></i>Выход без сохранения
+                            </h2>
+                        </div>
+                        <div class="p-content">
+                            <p id="unsavedConfirmModalMessage" class="text-gray-700 dark:text-gray-300">
+                                Изменения не сохранены. Вы действительно хотите выйти без сохранения?
+                            </p>
+                        </div>
+                        <div class="p-content border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
+                            <button type="button" id="unsavedConfirmCancelBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 rounded-md transition font-medium">
+                                Отмена
+                            </button>
+                            <button type="button" id="unsavedConfirmLeaveBtn" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-md transition font-medium">
+                                Да, выйти без сохранения
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Универсальное модальное окно подтверждения/алерта (в стилистике приложения) -->
+            <div
+                id="appConfirmModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-[70] p-4 overflow-y-auto"
+                aria-modal="true"
+                role="dialog"
+                aria-labelledby="appConfirmModalTitle"
+            >
+                <div class="flex items-center justify-center min-h-full">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full border border-gray-200 dark:border-gray-700">
+                        <div class="p-content border-b border-gray-200 dark:border-gray-700">
+                            <h2 id="appConfirmModalTitle" class="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                <i class="fas fa-info-circle mr-2 text-primary"></i>Подтверждение
+                            </h2>
+                        </div>
+                        <div class="p-content">
+                            <p id="appConfirmModalMessage" class="text-gray-700 dark:text-gray-300"></p>
+                        </div>
+                        <div id="appConfirmModalButtons" class="p-content border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Модальное окно Ссылки 1С -->
             <div
                 id="cibLinkModal"
                 class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4 overflow-y-auto"
             >
                 <div class="flex items-center justify-center min-h-full">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full">
-                        <div class="p-content border-b border-gray-200 dark:border-gray-700">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+                        <div class="p-content border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                             <div class="flex justify-between items-center">
-                                <h2 id="cibLinkModalTitle" class="text-xl font-bold">
+                                <h2 id="cibLinkModalTitle" class="text-2xl font-bold text-gray-900 dark:text-gray-100">
                                     Добавить ссылку 1С
                                 </h2>
                                 <button
+                                    type="button"
                                     class="close-modal p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                    title="Закрыть"
+                                    title="Закрыть (Esc)"
                                 >
                                     <i class="fas fa-times text-xl"></i>
                                 </button>
                             </div>
                         </div>
-                        <form id="cibLinkForm">
-                            <div class="p-content space-y-4">
+                        <form id="cibLinkForm" class="flex flex-col flex-1 min-h-0">
+                            <div class="p-content overflow-y-auto flex-1 space-y-4">
                                 <input type="hidden" id="cibLinkId" />
                                 <div>
                                     <label
@@ -2312,7 +2539,7 @@
                                         type="text"
                                         id="cibLinkTitle"
                                         required
-                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                     />
                                 </div>
                                 <div>
@@ -2326,7 +2553,7 @@
                                         id="cibLinkValue"
                                         required
                                         placeholder="e1cib/list/РегистрСведений.ЧтоТоТам"
-                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                     />
                                 </div>
                                 <div>
@@ -2337,18 +2564,16 @@
                                     >
                                     <textarea
                                         id="cibLinkDescription"
-                                        rows="3"
-                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base text-gray-900 dark:text-gray-100"
+                                        rows="5"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 modal-description-field min-h-[10rem]"
                                     ></textarea>
                                 </div>
                             </div>
-                            <div
-                                class="p-content border-t border-gray-200 dark:border-gray-700 mt-auto"
-                            >
+                            <div class="p-content border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
                                 <div class="flex justify-end gap-2">
                                     <button
                                         type="button"
-                                        class="cancel-modal px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md transition"
+                                        class="cancel-modal px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md transition"
                                     >
                                         Отмена
                                     </button>
@@ -2609,30 +2834,22 @@
                                             <b>Таймер:</b>
                                             <ul class="list-disc list-inside pl-5 mt-1 space-y-1">
                                                 <li>
-                                                    Нажатие
-                                                    <i class="fas fa-play w-4 text-center"></i> /
-                                                    <i class="fas fa-pause w-4 text-center"></i>:
-                                                    Старт/Пауза.
+                                                    <code class="hotkey-code">Ctrl + Alt + T</code> — Старт/пауза.
                                                 </li>
                                                 <li>
-                                                    Нажатие
-                                                    <i class="fas fa-undo w-4 text-center"></i>:
-                                                    Сброс на стандартное время.
+                                                    <code class="hotkey-code">Ctrl + Alt + R</code> — Сброс.
                                                 </li>
                                                 <li>
-                                                    <code class="hotkey-code">Ctrl</code> + Нажатие
-                                                    <i class="fas fa-undo w-4 text-center"></i>:
-                                                    Сброс на 00:00.
+                                                    <code class="hotkey-code">Ctrl + Alt + +</code> / <code class="hotkey-code">Ctrl + Alt + −</code> — Увеличить/уменьшить время на 5 сек.
                                                 </li>
                                                 <li>
-                                                    Нажатие
-                                                    <i class="fas fa-plus w-4 text-center"></i>:
-                                                    Увеличить время.
+                                                    Кнопки <i class="fas fa-plus w-4 text-center"></i>/<i class="fas fa-minus w-4 text-center"></i>: без модификатора ±5 сек, с <code class="hotkey-code">Ctrl</code> ±10 сек, с <code class="hotkey-code">Ctrl + Shift</code> ±30 сек.
                                                 </li>
                                                 <li>
-                                                    Нажатие
-                                                    <i class="fas fa-minus w-4 text-center"></i>:
-                                                    Уменьшить время.
+                                                    <code class="hotkey-code">Ctrl</code> + кнопка сброса — Сброс на 00:00.
+                                                </li>
+                                                <li class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                                                    На macOS: используйте <code class="hotkey-code">Ctrl + Option</code> (не Cmd).
                                                 </li>
                                             </ul>
                                         </li>
@@ -2726,6 +2943,16 @@
                     ›
                 </button>
             </div>
+        </div>
+
+        <!-- Кнопки прокрутки вверх/вниз для длинных страниц -->
+        <div id="scrollNavButtons" class="fixed right-6 bottom-24 z-40 flex flex-col gap-2 opacity-0 pointer-events-none transition-opacity duration-200" aria-hidden="true">
+            <button type="button" id="scrollUpBtn" class="p-2.5 rounded-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors" title="Прокрутить вверх">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+            <button type="button" id="scrollDownBtn" class="p-2.5 rounded-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors" title="Прокрутить вниз">
+                <i class="fas fa-chevron-down"></i>
+            </button>
         </div>
 
         <div id="app-copyright" class="p-3 text-center text-2xs">

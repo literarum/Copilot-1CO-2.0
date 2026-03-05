@@ -2,9 +2,14 @@
 
 import { escapeHtml } from '../utils/html.js';
 import { getStepContentAsText } from '../utils/helpers.js';
-import { MAIN_ALGO_COLLAPSE_KEY } from '../constants.js';
+import {
+    MAIN_ALGO_COLLAPSE_KEY,
+    MAIN_ALGO_HEADERS_ONLY_KEY,
+    MAIN_ALGO_DENSITY_KEY,
+    MAIN_ALGO_HEADERS_EXPANDED_KEY,
+    MAIN_ALGO_GROUPS_OPEN_KEY,
+} from '../constants.js';
 import { getFromIndexedDB, saveToIndexedDB } from '../db/indexeddb.js';
-import { State } from '../app/state.js';
 
 // ============================================================================
 // КОМПОНЕНТ ГЛАВНОГО АЛГОРИТМА
@@ -54,6 +59,92 @@ export async function saveMainAlgoCollapseState(state) {
 }
 
 /**
+ * Загружает настройки отображения главного алгоритма (режим «только заголовки», плотность)
+ */
+export async function loadMainAlgoViewPreference() {
+    const defaults = {
+        headersOnly: false,
+        density: 'normal',
+        headersExpandedIndices: [],
+        openGroupIds: [],
+    };
+    try {
+        const headersOnly = await getFromIndexedDB('preferences', MAIN_ALGO_HEADERS_ONLY_KEY);
+        const density = await getFromIndexedDB('preferences', MAIN_ALGO_DENSITY_KEY);
+        const headersExpanded = await getFromIndexedDB('preferences', MAIN_ALGO_HEADERS_EXPANDED_KEY);
+        const groupsOpen = await getFromIndexedDB('preferences', MAIN_ALGO_GROUPS_OPEN_KEY);
+        return {
+            headersOnly:
+                headersOnly && typeof headersOnly.data === 'boolean' ? headersOnly.data : defaults.headersOnly,
+            density:
+                density && typeof density.data === 'string' && (density.data === 'compact' || density.data === 'normal')
+                    ? density.data
+                    : defaults.density,
+            headersExpandedIndices:
+                headersExpanded && Array.isArray(headersExpanded.data) ? headersExpanded.data : defaults.headersExpandedIndices,
+            openGroupIds:
+                groupsOpen && Array.isArray(groupsOpen.data) ? groupsOpen.data : defaults.openGroupIds,
+        };
+    } catch (error) {
+        console.warn('[loadMainAlgoViewPreference] Ошибка загрузки:', error);
+        return defaults;
+    }
+}
+
+/**
+ * Сохраняет настройку «только заголовки»
+ */
+export async function saveMainAlgoHeadersOnly(value) {
+    try {
+        await saveToIndexedDB('preferences', { id: MAIN_ALGO_HEADERS_ONLY_KEY, data: !!value });
+    } catch (error) {
+        console.error('[saveMainAlgoHeadersOnly] Ошибка сохранения:', error);
+    }
+}
+
+/**
+ * Сохраняет плотность отображения (compact | normal)
+ */
+export async function saveMainAlgoDensity(value) {
+    try {
+        await saveToIndexedDB('preferences', {
+            id: MAIN_ALGO_DENSITY_KEY,
+            data: value === 'compact' ? 'compact' : 'normal',
+        });
+    } catch (error) {
+        console.error('[saveMainAlgoDensity] Ошибка сохранения:', error);
+    }
+}
+
+/**
+ * Сохраняет индексы развёрнутых шагов в режиме «только заголовки»
+ */
+export async function saveMainAlgoHeadersExpanded(indices) {
+    try {
+        await saveToIndexedDB('preferences', {
+            id: MAIN_ALGO_HEADERS_EXPANDED_KEY,
+            data: Array.isArray(indices) ? indices : [],
+        });
+    } catch (error) {
+        console.error('[saveMainAlgoHeadersExpanded] Ошибка сохранения:', error);
+    }
+}
+
+/**
+ * Сохраняет список id открытых групп
+ */
+export async function saveMainAlgoGroupsOpen(groupIds) {
+    try {
+        await saveToIndexedDB('preferences', {
+            id: MAIN_ALGO_GROUPS_OPEN_KEY,
+            data: Array.isArray(groupIds) ? groupIds : [],
+        });
+    } catch (error) {
+        console.error('[saveMainAlgoGroupsOpen] Ошибка сохранения:', error);
+    }
+}
+
+/**
  * Рендерит главный алгоритм
  */
 export async function renderMainAlgorithm() {
@@ -92,15 +183,33 @@ export async function renderMainAlgorithm() {
     }
 
     const mainSteps = algorithms.main.steps;
+    const viewPref = await loadMainAlgoViewPreference();
+
+    const mainAlgoCard = document.getElementById('mainAlgoCard');
+    if (mainAlgoCard) {
+        if (viewPref.density === 'compact') {
+            mainAlgoCard.classList.add('main-algo-density-compact');
+        } else {
+            mainAlgoCard.classList.remove('main-algo-density-compact');
+        }
+    }
 
     const savedCollapse = await loadMainAlgoCollapseState();
     const validIndices =
         savedCollapse && savedCollapse.stepsCount === mainSteps.length
             ? savedCollapse.collapsedIndices.filter(
-                  (i) => Number.isInteger(i) && i >= 0 && i < mainSteps.length,
+                  (i) =>
+                      Number.isInteger(i) &&
+                      i >= 0 &&
+                      i < mainSteps.length &&
+                      !!mainSteps[i]?.isCollapsible,
               )
             : [];
     const collapsedSet = new Set(validIndices);
+    if (collapsedSet.size === 0 && mainSteps.length > 0) {
+        const firstCollapsible = mainSteps.findIndex((s) => !!s?.isCollapsible);
+        if (firstCollapsible >= 0) collapsedSet.add(firstCollapsible);
+    }
 
     if (mainSteps.length === 0) {
         const emptyP = document.createElement('p');
@@ -109,27 +218,143 @@ export async function renderMainAlgorithm() {
         mainAlgorithmContainer.appendChild(emptyP);
         const mainTitleElement = document.querySelector('#mainContent > div > div:nth-child(1) h2');
         if (mainTitleElement) {
-            mainTitleElement.textContent = algorithms.main.title || DEFAULT_MAIN_ALGORITHM?.title || 'Главный алгоритм';
+            mainTitleElement.textContent =
+                algorithms.main.title || DEFAULT_MAIN_ALGORITHM?.title || 'Главный алгоритм';
         }
+        initMainAlgoToolbar(viewPref);
         return;
     }
 
     const fragment = document.createDocumentFragment();
-    mainSteps.forEach((step, index) => {
+    const headersExpandedSet = new Set(
+        (viewPref.headersExpandedIndices || []).filter(
+            (i) => Number.isInteger(i) && i >= 0 && i < mainSteps.length,
+        ),
+    );
+    const groups = Array.isArray(algorithms.main.groups) ? algorithms.main.groups : [];
+    const openGroupIdsSet = new Set(viewPref.openGroupIds || []);
+
+    function buildStepElement(step, index) {
         if (!step || typeof step !== 'object') {
-            console.warn('[renderMainAlgorithm v9] Пропуск невалидного объекта шага:', step);
             const errorDiv = document.createElement('div');
             errorDiv.className =
-                'algorithm-step bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-3 mb-3 rounded-lg shadow-sm text-red-700 dark:text-red-300';
-            errorDiv.textContent = `Ошибка: Некорректные данные для шага ${index + 1}.`;
-            fragment.appendChild(errorDiv);
-            return;
+                'algorithm-step bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-3 mb-3 rounded-lg';
+            errorDiv.textContent = `Ошибка: шаг ${index + 1}.`;
+            return errorDiv;
         }
+        if (viewPref.headersOnly) {
+            return buildStepElementHeadersOnly(step, index);
+        }
+        return buildStepElementFull(step, index);
+    }
 
+    function buildStepElementHeadersOnly(step, index) {
         const stepDiv = document.createElement('div');
         stepDiv.className =
-            'algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm mb-3';
+            'algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm mb-3 headers-only-step';
+        if (headersExpandedSet.has(index)) stepDiv.classList.add('is-expanded');
 
+        if (step.additionalInfoText && step.additionalInfoShowTop) {
+            const topDiv = document.createElement('div');
+            topDiv.className =
+                'additional-info-top mb-2 p-2 border-l-4 border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-sm text-gray-700 dark:text-gray-300 rounded break-words';
+            topDiv.innerHTML =
+                typeof window.linkify === 'function'
+                    ? window.linkify(step.additionalInfoText)
+                    : escapeHtml(step.additionalInfoText);
+            stepDiv.appendChild(topDiv);
+        }
+        const titleH3 = document.createElement('h3');
+        titleH3.className = 'font-semibold text-gray-900 dark:text-gray-100 mb-2';
+        titleH3.textContent = step.title || `Шаг ${index + 1}`;
+        stepDiv.appendChild(titleH3);
+        const collapsibleBody = document.createElement('div');
+        collapsibleBody.className = 'collapsible-body';
+        if (step.description) {
+            const descDiv = document.createElement('div');
+            descDiv.className = 'text-gray-700 dark:text-gray-300 mb-2';
+            if (typeof step.description === 'string') {
+                descDiv.innerHTML =
+                    typeof window.linkify === 'function'
+                        ? window.linkify(step.description)
+                        : escapeHtml(step.description);
+            } else if (typeof step.description === 'object' && step.description.type === 'list') {
+                let listHTML = '';
+                if (step.description.intro) listHTML += `<p class="mb-2">${escapeHtml(step.description.intro)}</p>`;
+                if (Array.isArray(step.description.items)) {
+                    listHTML += '<ul class="list-disc list-inside space-y-1">';
+                    step.description.items.forEach((item) => {
+                        listHTML += `<li>${escapeHtml(typeof item === 'string' ? item : JSON.stringify(item))}</li>`;
+                    });
+                    listHTML += '</ul>';
+                }
+                descDiv.innerHTML = listHTML;
+            }
+            collapsibleBody.appendChild(descDiv);
+        }
+        if (step.example) {
+            const exampleDiv = document.createElement('div');
+            exampleDiv.className = 'mt-2 p-2';
+            if (typeof step.example === 'string') {
+                exampleDiv.innerHTML = `<strong>Пример:</strong><br>${escapeHtml(step.example)}`;
+            } else if (typeof step.example === 'object' && step.example.type === 'list') {
+                let ex = '';
+                if (step.example.intro) ex += `<p class="mb-2">${escapeHtml(step.example.intro)}</p>`;
+                if (Array.isArray(step.example.items)) {
+                    ex += '<ul class="list-disc list-inside space-y-1">';
+                    step.example.items.forEach((item) => {
+                        ex += `<li>${escapeHtml(typeof item === 'string' ? item : JSON.stringify(item))}</li>`;
+                    });
+                    ex += '</ul>';
+                }
+                exampleDiv.innerHTML = ex;
+            }
+            collapsibleBody.appendChild(exampleDiv);
+        }
+        if (step.additionalInfoText && step.additionalInfoShowBottom) {
+            const bottomDiv = document.createElement('div');
+            bottomDiv.className =
+                'additional-info-bottom mt-2 p-2 border-l-4 border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-sm text-gray-700 dark:text-gray-300 rounded break-words';
+            bottomDiv.innerHTML =
+                typeof window.linkify === 'function'
+                    ? window.linkify(step.additionalInfoText)
+                    : escapeHtml(step.additionalInfoText);
+            collapsibleBody.appendChild(bottomDiv);
+        }
+        stepDiv.appendChild(collapsibleBody);
+        titleH3.addEventListener('click', async () => {
+            stepDiv.classList.toggle('is-expanded');
+            const list = Array.from(mainAlgorithmContainer.querySelectorAll('.algorithm-step.headers-only-step'));
+            const indices = list
+                .map((el, i) => (el.classList.contains('is-expanded') ? i : -1))
+                .filter((i) => i >= 0);
+            await saveMainAlgoHeadersExpanded(indices);
+        });
+        if (step.isCopyable && typeof copyToClipboard === 'function') {
+            stepDiv.classList.add('copyable-step-active');
+            stepDiv.title = 'Нажмите, чтобы скопировать содержимое шага';
+            stepDiv.style.cursor = 'pointer';
+            stepDiv.addEventListener('click', (e) => {
+                if (e.target.closest('h3')) return;
+                const data = algorithms.main.steps[index];
+                if (data) {
+                    const text = getStepContentAsText(data);
+                    if (text && text.trim()) copyToClipboard(text, 'Содержимое шага скопировано!');
+                }
+            });
+        }
+        return stepDiv;
+    }
+
+    function buildStepElementFull(step, index) {
+        const stepDiv = document.createElement('div');
+        const isCollapsible = !!step.isCollapsible;
+        stepDiv.className =
+            'algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm mb-3';
+        if (isCollapsible) {
+            stepDiv.classList.add('collapsible');
+            if (collapsedSet.has(index)) stepDiv.classList.add('is-collapsed');
+        }
         if (step.isCopyable) {
             stepDiv.classList.add('copyable-step-active');
             stepDiv.title = 'Нажмите, чтобы скопировать содержимое шага';
@@ -139,19 +364,22 @@ export async function renderMainAlgorithm() {
             stepDiv.title = '';
             stepDiv.style.cursor = 'default';
         }
-
         stepDiv.addEventListener('click', (e) => {
             if (e.target.closest('h3')) return;
-            if (e.target.tagName === 'A' || e.target.closest('A')) return;
-
+            if (e.target.closest('a') || e.target.closest('button') || e.target.closest('[role="button"]'))
+                return;
             const currentStepData = algorithms.main.steps[index];
-            if (currentStepData && currentStepData.isCopyable && copyToClipboard) {
+            if (
+                currentStepData &&
+                currentStepData.isCopyable &&
+                typeof copyToClipboard === 'function'
+            ) {
                 const textToCopy = getStepContentAsText(currentStepData);
-                copyToClipboard(textToCopy, 'Содержимое шага скопировано!');
+                if (textToCopy && textToCopy.trim()) {
+                    copyToClipboard(textToCopy, 'Содержимое шага скопировано!');
+                }
             }
         });
-
-        // Добавление дополнительной информации сверху, если есть
         if (step.additionalInfoText && step.additionalInfoShowTop) {
             const additionalInfoTopDiv = document.createElement('div');
             additionalInfoTopDiv.className =
@@ -162,18 +390,15 @@ export async function renderMainAlgorithm() {
                     : escapeHtml(step.additionalInfoText);
             stepDiv.appendChild(additionalInfoTopDiv);
         }
-
-        // Заголовок шага
         const titleH3 = document.createElement('h3');
         titleH3.className = 'font-semibold text-gray-900 dark:text-gray-100 mb-2';
         titleH3.textContent = step.title || `Шаг ${index + 1}`;
         stepDiv.appendChild(titleH3);
-
-        // Описание шага
+        const collapsibleBody = document.createElement('div');
+        collapsibleBody.className = 'collapsible-body';
         if (step.description) {
             const descDiv = document.createElement('div');
             descDiv.className = 'text-gray-700 dark:text-gray-300 mb-2';
-
             if (typeof step.description === 'string') {
                 descDiv.innerHTML =
                     typeof window.linkify === 'function'
@@ -181,36 +406,26 @@ export async function renderMainAlgorithm() {
                         : escapeHtml(step.description);
             } else if (typeof step.description === 'object' && step.description.type === 'list') {
                 let listHTML = '';
-                if (step.description.intro) {
-                    listHTML += `<p class="mb-2">${escapeHtml(step.description.intro)}</p>`;
-                }
+                if (step.description.intro) listHTML += `<p class="mb-2">${escapeHtml(step.description.intro)}</p>`;
                 if (Array.isArray(step.description.items)) {
                     listHTML += '<ul class="list-disc list-inside space-y-1">';
                     step.description.items.forEach((item) => {
-                        const itemText = typeof item === 'string' ? item : JSON.stringify(item);
-                        listHTML += `<li>${escapeHtml(itemText)}</li>`;
+                        listHTML += `<li>${escapeHtml(typeof item === 'string' ? item : JSON.stringify(item))}</li>`;
                     });
                     listHTML += '</ul>';
                 }
                 descDiv.innerHTML = listHTML;
             }
-
-            stepDiv.appendChild(descDiv);
+            collapsibleBody.appendChild(descDiv);
         }
-
-        // Пример для шага
         if (step.example) {
             const exampleDiv = document.createElement('div');
-            exampleDiv.className =
-                'mt-2 p-2';
-
+            exampleDiv.className = 'mt-2 p-2';
             if (typeof step.example === 'string') {
                 exampleDiv.innerHTML = `<strong>Пример:</strong><br>${escapeHtml(step.example)}`;
             } else if (typeof step.example === 'object' && step.example.type === 'list') {
                 let exampleHTML = '';
-                if (step.example.intro) {
-                    exampleHTML += `<p class="mb-2">${escapeHtml(step.example.intro)}</p>`;
-                }
+                if (step.example.intro) exampleHTML += `<p class="mb-2">${escapeHtml(step.example.intro)}</p>`;
                 if (Array.isArray(step.example.items)) {
                     exampleHTML += '<ul class="list-disc list-inside space-y-1">';
                     step.example.items.forEach((item) => {
@@ -221,11 +436,8 @@ export async function renderMainAlgorithm() {
                 }
                 exampleDiv.innerHTML = exampleHTML;
             }
-
-            stepDiv.appendChild(exampleDiv);
+            collapsibleBody.appendChild(exampleDiv);
         }
-
-        // Дополнительная информация снизу, если есть
         if (step.additionalInfoText && step.additionalInfoShowBottom) {
             const additionalInfoBottomDiv = document.createElement('div');
             additionalInfoBottomDiv.className =
@@ -234,19 +446,136 @@ export async function renderMainAlgorithm() {
                 typeof window.linkify === 'function'
                     ? window.linkify(step.additionalInfoText)
                     : escapeHtml(step.additionalInfoText);
-            stepDiv.appendChild(additionalInfoBottomDiv);
+            collapsibleBody.appendChild(additionalInfoBottomDiv);
         }
+        stepDiv.appendChild(collapsibleBody);
+        if (isCollapsible) {
+            titleH3.addEventListener('click', async () => {
+                stepDiv.classList.toggle('is-collapsed');
+                const indices = Array.from(
+                    mainAlgorithmContainer.querySelectorAll('.algorithm-step.collapsible'),
+                )
+                    .map((el, i) => (el.classList.contains('is-collapsed') ? i : -1))
+                    .filter((i) => i >= 0);
+                await saveMainAlgoCollapseState({
+                    stepsCount: mainSteps.length,
+                    collapsedIndices: indices,
+                });
+            });
+        }
+        return stepDiv;
+    }
 
-        fragment.appendChild(stepDiv);
-    });
+    if (groups.length === 0) {
+        mainSteps.forEach((step, index) => {
+            fragment.appendChild(buildStepElement(step, index));
+        });
+    } else {
+        const stepsNoGroup = mainSteps
+            .map((s, i) => ({ step: s, index: i }))
+            .filter(
+                ({ step }) =>
+                    !step.groupId || !groups.some((g) => g.id === step.groupId),
+            );
+        stepsNoGroup.forEach(({ step, index }) => {
+            fragment.appendChild(buildStepElement(step, index));
+        });
+        groups.forEach((group) => {
+            const stepIndices = mainSteps
+                .map((s, i) => i)
+                .filter((i) => mainSteps[i].groupId === group.id);
+            if (stepIndices.length === 0) return;
+            const groupDiv = document.createElement('div');
+            groupDiv.className =
+                'main-algo-group' + (openGroupIdsSet.has(group.id) ? '' : ' is-closed');
+            groupDiv.dataset.groupId = group.id;
+            const header = document.createElement('div');
+            header.className = 'main-algo-group-header';
+            header.innerHTML = `${escapeHtml(group.title || group.id)} <i class="fas fa-chevron-down"></i>`;
+            header.addEventListener('click', async () => {
+                groupDiv.classList.toggle('is-closed');
+                const openIds = Array.from(
+                    mainAlgorithmContainer.querySelectorAll('.main-algo-group:not(.is-closed)'),
+                )
+                    .map((el) => el.dataset.groupId)
+                    .filter(Boolean);
+                await saveMainAlgoGroupsOpen(openIds);
+            });
+            groupDiv.appendChild(header);
+            const body = document.createElement('div');
+            body.className = 'main-algo-group-body';
+            stepIndices.forEach((i) => body.appendChild(buildStepElement(mainSteps[i], i)));
+            groupDiv.appendChild(body);
+            fragment.appendChild(groupDiv);
+        });
+    }
 
     mainAlgorithmContainer.appendChild(fragment);
 
     // Обновление заголовка
     const mainTitleElement = document.querySelector('#mainContent > div > div:nth-child(1) h2');
     if (mainTitleElement) {
-        mainTitleElement.textContent = algorithms.main.title || DEFAULT_MAIN_ALGORITHM?.title || 'Главный алгоритм работы';
+        mainTitleElement.textContent =
+            algorithms.main.title || DEFAULT_MAIN_ALGORITHM?.title || 'Главный алгоритм работы';
     }
 
+    initMainAlgoToolbar(viewPref);
     console.log('[renderMainAlgorithm v9] Рендеринг главного алгоритма завершен.');
+}
+
+let _mainAlgoToolbarInited = false;
+
+/**
+ * Инициализирует панель переключателей главного алгоритма (только заголовки, плотность)
+ * @param {Object} viewPref - результат loadMainAlgoViewPreference()
+ */
+function initMainAlgoToolbar(viewPref) {
+    const toolbar = document.getElementById('mainAlgoToolbar');
+    const headersOnlyCheckbox = document.getElementById('mainAlgoHeadersOnly');
+    const densityNormalBtn = document.getElementById('mainAlgoDensityNormal');
+    const densityCompactBtn = document.getElementById('mainAlgoDensityCompact');
+    const mainAlgoCard = document.getElementById('mainAlgoCard');
+
+    if (!toolbar || !headersOnlyCheckbox) return;
+
+    headersOnlyCheckbox.checked = !!viewPref.headersOnly;
+    if (densityNormalBtn && densityCompactBtn) {
+        densityNormalBtn.classList.toggle('bg-primary', viewPref.density === 'normal');
+        densityNormalBtn.classList.toggle('text-white', viewPref.density === 'normal');
+        densityCompactBtn.classList.toggle('bg-primary', viewPref.density === 'compact');
+        densityCompactBtn.classList.toggle('text-white', viewPref.density === 'compact');
+    }
+
+    if (_mainAlgoToolbarInited) return;
+    _mainAlgoToolbarInited = true;
+
+    headersOnlyCheckbox.addEventListener('change', async () => {
+        await saveMainAlgoHeadersOnly(headersOnlyCheckbox.checked);
+        await renderMainAlgorithm();
+    });
+
+    if (densityNormalBtn) {
+        densityNormalBtn.addEventListener('click', async () => {
+            await saveMainAlgoDensity('normal');
+            if (mainAlgoCard) mainAlgoCard.classList.remove('main-algo-density-compact');
+            if (densityNormalBtn) {
+                densityNormalBtn.classList.add('bg-primary', 'text-white');
+            }
+            if (densityCompactBtn) {
+                densityCompactBtn.classList.remove('bg-primary', 'text-white');
+            }
+        });
+    }
+    if (densityCompactBtn) {
+        densityCompactBtn.addEventListener('click', async () => {
+            await saveMainAlgoDensity('compact');
+            if (mainAlgoCard) mainAlgoCard.classList.add('main-algo-density-compact');
+            if (densityNormalBtn) {
+                densityNormalBtn.classList.remove('bg-primary', 'text-white');
+            }
+            if (densityCompactBtn) {
+                densityCompactBtn.classList.add('bg-primary', 'text-white');
+            }
+        });
+    }
 }

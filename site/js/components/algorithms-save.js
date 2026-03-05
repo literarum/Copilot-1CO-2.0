@@ -26,17 +26,39 @@ let getSectionName = null;
 export function setAlgorithmsSaveDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
     if (deps.algorithms !== undefined) algorithms = deps.algorithms;
-    if (deps.extractStepsDataFromEditForm !== undefined) extractStepsDataFromEditForm = deps.extractStepsDataFromEditForm;
+    if (deps.extractStepsDataFromEditForm !== undefined)
+        extractStepsDataFromEditForm = deps.extractStepsDataFromEditForm;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
     if (deps.updateSearchIndex !== undefined) updateSearchIndex = deps.updateSearchIndex;
     if (deps.renderAlgorithmCards !== undefined) renderAlgorithmCards = deps.renderAlgorithmCards;
     if (deps.renderMainAlgorithm !== undefined) renderMainAlgorithm = deps.renderMainAlgorithm;
-    if (deps.clearTemporaryThumbnailsFromContainer !== undefined) clearTemporaryThumbnailsFromContainer = deps.clearTemporaryThumbnailsFromContainer;
+    if (deps.clearTemporaryThumbnailsFromContainer !== undefined)
+        clearTemporaryThumbnailsFromContainer = deps.clearTemporaryThumbnailsFromContainer;
     if (deps.getVisibleModals !== undefined) getVisibleModals = deps.getVisibleModals;
     if (deps.addPdfRecords !== undefined) addPdfRecords = deps.addPdfRecords;
     if (deps.resetInitialAddState !== undefined) resetInitialAddState = deps.resetInitialAddState;
-    if (deps.resetInitialEditState !== undefined) resetInitialEditState = deps.resetInitialEditState;
+    if (deps.resetInitialEditState !== undefined)
+        resetInitialEditState = deps.resetInitialEditState;
     if (deps.getSectionName !== undefined) getSectionName = deps.getSectionName;
+}
+
+// ============================================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================================
+
+/**
+ * Читает список групп главного алгоритма из формы редактирования
+ * @returns {Array<{id: string, title: string}>}
+ */
+function getMainAlgoGroupsFromForm() {
+    const list = document.getElementById('editMainAlgoGroupsList');
+    if (!list || !list.children.length) return [];
+    return Array.from(list.children).map((row) => {
+        const id = row.dataset.groupId || `gr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const input = row.querySelector('.main-algo-group-title');
+        const title = (input && input.value && input.value.trim()) || id;
+        return { id, title };
+    });
 }
 
 // ============================================================================
@@ -650,9 +672,11 @@ export async function saveAlgorithm() {
         let targetAlgorithmObject;
         const timestamp = new Date().toISOString();
         if (isMainAlgo) {
+            const groupsFromForm = getMainAlgoGroupsFromForm();
             if (!algorithms.main) algorithms.main = { id: 'main' };
             algorithms.main.title = finalTitle;
             algorithms.main.steps = finalSteps;
+            algorithms.main.groups = Array.isArray(groupsFromForm) ? groupsFromForm : [];
             algorithms.main.dateUpdated = timestamp;
             if (!algorithms.main.dateAdded) algorithms.main.dateAdded = timestamp;
             targetAlgorithmObject = algorithms.main;

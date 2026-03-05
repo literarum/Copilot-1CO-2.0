@@ -17,6 +17,10 @@ export const BLACKLIST_WARNING_ACCEPTED_KEY = 'blacklistWarningAccepted';
 export const USER_PREFERENCES_KEY = 'userGlobalPreferences';
 export const EXT_LINKS_MIGRATION_KEY = 'extLinksCategoryMigrationDone_v1';
 export const MAIN_ALGO_COLLAPSE_KEY = 'mainAlgoCollapsedState_v1';
+export const MAIN_ALGO_HEADERS_ONLY_KEY = 'mainAlgoHeadersOnly_v1';
+export const MAIN_ALGO_DENSITY_KEY = 'mainAlgoDensity_v1';
+export const MAIN_ALGO_HEADERS_EXPANDED_KEY = 'mainAlgoHeadersExpanded_v1';
+export const MAIN_ALGO_GROUPS_OPEN_KEY = 'mainAlgoGroupsOpen_v1';
 export const TIMER_STATE_KEY = 'appTimerStateCopilot1CO_v2';
 
 // ============================================================================

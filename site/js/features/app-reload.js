@@ -6,6 +6,7 @@
 
 let deps = {
     showNotification: null,
+    showAppConfirm: null,
 };
 
 /**
@@ -13,19 +14,27 @@ let deps = {
  */
 export function setAppReloadDependencies(dependencies) {
     if (dependencies.showNotification) deps.showNotification = dependencies.showNotification;
+    if (dependencies.showAppConfirm) deps.showAppConfirm = dependencies.showAppConfirm;
     console.log('[app-reload.js] Зависимости установлены');
 }
 
 /**
  * Выполняет перезагрузку приложения с подтверждением
  */
-export function forceReloadApp() {
-    const confirmation = confirm(
+export async function forceReloadApp() {
+    const message =
         'Вы уверены, что хотите перезагрузить приложение?\n\n' +
-            'Это действие аналогично обновлению страницы в браузере (F5).\n' +
-            'Если вы хотите гарантированно загрузить последнюю версию после обновления, ' +
-            "используйте 'жесткую перезагрузку' вашего браузера (обычно Ctrl+F5 или Cmd+Shift+R).",
-    );
+        'Это действие аналогично обновлению страницы в браузере (F5).\n' +
+        'Если вы хотите гарантированно загрузить последнюю версию после обновления, ' +
+        "используйте 'жесткую перезагрузку' вашего браузера (обычно Ctrl+F5 или Cmd+Shift+R).";
+    const confirmation = deps.showAppConfirm
+        ? await deps.showAppConfirm({
+              title: 'Перезагрузка приложения',
+              message,
+              confirmText: 'Перезагрузить',
+              cancelText: 'Отмена',
+          })
+        : confirm(message);
 
     if (confirmation) {
         console.log('Перезагрузка приложения по запросу пользователя...');

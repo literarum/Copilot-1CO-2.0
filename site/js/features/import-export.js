@@ -8,11 +8,17 @@
 import { State } from '../app/state.js';
 import {
     initDB,
-    getAllFromIndexedDB,
     saveToIndexedDB,
+    deleteFromIndexedDB,
     clearIndexedDBStore,
 } from '../db/indexeddb.js';
-import { CURRENT_SCHEMA_VERSION, DIALOG_WATCHDOG_TIMEOUT_NEW } from '../constants.js';
+import {
+    CURRENT_SCHEMA_VERSION,
+    DIALOG_WATCHDOG_TIMEOUT_NEW,
+    CATEGORY_INFO_KEY,
+} from '../constants.js';
+import { base64ToBlob } from '../utils/helpers.js';
+import { appInit } from '../app/app-init.js';
 
 // ============================================================================
 // ЗАВИСИМОСТИ (устанавливаются через setImportExportDependencies)
@@ -37,6 +43,8 @@ let deps = {
     applyPreviewSettings: null,
     applyThemeOverrides: null,
     importFileInput: null,
+    storeConfigs: null,
+    loadUISettings: null,
 };
 
 /**
@@ -58,14 +66,14 @@ export function setImportExportDependencies(dependencies) {
 export function clearTemporaryThumbnailsFromContainer(container) {
     if (!container) return;
     const tempThumbs = container.querySelectorAll(
-        '.screenshot-thumbnail.temporary img[data-object-url]'
+        '.screenshot-thumbnail.temporary img[data-object-url]',
     );
     tempThumbs.forEach((img) => {
         if (img.dataset.objectUrl && img.dataset.objectUrlRevoked !== 'true') {
             try {
                 URL.revokeObjectURL(img.dataset.objectUrl);
                 console.log(
-                    `[clearTemporaryThumbnails] Освобожден временный URL: ${img.dataset.objectUrl}`
+                    `[clearTemporaryThumbnails] Освобожден временный URL: ${img.dataset.objectUrl}`,
                 );
                 img.dataset.objectUrlRevoked = 'true';
             } catch (e) {
@@ -105,7 +113,7 @@ export async function importBookmarks(bookmarks) {
 export async function importReglaments(reglaments) {
     if (!State.db || !Array.isArray(reglaments)) {
         console.error(
-            'База данных не готова или предоставлены неверные данные для импорта регламентов.'
+            'База данных не готова или предоставлены неверные данные для импорта регламентов.',
         );
         return false;
     }
@@ -116,7 +124,7 @@ export async function importReglaments(reglaments) {
         console.log("Хранилище 'reglaments' очищено.");
 
         const savePromises = reglaments.map((reglament) => {
-            const { id, ...reglamentData } = reglament;
+            const { id: _id, ...reglamentData } = reglament;
             return saveToIndexedDB('reglaments', reglamentData);
         });
 
@@ -131,30 +139,32 @@ export async function importReglaments(reglaments) {
                     console.warn(
                         `Не удалось получить ID для регламента при импорте: ${
                             reglament.title || 'Без заголовка'
-                        }. Пропуск индексации.`
+                        }. Пропуск индексации.`,
                     );
                     return Promise.resolve();
                 }
                 const reglamentWithId = { ...reglament, id: newId };
-                return deps.updateSearchIndex('reglaments', newId, reglamentWithId, 'add').catch((err) =>
-                    console.error(
-                        `Ошибка индексации импортированного регламента ID ${newId}:`,
-                        err
-                    )
-                );
+                return deps
+                    .updateSearchIndex('reglaments', newId, reglamentWithId, 'add')
+                    .catch((err) =>
+                        console.error(
+                            `Ошибка индексации импортированного регламента ID ${newId}:`,
+                            err,
+                        ),
+                    );
             });
             await Promise.all(indexPromises);
             console.log('Поисковый индекс обновлен для импортированных регламентов.');
         } else {
             console.warn(
-                'Функция updateSearchIndex недоступна. Поисковый индекс не обновлен после импорта.'
+                'Функция updateSearchIndex недоступна. Поисковый индекс не обновлен после импорта.',
             );
             deps.showNotification?.('Импорт завершен, но поисковый индекс не обновлен.', 'warning');
         }
 
         console.log('Импорт регламентов успешно завершен.');
         await deps.renderReglamentCategories?.();
-        
+
         const reglamentsListDiv = document.getElementById('reglamentsList');
         const currentCategoryId = reglamentsListDiv?.dataset.currentCategory;
         if (
@@ -181,12 +191,20 @@ export async function importReglaments(reglaments) {
  * Выполняет принудительное резервное копирование перед импортом
  */
 export async function performForcedBackup() {
-    const userAgreesToBackup = window.confirm(
+    const backupWarningMessage =
         'Создать резервную копию текущей базы данных перед импортом?\n\n' +
-            'ОТКАЗ ОТ РЕЗЕРВНОГО КОПИРОВАНИЯ МОЖЕТ ПРИВЕСТИ К ПОЛНОЙ И НЕОБРАТИМОЙ ПОТЕРЕ ДАННЫХ.\n\n' +
-            "Нажмите 'ОК', чтобы создать резервную копию (рекомендуется).\n" +
-            "Нажмите 'Отмена', чтобы продолжить импорт без резервной копии (на свой страх и риск)."
-    );
+        'ОТКАЗ ОТ РЕЗЕРВНОГО КОПИРОВАНИЯ МОЖЕТ ПРИВЕСТИ К ПОЛНОЙ И НЕОБРАТИМОЙ ПОТЕРЕ ДАННЫХ.\n\n' +
+        "Нажмите 'ОК', чтобы создать резервную копию (рекомендуется).\n" +
+        "Нажмите 'Отмена', чтобы продолжить импорт без резервной копии (на свой страх и риск).";
+    const userAgreesToBackup = deps.showAppConfirm
+        ? await deps.showAppConfirm({
+              title: 'Резервное копирование перед импортом',
+              message: backupWarningMessage,
+              confirmText: 'Сделать бэкап',
+              cancelText: 'Без бэкапа',
+              confirmClass: 'bg-amber-600 hover:bg-amber-700 text-white',
+          })
+        : window.confirm(backupWarningMessage);
 
     deps.NotificationService?.dismissImportant('critical-backup-warning-prompt');
 
@@ -203,33 +221,37 @@ export async function performForcedBackup() {
                     'Автоматическое резервное копирование не удалось из-за ограничений безопасности браузера. ' +
                         'Импорт прерван. Попробуйте сначала экспортировать данные вручную.',
                     'error',
-                    { important: true, duration: 0, id: 'backup-gesture-error-critical-pfb' }
+                    { important: true, duration: 0, id: 'backup-gesture-error-critical-pfb' },
                 );
                 return false;
             } else if (exportOutcome === true) {
-                deps.NotificationService?.add('Резервное копирование успешно завершено.', 'success', {
-                    duration: 5000,
-                    id: 'forced-backup-success-pfb',
-                });
+                deps.NotificationService?.add(
+                    'Резервное копирование успешно завершено.',
+                    'success',
+                    {
+                        duration: 5000,
+                        id: 'forced-backup-success-pfb',
+                    },
+                );
                 return true;
             } else {
                 deps.NotificationService?.add(
                     'Резервное копирование было отменено или не удалось. Импорт прерван.',
                     'error',
-                    { important: true, duration: 7000, id: 'forced-backup-failed-pfb' }
+                    { important: true, duration: 7000, id: 'forced-backup-failed-pfb' },
                 );
                 return false;
             }
         } catch (error) {
             console.error(
                 'Критическая ошибка во время принудительного резервного копирования (внутри performForcedBackup):',
-                error
+                error,
             );
             deps.NotificationService?.add(
                 'Критическая ошибка при резервном копировании: ' +
                     (error.message || 'Неизвестная ошибка'),
                 'error',
-                { important: true, duration: 0, id: 'forced-backup-critical-error-pfb' }
+                { important: true, duration: 0, id: 'forced-backup-critical-error-pfb' },
             );
             return false;
         }
@@ -248,21 +270,24 @@ export async function performForcedBackup() {
  */
 export async function handleImportButtonClick() {
     console.log(
-        "[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Кнопка 'Импорт данных' нажата."
+        "[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Кнопка 'Импорт данных' нажата.",
     );
 
     if (State.isExportOperationInProgress && deps.loadingOverlayManager?.overlayElement) {
         console.warn(
-            '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Экспорт/Импорт уже выполняется. Выход.'
+            '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Экспорт/Импорт уже выполняется. Выход.',
         );
         deps.NotificationService?.add('Операция импорта или экспорта уже выполняется.', 'warning');
         return;
     }
     if (State.isExpectingFileDialog) {
         console.warn(
-            '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Диалог выбора файла уже ожидается. Предотвращение повторного вызова.'
+            '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Диалог выбора файла уже ожидается. Предотвращение повторного вызова.',
         );
-        deps.NotificationService?.add('Пожалуйста, завершите предыдущую операцию выбора файла.', 'info');
+        deps.NotificationService?.add(
+            'Пожалуйста, завершите предыдущую операцию выбора файла.',
+            'info',
+        );
         return;
     }
 
@@ -296,17 +321,17 @@ export async function handleImportButtonClick() {
         deps.NotificationService?.dismissImportant('import-init-global-error');
 
         await new Promise((resolve) =>
-            setTimeout(resolve, (deps.NotificationService?.FADE_DURATION_MS || 300) + 100)
+            setTimeout(resolve, (deps.NotificationService?.FADE_DURATION_MS || 300) + 100),
         );
 
         if (skipBackupSetting) {
             console.log(
-                '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Принудительный бэкап отключен настройкой.'
+                '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Принудительный бэкап отключен настройкой.',
             );
             deps.NotificationService?.add(
                 'Принудительное резервное копирование отключено в настройках. Импорт начнется без бэкапа.',
                 'warning',
-                { important: true, duration: 7000, id: 'backup-skipped-by-setting-temp' }
+                { important: true, duration: 7000, id: 'backup-skipped-by-setting-temp' },
             );
             await new Promise((resolve) => setTimeout(resolve, 1000));
             backupOutcome = 'skipped_by_setting';
@@ -320,7 +345,7 @@ export async function handleImportButtonClick() {
             backupOutcome === 'skipped_by_setting'
         ) {
             console.log(
-                `[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Статус бэкапа: ${backupOutcome}. Запрос файла для импорта.`
+                `[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Статус бэкапа: ${backupOutcome}. Запрос файла для импорта.`,
             );
 
             deps.NotificationService?.dismissImportant('critical-backup-warning-prompt');
@@ -328,17 +353,17 @@ export async function handleImportButtonClick() {
             deps.NotificationService?.dismissImportant('forced-backup-failed-pfb');
             deps.NotificationService?.dismissImportant('backup-gesture-error-critical-pfb');
             await new Promise((resolve) =>
-                setTimeout(resolve, (deps.NotificationService?.FADE_DURATION_MS || 300) + 50)
+                setTimeout(resolve, (deps.NotificationService?.FADE_DURATION_MS || 300) + 50),
             );
 
             if (!deps.importFileInput) {
                 console.error(
-                    '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Элемент importFileInput не найден! Импорт невозможен.'
+                    '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Элемент importFileInput не найден! Импорт невозможен.',
                 );
                 deps.NotificationService?.add(
                     'Ошибка импорта: не найден элемент для выбора файла. Обратитесь к разработчику.',
                     'error',
-                    { important: true, duration: 10000, id: 'import-file-input-missing-critical' }
+                    { important: true, duration: 10000, id: 'import-file-input-missing-critical' },
                 );
                 throw new Error('importFileInput missing');
             }
@@ -349,24 +374,33 @@ export async function handleImportButtonClick() {
                 deps.NotificationService?.add(
                     'ВЫ ОТКАЗАЛИСЬ ОТ РЕЗЕРВНОГО КОПИРОВАНИЯ. Продолжение импорта может привести к потере данных.',
                     'error',
-                    { important: true, duration: 0, id: IMPORT_WITHOUT_BACKUP_WARNING_ID }
+                    { important: true, duration: 0, id: IMPORT_WITHOUT_BACKUP_WARNING_ID },
                 );
             }
-            deps.NotificationService?.add('Выберите файл базы данных (.json) для импорта.', 'info', {
-                important: true,
-                duration: 0,
-                id: SELECT_IMPORT_FILE_PROMPT_ID,
-            });
+            deps.NotificationService?.add(
+                'Выберите файл базы данных (.json) для импорта.',
+                'info',
+                {
+                    important: true,
+                    duration: 0,
+                    id: SELECT_IMPORT_FILE_PROMPT_ID,
+                },
+            );
 
             const watchdogTimerId = setTimeout(async () => {
-                if (deps.importFileInput && deps.importFileInput._watchdogTimerId === watchdogTimerId) {
+                if (
+                    deps.importFileInput &&
+                    deps.importFileInput._watchdogTimerId === watchdogTimerId
+                ) {
                     delete deps.importFileInput._watchdogTimerId;
                     if (!State.importDialogInteractionComplete) {
                         console.warn(
-                            '[Import Watchdog Timer FOCUS_HANDLER_FINAL_FULL] Взаимодействие с диалогом НЕ завершено. Принудительная очистка UI.'
+                            '[Import Watchdog Timer FOCUS_HANDLER_FINAL_FULL] Взаимодействие с диалогом НЕ завершено. Принудительная очистка UI.',
                         );
                         deps.NotificationService?.dismissImportant(SELECT_IMPORT_FILE_PROMPT_ID);
-                        deps.NotificationService?.dismissImportant(IMPORT_WITHOUT_BACKUP_WARNING_ID);
+                        deps.NotificationService?.dismissImportant(
+                            IMPORT_WITHOUT_BACKUP_WARNING_ID,
+                        );
                         if (deps.loadingOverlayManager?.overlayElement) {
                             deps.loadingOverlayManager.updateProgress(100);
                             await deps.loadingOverlayManager.hideAndDestroy();
@@ -374,7 +408,7 @@ export async function handleImportButtonClick() {
                         deps.NotificationService?.add(
                             'Импорт был отменен (превышено время ожидания выбора файла).',
                             'info',
-                            { duration: 7000, id: 'import-cancelled-timeout' }
+                            { duration: 7000, id: 'import-cancelled-timeout' },
                         );
                         if (deps.importFileInput) deps.importFileInput.value = '';
 
@@ -401,7 +435,7 @@ export async function handleImportButtonClick() {
                     window.removeEventListener('focus', self);
                     State.windowFocusHandlerInstance = null;
                     console.log(
-                        '[WindowFocusHandler FOR IMPORT] Обработчик window.focus удален (сработал).'
+                        '[WindowFocusHandler FOR IMPORT] Обработчик window.focus удален (сработал).',
                     );
                 }
 
@@ -409,11 +443,11 @@ export async function handleImportButtonClick() {
 
                 if (State.isExpectingFileDialog && !State.importDialogInteractionComplete) {
                     console.log(
-                        '[WindowFocusHandler FOR IMPORT] State.isExpectingFileDialog=true, State.importDialogInteractionComplete=false.'
+                        '[WindowFocusHandler FOR IMPORT] State.isExpectingFileDialog=true, State.importDialogInteractionComplete=false.',
                     );
                     if (!deps.importFileInput || deps.importFileInput.files.length === 0) {
                         console.log(
-                            '[WindowFocusHandler FOR IMPORT] Файл НЕ выбран. Обработка отмены.'
+                            '[WindowFocusHandler FOR IMPORT] Файл НЕ выбран. Обработка отмены.',
                         );
                         State.importDialogInteractionComplete = true;
                         State.isExpectingFileDialog = false;
@@ -424,7 +458,9 @@ export async function handleImportButtonClick() {
                         }
 
                         deps.NotificationService?.dismissImportant(SELECT_IMPORT_FILE_PROMPT_ID);
-                        deps.NotificationService?.dismissImportant(IMPORT_WITHOUT_BACKUP_WARNING_ID);
+                        deps.NotificationService?.dismissImportant(
+                            IMPORT_WITHOUT_BACKUP_WARNING_ID,
+                        );
 
                         if (deps.loadingOverlayManager?.overlayElement) {
                             deps.loadingOverlayManager.updateProgress(100);
@@ -441,12 +477,12 @@ export async function handleImportButtonClick() {
                         }
                     } else {
                         console.log(
-                            '[WindowFocusHandler FOR IMPORT] Файл выбран, ожидаем `handleImportFileChange`.'
+                            '[WindowFocusHandler FOR IMPORT] Файл выбран, ожидаем `handleImportFileChange`.',
                         );
                     }
                 } else {
                     console.log(
-                        `[WindowFocusHandler FOR IMPORT] Условия не выполнены: State.isExpectingFileDialog=${State.isExpectingFileDialog}, State.importDialogInteractionComplete=${State.importDialogInteractionComplete}.`
+                        `[WindowFocusHandler FOR IMPORT] Условия не выполнены: State.isExpectingFileDialog=${State.isExpectingFileDialog}, State.importDialogInteractionComplete=${State.importDialogInteractionComplete}.`,
                     );
                 }
             };
@@ -463,22 +499,24 @@ export async function handleImportButtonClick() {
                         deps.importFileInput.type === 'file')
                 ) {
                     console.log(
-                        '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Попытка вызвать importFileInput.click() через rAF.'
+                        '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Попытка вызвать importFileInput.click() через rAF.',
                     );
                     try {
                         deps.importFileInput.click();
                         console.log(
-                            '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] importFileInput.click() был вызван.'
+                            '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] importFileInput.click() был вызван.',
                         );
                     } catch (clickError) {
                         console.error(
                             '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Ошибка при вызове importFileInput.click():',
-                            clickError
+                            clickError,
                         );
                         clearTimeout(watchdogTimerId);
                         if (deps.importFileInput) delete deps.importFileInput._watchdogTimerId;
                         deps.NotificationService?.dismissImportant(SELECT_IMPORT_FILE_PROMPT_ID);
-                        deps.NotificationService?.dismissImportant(IMPORT_WITHOUT_BACKUP_WARNING_ID);
+                        deps.NotificationService?.dismissImportant(
+                            IMPORT_WITHOUT_BACKUP_WARNING_ID,
+                        );
 
                         State.isExpectingFileDialog = false;
                         if (State.windowFocusHandlerInstance) {
@@ -492,13 +530,13 @@ export async function handleImportButtonClick() {
                         deps.NotificationService?.add(
                             'Критическая ошибка: не удалось открыть диалог выбора файла.',
                             'error',
-                            { important: true, duration: 0 }
+                            { important: true, duration: 0 },
                         );
                         State.importDialogInteractionComplete = true;
                     }
                 } else {
                     console.error(
-                        '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] importFileInput не готов к .click() (не найден, не в DOM или не видим).'
+                        '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] importFileInput не готов к .click() (не найден, не в DOM или не видим).',
                     );
                     clearTimeout(watchdogTimerId);
                     if (deps.importFileInput) delete deps.importFileInput._watchdogTimerId;
@@ -517,14 +555,14 @@ export async function handleImportButtonClick() {
                     deps.NotificationService?.add(
                         'Ошибка: не удалось инициировать выбор файла импорта.',
                         'error',
-                        { important: true, duration: 7000 }
+                        { important: true, duration: 7000 },
                     );
                     State.importDialogInteractionComplete = true;
                 }
             });
         } else {
             console.log(
-                '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Бэкап не удался. Импорт прерван.'
+                '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Бэкап не удался. Импорт прерван.',
             );
             State.isExpectingFileDialog = false;
             if (State.windowFocusHandlerInstance) {
@@ -540,14 +578,14 @@ export async function handleImportButtonClick() {
     } catch (error) {
         console.error(
             '[handleImportButtonClick v_FOCUS_HANDLER_FINAL_FULL] Глобальная ошибка в процессе инициации импорта:',
-            error
+            error,
         );
         deps.NotificationService?.dismissImportant(SELECT_IMPORT_FILE_PROMPT_ID);
         deps.NotificationService?.dismissImportant(IMPORT_WITHOUT_BACKUP_WARNING_ID);
         deps.NotificationService?.add(
             `Ошибка инициации импорта: ${error.message || 'Неизвестная ошибка'}.`,
             'error',
-            { important: true, duration: 10000, id: 'import-init-global-error' }
+            { important: true, duration: 10000, id: 'import-init-global-error' },
         );
 
         State.isExpectingFileDialog = false;
@@ -579,7 +617,7 @@ export async function handleImportButtonClick() {
  */
 export async function handleImportFileChange(e) {
     console.log(
-        '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Функция вызвана (файл выбран).'
+        '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Функция вызвана (файл выбран).',
     );
 
     State.isExpectingFileDialog = false;
@@ -587,7 +625,7 @@ export async function handleImportFileChange(e) {
         window.removeEventListener('focus', State.windowFocusHandlerInstance);
         State.windowFocusHandlerInstance = null;
         console.log(
-            '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Обработчик window.focus удален.'
+            '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Обработчик window.focus удален.',
         );
     }
 
@@ -597,7 +635,7 @@ export async function handleImportFileChange(e) {
         clearTimeout(deps.importFileInput._watchdogTimerId);
         delete deps.importFileInput._watchdogTimerId;
         console.log(
-            '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Сторожевой таймер импорта очищен.'
+            '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Сторожевой таймер импорта очищен.',
         );
     }
 
@@ -611,7 +649,7 @@ export async function handleImportFileChange(e) {
 
     if (!file) {
         console.error(
-            "[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Файл НЕ найден, хотя событие 'change' сработало! Это крайне неожиданно. Обработка как отмена."
+            "[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Файл НЕ найден, хотя событие 'change' сработало! Это крайне неожиданно. Обработка как отмена.",
         );
         if (deps.importFileInput) deps.importFileInput.value = '';
 
@@ -630,7 +668,7 @@ export async function handleImportFileChange(e) {
     }
 
     console.log(
-        `[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Файл "${file.name}" выбран. Начало чтения.`
+        `[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Файл "${file.name}" выбран. Начало чтения.`,
     );
 
     const reader = new FileReader();
@@ -644,7 +682,7 @@ export async function handleImportFileChange(e) {
         } catch (error) {
             console.error(
                 '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Ошибка из _processActualImport:',
-                error
+                error,
             );
             importResult = {
                 success: false,
@@ -653,30 +691,32 @@ export async function handleImportFileChange(e) {
         } finally {
             if (importResult.success) {
                 console.log(
-                    '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Импорт успешен.'
+                    '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Импорт успешен.',
                 );
             } else {
                 const errorNotificationId = 'import-failed-in-handler-focus-final';
                 const existingErrorNotification =
-                    deps.NotificationService?.activeImportantNotifications?.has(errorNotificationId) ||
+                    deps.NotificationService?.activeImportantNotifications?.has(
+                        errorNotificationId,
+                    ) ||
                     document.querySelector(
-                        `.notification-item.notification-type-error[data-id^="import-"]`
+                        `.notification-item.notification-type-error[data-id^="import-"]`,
                     );
                 if (!existingErrorNotification) {
                     deps.NotificationService?.add(
                         importResult.message || 'Импорт данных не удался. Проверьте консоль.',
                         'error',
-                        { important: true, duration: 10000, id: errorNotificationId }
+                        { important: true, duration: 10000, id: errorNotificationId },
                     );
                 }
                 console.log(
-                    '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Импорт не удался.'
+                    '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Импорт не удался.',
                 );
             }
 
             if (deps.loadingOverlayManager?.overlayElement) {
                 console.warn(
-                    '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Оверлей все еще активен после _processActualImport. Принудительное скрытие.'
+                    '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Оверлей все еще активен после _processActualImport. Принудительное скрытие.',
                 );
                 deps.loadingOverlayManager.updateProgress(100);
                 await deps.loadingOverlayManager.hideAndDestroy();
@@ -686,7 +726,7 @@ export async function handleImportFileChange(e) {
     };
     reader.onerror = async () => {
         console.error(
-            '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Ошибка чтения файла FileReader.error'
+            '[handleImportFileChange v_FOCUS_HANDLER_AWARE_FINAL_FULL] Ошибка чтения файла FileReader.error',
         );
         deps.NotificationService?.add('Ошибка чтения файла.', 'error', {
             important: true,
@@ -704,7 +744,6 @@ export async function handleImportFileChange(e) {
 // ============================================================================
 // ОБРАБОТКА ИМПОРТА - ФАКТИЧЕСКИЙ ИМПОРТ
 // ============================================================================
-
 
 /**
  * Выполняет фактический импорт данных из JSON строки
@@ -766,10 +805,10 @@ export async function _processActualImport(jsonString) {
         }
     };
 
-    if (typeof loadingOverlayManager !== 'undefined' && !deps.loadingOverlayManager?.overlayElement) {
+    if (deps.loadingOverlayManager && !deps.loadingOverlayManager?.overlayElement) {
         console.warn('[_processActualImport V7] Оверлей не был показан. Показываем сейчас.');
-        if (typeof loadingOverlayManager.createAndShow === 'function')
-            loadingOverlayManager.createAndShow();
+        if (typeof deps.loadingOverlayManager.createAndShow === 'function')
+            deps.loadingOverlayManager.createAndShow();
     }
     currentImportProgress = 0;
     if (deps.loadingOverlayManager?.updateProgress) {
@@ -777,10 +816,14 @@ export async function _processActualImport(jsonString) {
     }
 
     if (deps.NotificationService?.add) {
-        deps.NotificationService?.add('Началась обработка и загрузка новой базы данных...', 'info', {
-            duration: 4000,
-            id: 'import-processing-started',
-        });
+        deps.NotificationService?.add(
+            'Началась обработка и загрузка новой базы данных...',
+            'info',
+            {
+                duration: 4000,
+                id: 'import-processing-started',
+            },
+        );
     }
 
     const errorsOccurred = [];
@@ -820,7 +863,7 @@ export async function _processActualImport(jsonString) {
             importData = JSON.parse(jsonString);
             console.log('[_processActualImport V7] JSON успешно распарсен.');
             updateTotalImportProgress(STAGE_WEIGHTS_ACTUAL_IMPORT.PARSE_JSON, 'Парсинг JSON');
-        } catch (error) {
+        } catch {
             throw new Error('Некорректный формат JSON файла.');
         }
 
@@ -852,11 +895,7 @@ export async function _processActualImport(jsonString) {
                 `Импорт невозможен: версия схемы файла (${importData.schemaVersion}) новее, чем версия приложения (${CURRENT_SCHEMA_VERSION}). Обновите приложение до более новой версии.`,
             );
         }
-        if (
-            fileMinor < appMinor &&
-            typeof NotificationService !== 'undefined' &&
-            NotificationService.add
-        ) {
+        if (fileMinor < appMinor && deps.NotificationService?.add) {
             deps.NotificationService?.add(
                 `ВНИМАНИЕ: Версия импортируемого файла (${importData.schemaVersion}) старше текущей версии приложения (${CURRENT_SCHEMA_VERSION}). Некоторые данные могут не перенестись корректно или будут утеряны. Рекомендуется обновить файл экспорта.`,
                 'warning',
@@ -970,12 +1009,13 @@ export async function _processActualImport(jsonString) {
         let importTransactionSuccessful = false;
         try {
             console.log('[_processActualImport V7] Попытка начать основную транзакцию импорта...');
-            importTransactionSuccessful = await new Promise(
-                async (resolvePromise, rejectPromise) => {
+            importTransactionSuccessful = await new Promise((resolvePromise, rejectPromise) => {
+                (async () => {
                     let transaction;
                     try {
                         transaction = State.db.transaction(storesToImport, 'readwrite');
-                        if (!transaction) throw new Error('State.db.transaction вернула null/undefined.');
+                        if (!transaction)
+                            throw new Error('State.db.transaction вернула null/undefined.');
                     } catch (txError) {
                         errorsOccurred.push({
                             storeName: storesToImport.join(', '),
@@ -1076,10 +1116,7 @@ export async function _processActualImport(jsonString) {
                             currentImportProgress,
                             baseProgressForClear + STAGE_WEIGHTS_ACTUAL_IMPORT.CLEAR_STORES,
                         );
-                        if (
-                            typeof loadingOverlayManager !== 'undefined' &&
-                            loadingOverlayManager.updateProgress
-                        )
+                        if (deps.loadingOverlayManager?.updateProgress)
                             deps.loadingOverlayManager?.updateProgress(
                                 Math.min(currentImportProgress, 99),
                                 'Очистка завершена',
@@ -1125,7 +1162,21 @@ export async function _processActualImport(jsonString) {
                             }
                             continue;
                         }
-                        const storeConfigFound = storeConfigs.find((sc) => sc.name === storeName);
+                        const configs = Array.isArray(deps.storeConfigs) ? deps.storeConfigs : null;
+                        if (!configs) {
+                            errorsOccurred.push({
+                                storeName,
+                                error: 'Внутренняя ошибка: не передана конфигурация хранилищ (storeConfigs)',
+                                item: null,
+                            });
+                            if (transaction && transaction.abort) transaction.abort();
+                            return rejectPromise(
+                                new Error(
+                                    'Missing storeConfigs dependency; cannot import data safely.',
+                                ),
+                            );
+                        }
+                        const storeConfigFound = configs.find((sc) => sc.name === storeName);
                         if (!storeConfigFound) {
                             errorsOccurred.push({
                                 storeName,
@@ -1153,13 +1204,16 @@ export async function _processActualImport(jsonString) {
                                 let hasKey = false;
                                 if (typeof keyPathFromConfig === 'string')
                                     hasKey =
-                                        item.hasOwnProperty(keyPathFromConfig) &&
+                                        Object.prototype.hasOwnProperty.call(
+                                            item,
+                                            keyPathFromConfig,
+                                        ) &&
                                         item[keyPathFromConfig] !== undefined &&
                                         item[keyPathFromConfig] !== null;
                                 else if (Array.isArray(keyPathFromConfig))
                                     hasKey = keyPathFromConfig.every(
                                         (kp) =>
-                                            item.hasOwnProperty(kp) &&
+                                            Object.prototype.hasOwnProperty.call(item, kp) &&
                                             item[kp] !== undefined &&
                                             item[kp] !== null,
                                     );
@@ -1213,7 +1267,10 @@ export async function _processActualImport(jsonString) {
                         if (storeName === 'screenshots') {
                             itemsToImport = itemsToImport
                                 .map((item) => {
-                                    if (item && item.hasOwnProperty('blob')) {
+                                    if (
+                                        item &&
+                                        Object.prototype.hasOwnProperty.call(item, 'blob')
+                                    ) {
                                         const blobData = item.blob;
                                         if (
                                             typeof blobData === 'object' &&
@@ -1256,12 +1313,18 @@ export async function _processActualImport(jsonString) {
                                 })
                                 .filter(
                                     (item) =>
-                                        !(item.hasOwnProperty('blob') && item.blob === undefined),
+                                        !(
+                                            Object.prototype.hasOwnProperty.call(item, 'blob') &&
+                                            item.blob === undefined
+                                        ),
                                 );
                         } else if (storeName === 'pdfFiles') {
                             itemsToImport = itemsToImport
                                 .map((item) => {
-                                    if (item && item.hasOwnProperty('blob')) {
+                                    if (
+                                        item &&
+                                        Object.prototype.hasOwnProperty.call(item, 'blob')
+                                    ) {
                                         const blobData = item.blob;
                                         if (
                                             typeof blobData === 'object' &&
@@ -1304,7 +1367,10 @@ export async function _processActualImport(jsonString) {
                                 })
                                 .filter(
                                     (item) =>
-                                        !(item.hasOwnProperty('blob') && item.blob === undefined),
+                                        !(
+                                            Object.prototype.hasOwnProperty.call(item, 'blob') &&
+                                            item.blob === undefined
+                                        ),
                                 );
                         }
 
@@ -1388,15 +1454,12 @@ export async function _processActualImport(jsonString) {
                     }
 
                     Promise.all(putPromises)
-                        .then((putResults) => {
+                        .then(() => {
                             currentImportProgress = Math.max(
                                 currentImportProgress,
                                 baseProgressForImportData + STAGE_WEIGHTS_ACTUAL_IMPORT.IMPORT_DATA,
                             );
-                            if (
-                                typeof loadingOverlayManager !== 'undefined' &&
-                                loadingOverlayManager.updateProgress
-                            )
+                            if (deps.loadingOverlayManager?.updateProgress)
                                 deps.loadingOverlayManager?.updateProgress(
                                     Math.min(currentImportProgress, 99),
                                     'Запись данных завершена',
@@ -1417,8 +1480,8 @@ export async function _processActualImport(jsonString) {
                                 rejectPromise(promiseAllError);
                             }
                         });
-                },
-            );
+                })().catch(rejectPromise);
+            });
         } catch (transactionError) {
             console.error(
                 '[_processActualImport V7] Ошибка на уровне транзакции импорта:',
@@ -1476,19 +1539,13 @@ export async function _processActualImport(jsonString) {
             );
 
             console.log('[FIX] Принудительный сброс кэшей в памяти перед реинициализацией...');
-            if (typeof algorithms !== 'undefined') {
-                algorithms = { main: {}, program: [], skzi: [], lk1c: [], webReg: [] };
-                console.log("[FIX] Кэш 'algorithms' сброшен.");
-            }
+            console.log("[FIX] Кэш 'algorithms' пропущен: переменная не доступна в модуле.");
             if (typeof State.extLinkCategoryInfo !== 'undefined') {
                 State.extLinkCategoryInfo = {};
                 console.log("[FIX] Кэш 'State.extLinkCategoryInfo' сброшен.");
             }
 
-            if (
-                typeof loadingOverlayManager !== 'undefined' &&
-                loadingOverlayManager.updateProgress
-            ) {
+            if (deps.loadingOverlayManager?.updateProgress) {
                 deps.loadingOverlayManager?.updateProgress(
                     Math.min(currentImportProgress + 1, 99),
                     'Инициализация приложения',
@@ -1505,7 +1562,9 @@ export async function _processActualImport(jsonString) {
                     storesToImport.includes('preferences') &&
                     importData.data.preferences?.some((p) => p.id === 'uiSettings')
                 ) {
-                    await loadUISettings();
+                    if (typeof deps.loadUISettings === 'function') {
+                        await deps.loadUISettings();
+                    }
                 }
 
                 updateTotalImportProgress(
@@ -1528,7 +1587,7 @@ export async function _processActualImport(jsonString) {
                         console.log(
                             `[_processActualImport V7 - FIX] Обновление отображения регламентов для активной категории: ${currentCategoryId}`,
                         );
-                        if (typeof showReglamentsForCategory === 'function') {
+                        if (typeof deps.showReglamentsForCategory === 'function') {
                             try {
                                 await deps.showReglamentsForCategory?.(currentCategoryId);
                                 console.log(
@@ -1543,10 +1602,7 @@ export async function _processActualImport(jsonString) {
                                     `[_processActualImport V7 - FIX] Ошибка при вызове showReglamentsForCategory для категории ${currentCategoryId}:`,
                                     e,
                                 );
-                                if (
-                                    typeof NotificationService !== 'undefined' &&
-                                    NotificationService.add
-                                ) {
+                                if (deps.NotificationService?.add) {
                                     deps.NotificationService?.add(
                                         `Ошибка обновления списка регламентов для категории. Попробуйте выбрать категорию заново.`,
                                         'warning',
@@ -1559,18 +1615,15 @@ export async function _processActualImport(jsonString) {
                                         document.getElementById('currentCategoryTitle');
                                     if (currentCategoryTitleEl)
                                         currentCategoryTitleEl.textContent = '';
-                                    if (typeof renderReglamentCategories === 'function')
-                                        renderReglamentCategories();
+                                    if (typeof deps.renderReglamentCategories === 'function')
+                                        deps.renderReglamentCategories();
                                 }
                             }
                         } else {
                             console.warn(
                                 '[_processActualImport V7 - FIX] Функция showReglamentsForCategory не найдена для обновления UI регламентов.',
                             );
-                            if (
-                                typeof NotificationService !== 'undefined' &&
-                                NotificationService.add
-                            ) {
+                            if (deps.NotificationService?.add) {
                                 deps.NotificationService?.add(
                                     'Ошибка: не удалось обновить список регламентов (функция не найдена).',
                                     'error',
@@ -1595,10 +1648,7 @@ export async function _processActualImport(jsonString) {
                     );
                 }
 
-                if (
-                    typeof loadingOverlayManager !== 'undefined' &&
-                    loadingOverlayManager.updateProgress
-                ) {
+                if (deps.loadingOverlayManager?.updateProgress) {
                     deps.loadingOverlayManager?.updateProgress(100, 'FinalizeImportSuccess');
                 }
                 console.log(
@@ -1698,9 +1748,8 @@ export async function _processActualImport(jsonString) {
             notificationMessageOnError = `Ошибка импорта: ${error.message || 'Неизвестная ошибка'}`;
         }
         if (
-            typeof loadingOverlayManager !== 'undefined' &&
             deps.loadingOverlayManager?.overlayElement &&
-            loadingOverlayManager.updateProgress
+            deps.loadingOverlayManager?.updateProgress
         ) {
             deps.loadingOverlayManager?.updateProgress(100, 'Ошибка импорта');
         }
@@ -1726,7 +1775,7 @@ export async function _processActualImport(jsonString) {
 export async function exportAllData(options = {}) {
     console.log(
         `[exportAllData v_FIXED_LOGIC_FINAL] Начало экспорта. Options:`,
-        JSON.parse(JSON.stringify(options || {}))
+        JSON.parse(JSON.stringify(options || {})),
     );
 
     if (State.isExportOperationInProgress) {
@@ -1735,7 +1784,7 @@ export async function exportAllData(options = {}) {
             deps.NotificationService?.add(
                 'Операция экспорта уже выполняется. Пожалуйста, подождите.',
                 'warning',
-                { duration: 4000 }
+                { duration: 4000 },
             );
         }
         return false;
@@ -1751,7 +1800,7 @@ export async function exportAllData(options = {}) {
     deps.NotificationService?.dismissImportant('export-data-prep-failed');
     deps.NotificationService?.dismissImportant('export-generic-error');
     await new Promise((resolve) =>
-        setTimeout(resolve, (deps.NotificationService?.FADE_DURATION_MS || 300) + 50)
+        setTimeout(resolve, (deps.NotificationService?.FADE_DURATION_MS || 300) + 50),
     );
 
     try {
@@ -1764,7 +1813,7 @@ export async function exportAllData(options = {}) {
 
         if (!State.db) {
             console.error(
-                '[exportAllData] Export failed: Database (db variable) is not initialized.'
+                '[exportAllData] Export failed: Database (db variable) is not initialized.',
             );
             if (!isForcedBackupMode) {
                 deps.NotificationService?.add('Ошибка экспорта: База данных не доступна', 'error', {
@@ -1814,10 +1863,10 @@ export async function exportAllData(options = {}) {
                         request.onerror = (e) =>
                             reject(
                                 new Error(
-                                    `Ошибка чтения из ${storeName}: ${e.target.error?.message}`
-                                )
+                                    `Ошибка чтения из ${storeName}: ${e.target.error?.message}`,
+                                ),
                             );
-                    })
+                    }),
             );
             const results = await Promise.all(dataPromises);
 
@@ -1831,7 +1880,7 @@ export async function exportAllData(options = {}) {
                     deps.NotificationService?.add(
                         `Обработка ${screenshotData.data.length} скриншотов.`,
                         'info',
-                        { duration: 2000, id: 'export-screenshot-processing' }
+                        { duration: 2000, id: 'export-screenshot-processing' },
                     );
                 const conversionPromises = screenshotData.data.map(async (item) => {
                     if (item && item.blob instanceof Blob) {
@@ -1850,13 +1899,13 @@ export async function exportAllData(options = {}) {
             const pdfData = results.find((r) => r.storeName === 'pdfFiles');
             if (pdfData && Array.isArray(pdfData.data) && pdfData.data.length > 0) {
                 const convertiblePdfCount = pdfData.data.filter(
-                    (item) => item && item.blob instanceof Blob
+                    (item) => item && item.blob instanceof Blob,
                 ).length;
                 if (!isForcedBackupMode)
                     deps.NotificationService?.add(
                         `Обработка ${convertiblePdfCount} PDF-файлов.`,
                         'info',
-                        { duration: 2000, id: 'export-pdf-processing' }
+                        { duration: 2000, id: 'export-pdf-processing' },
                     );
                 const pdfConversionPromises = pdfData.data.map(async (item) => {
                     if (item && item.blob instanceof Blob) {
@@ -1878,7 +1927,7 @@ export async function exportAllData(options = {}) {
         } catch (dataPrepError) {
             console.error(
                 '[exportAllData] Ошибка при подготовке данных для экспорта:',
-                dataPrepError
+                dataPrepError,
             );
             if (!isForcedBackupMode)
                 deps.NotificationService?.add(
@@ -1887,12 +1936,14 @@ export async function exportAllData(options = {}) {
                     {
                         important: true,
                         id: 'export-data-prep-failed',
-                    }
+                    },
                 );
             if (transaction && typeof transaction.abort === 'function')
                 try {
                     transaction.abort();
-                } catch (e) {}
+                } catch {
+                    // noop
+                }
             throw dataPrepError;
         }
 
@@ -1915,10 +1966,14 @@ export async function exportAllData(options = {}) {
                 !State.exportDialogInteractionComplete
             ) {
                 console.warn('[Export Watchdog] Сработал таймаут ожидания диалога сохранения.');
-                deps.NotificationService?.add('Экспорт отменен: превышено время ожидания.', 'warning', {
-                    duration: 7000,
-                    id: 'export-cancelled-timeout',
-                });
+                deps.NotificationService?.add(
+                    'Экспорт отменен: превышено время ожидания.',
+                    'warning',
+                    {
+                        duration: 7000,
+                        id: 'export-cancelled-timeout',
+                    },
+                );
                 functionResult = false;
                 State.isExpectingExportFileDialog = false;
                 if (State.exportWindowFocusHandlerInstance) {
@@ -1952,20 +2007,27 @@ export async function exportAllData(options = {}) {
                 functionResult = true;
             } else {
                 console.log(
-                    '[exportAllData] File System Access API не поддерживается, используется резервный метод.'
+                    '[exportAllData] File System Access API не поддерживается, используется резервный метод.',
                 );
                 if (State.exportWindowFocusHandlerInstance)
                     window.removeEventListener('focus', State.exportWindowFocusHandlerInstance);
                 State.exportWindowFocusHandlerInstance = () => {
-                    if (State.isExpectingExportFileDialog && !State.exportDialogInteractionComplete) {
+                    if (
+                        State.isExpectingExportFileDialog &&
+                        !State.exportDialogInteractionComplete
+                    ) {
                         console.log(
-                            '[Export Focus Handler] Диалог ожидался, но взаимодействие не завершено. Считаем отменой.'
+                            '[Export Focus Handler] Диалог ожидался, но взаимодействие не завершено. Считаем отменой.',
                         );
                         if (!isForcedBackupMode)
-                            deps.NotificationService?.add('Экспорт отменен пользователем.', 'info', {
-                                duration: 5000,
-                                id: 'export-cancelled-by-user-focus',
-                            });
+                            deps.NotificationService?.add(
+                                'Экспорт отменен пользователем.',
+                                'info',
+                                {
+                                    duration: 5000,
+                                    id: 'export-cancelled-by-user-focus',
+                                },
+                            );
                         functionResult = false;
                     }
                     if (State.exportWindowFocusHandlerInstance) {
@@ -1987,7 +2049,10 @@ export async function exportAllData(options = {}) {
                         if (functionResult !== false) {
                             functionResult = true;
                             if (!isForcedBackupMode)
-                                deps.NotificationService?.add('Экспорт данных инициирован.', 'success');
+                                deps.NotificationService?.add(
+                                    'Экспорт данных инициирован.',
+                                    'success',
+                                );
                         }
                     }
                     URL.revokeObjectURL(dataUri);
@@ -1997,7 +2062,7 @@ export async function exportAllData(options = {}) {
             State.exportDialogInteractionComplete = true;
             if (err.name === 'AbortError') {
                 console.log(
-                    '[exportAllData] Экспорт отменен пользователем (File System Access API).'
+                    '[exportAllData] Экспорт отменен пользователем (File System Access API).',
                 );
                 if (!isForcedBackupMode)
                     deps.NotificationService?.add('Экспорт отменен пользователем.', 'info', {
@@ -2007,10 +2072,14 @@ export async function exportAllData(options = {}) {
             } else {
                 console.error('[exportAllData] Ошибка сохранения файла:', err);
                 if (!isForcedBackupMode)
-                    deps.NotificationService?.add(`Ошибка сохранения файла: ${err.message}.`, 'error', {
-                        important: true,
-                        id: 'export-save-file-picker-failed',
-                    });
+                    deps.NotificationService?.add(
+                        `Ошибка сохранения файла: ${err.message}.`,
+                        'error',
+                        {
+                            important: true,
+                            id: 'export-save-file-picker-failed',
+                        },
+                    );
                 functionResult = false;
             }
         }
@@ -2021,7 +2090,7 @@ export async function exportAllData(options = {}) {
             deps.NotificationService?.add(
                 `Критическая ошибка экспорта: ${error.message || 'Неизвестная ошибка'}`,
                 'error',
-                { important: true, id: 'export-generic-error' }
+                { important: true, id: 'export-generic-error' },
             );
         }
     } finally {
@@ -2033,7 +2102,7 @@ export async function exportAllData(options = {}) {
         State.exportWindowFocusHandlerInstance = null;
         State.exportWatchdogTimerId = null;
         console.log(
-            `[exportAllData FINALLY] Процесс экспорта завершен. Возвращаемое значение будет: ${functionResult}`
+            `[exportAllData FINALLY] Процесс экспорта завершен. Возвращаемое значение будет: ${functionResult}`,
         );
     }
 

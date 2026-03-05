@@ -15,20 +15,24 @@ let deleteFromIndexedDB = null;
 let removeCustomBackgroundImage = null;
 let applyPreviewSettings = null;
 let setColorPickerStateFromHex = null;
-let handleModalVisibilityToggleRef = null;
+let _handleModalVisibilityToggleRef = null;
 
 export function setUISettingsModalDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
     if (deps.DEFAULT_UI_SETTINGS !== undefined) DEFAULT_UI_SETTINGS = deps.DEFAULT_UI_SETTINGS;
     if (deps.tabsConfig !== undefined) tabsConfig = deps.tabsConfig;
     if (deps.defaultPanelOrder !== undefined) defaultPanelOrder = deps.defaultPanelOrder;
-    if (deps.defaultPanelVisibility !== undefined) defaultPanelVisibility = deps.defaultPanelVisibility;
+    if (deps.defaultPanelVisibility !== undefined)
+        defaultPanelVisibility = deps.defaultPanelVisibility;
     if (deps.showNotification !== undefined) showNotification = deps.showNotification;
     if (deps.deleteFromIndexedDB !== undefined) deleteFromIndexedDB = deps.deleteFromIndexedDB;
-    if (deps.removeCustomBackgroundImage !== undefined) removeCustomBackgroundImage = deps.removeCustomBackgroundImage;
+    if (deps.removeCustomBackgroundImage !== undefined)
+        removeCustomBackgroundImage = deps.removeCustomBackgroundImage;
     if (deps.applyPreviewSettings !== undefined) applyPreviewSettings = deps.applyPreviewSettings;
-    if (deps.setColorPickerStateFromHex !== undefined) setColorPickerStateFromHex = deps.setColorPickerStateFromHex;
-    if (deps.handleModalVisibilityToggle !== undefined) handleModalVisibilityToggleRef = deps.handleModalVisibilityToggle;
+    if (deps.setColorPickerStateFromHex !== undefined)
+        setColorPickerStateFromHex = deps.setColorPickerStateFromHex;
+    if (deps.handleModalVisibilityToggle !== undefined)
+        _handleModalVisibilityToggleRef = deps.handleModalVisibilityToggle;
 }
 
 /**
@@ -83,6 +87,11 @@ export function populateModalControls(settings) {
         disableForcedBackupToggle.checked = settings.disableForcedBackupOnImport ?? false;
     }
 
+    const staticHeaderToggle = modal.querySelector('#toggleStaticHeader');
+    if (staticHeaderToggle) {
+        staticHeaderToggle.checked = settings.staticHeader ?? false;
+    }
+
     const fontSizeLabel = modal.querySelector('#fontSizeLabel');
     if (fontSizeLabel) fontSizeLabel.textContent = (settings.fontSize ?? 100) + '%';
 
@@ -98,7 +107,8 @@ export function populateModalControls(settings) {
         const idToConfigMap = tabsConfig.reduce((map, tab) => ((map[tab.id] = tab), map), {});
 
         const order = settings.panelOrder || defaultPanelOrder;
-        const visibility = settings.panelVisibility || (defaultPanelVisibility || order.map(() => true));
+        const visibility =
+            settings.panelVisibility || defaultPanelVisibility || order.map(() => true);
 
         order.forEach((panelId, index) => {
             const config = idToConfigMap[panelId];
@@ -148,8 +158,10 @@ export function getSettingsFromModal() {
 
     const showBlacklistWarningToggle = modal.querySelector('#toggleBlacklistWarning');
     const disableForcedBackupToggle = modal.querySelector('#toggleDisableForcedBackup');
+    const staticHeaderToggle = modal.querySelector('#toggleStaticHeader');
 
-    const primaryColor = State.currentPreviewSettings.primaryColor || DEFAULT_UI_SETTINGS.primaryColor;
+    const primaryColor =
+        State.currentPreviewSettings.primaryColor || DEFAULT_UI_SETTINGS.primaryColor;
     const backgroundColor = State.currentPreviewSettings.backgroundColor;
     const isBackgroundCustom = State.currentPreviewSettings.isBackgroundCustom || false;
     const customTextColor = State.currentPreviewSettings.customTextColor;
@@ -180,6 +192,7 @@ export function getSettingsFromModal() {
         disableForcedBackupOnImport: disableForcedBackupToggle
             ? disableForcedBackupToggle.checked
             : false,
+        staticHeader: staticHeaderToggle ? staticHeaderToggle.checked : false,
     };
 }
 
@@ -190,7 +203,10 @@ export function updatePreviewSettingsFromModal() {
     const settings = getSettingsFromModal();
     if (settings && State) {
         State.currentPreviewSettings = { ...settings };
-        console.log('Updated State.currentPreviewSettings from modal:', State.currentPreviewSettings);
+        console.log(
+            'Updated State.currentPreviewSettings from modal:',
+            State.currentPreviewSettings,
+        );
     }
 }
 

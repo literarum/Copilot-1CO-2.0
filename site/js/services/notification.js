@@ -19,7 +19,7 @@ function ensureNotificationIconlessStyles() {
 .notification-item > div > i.fas { display: none !important; }
 `;
         document.head.appendChild(style);
-    } catch (e) {
+    } catch {
         /* no-op */
     }
 }
@@ -421,16 +421,16 @@ export const NotificationService = {
         colorIconClasses.forEach((cls) => iconElement.classList.add(cls));
         try {
             iconElement.style.color = 'var(--color-primary)';
-        } catch (e) {}
+        } catch {
+            // non-fatal if CSS variable is unavailable
+        }
 
         contentWrapper.appendChild(iconElement);
 
         const messageSpan = document.createElement('span');
         messageSpan.className = 'notification-message-span flex-1 text-sm break-words';
         messageSpan.innerHTML =
-            typeof window.linkify === 'function'
-                ? window.linkify(message)
-                : escapeHtml(message);
+            typeof window.linkify === 'function' ? window.linkify(message) : escapeHtml(message);
         contentWrapper.appendChild(messageSpan);
 
         notificationElement.appendChild(contentWrapper);
@@ -464,3 +464,215 @@ export const NotificationService = {
         return notificationElement;
     },
 };
+
+// ============================================================================
+// LEGACY showNotification (message, type, duration) — один тост по id "notification"
+// ============================================================================
+
+export function showNotification(message, type = 'success', duration = 5000) {
+    ensureNotificationIconlessStyles();
+    console.log(
+        `[SHOW_NOTIFICATION_CALL_V5.2_INLINE_STYLE] Message: "${message}", Type: "${type}", Duration: ${duration}, Timestamp: ${new Date().toISOString()}`,
+    );
+    let callStackInfo = 'N/A';
+    try {
+        const err = new Error();
+        if (err.stack) {
+            const stackLines = err.stack.split('\n');
+            callStackInfo = stackLines
+                .slice(2, 5)
+                .map((line) => line.trim())
+                .join(' -> ');
+        }
+    } catch (e) {}
+    console.log(`[SHOW_NOTIFICATION_CALL_STACK_V5.2_INLINE_STYLE] Called from: ${callStackInfo}`);
+
+    if (!message || typeof message !== 'string' || message.trim() === '') {
+        console.warn(
+            '[ShowNotification_V5.2_INLINE_STYLE] Вызван с пустым или невалидным сообщением. Уведомление не будет показано.',
+            { messageContent: message, type, duration },
+        );
+        return;
+    }
+
+    const FADE_DURATION_MS = 300;
+    const NOTIFICATION_ID = 'notification';
+
+    let notificationElement = document.getElementById(NOTIFICATION_ID);
+    let isNewNotification = !notificationElement;
+
+    if (notificationElement) {
+        console.log(
+            `[ShowNotification_V5.2_INLINE_STYLE] Найдено существующее уведомление (ID: ${NOTIFICATION_ID}). Обновление...`,
+        );
+        cancelAnimationFrame(Number(notificationElement.dataset.animationFrameId || 0));
+        clearTimeout(Number(notificationElement.dataset.hideTimeoutId || 0));
+        clearTimeout(Number(notificationElement.dataset.removeTimeoutId || 0));
+        notificationElement.style.transform = 'translateX(0)';
+        notificationElement.style.opacity = '1';
+    } else {
+        console.log(
+            `[ShowNotification_V5.2_INLINE_STYLE] Существующее уведомление не найдено. Создание нового (ID: ${NOTIFICATION_ID}).`,
+        );
+        notificationElement = document.createElement('div');
+        notificationElement.id = NOTIFICATION_ID;
+        notificationElement.setAttribute('role', 'alert');
+        notificationElement.style.willChange = 'transform, opacity';
+        notificationElement.style.transform = 'translateX(100%)';
+        notificationElement.style.opacity = '0';
+    }
+
+    let bgColorClass = 'bg-green-500 dark:bg-green-600';
+    let iconClass = 'fa-check-circle';
+
+    switch (type) {
+        case 'error':
+            bgColorClass = 'bg-red-600 dark:bg-red-700';
+            iconClass = 'fa-times-circle';
+            break;
+        case 'warning':
+            bgColorClass = 'bg-yellow-500 dark:bg-yellow-600';
+            iconClass = 'fa-exclamation-triangle';
+            break;
+        case 'info':
+            bgColorClass = 'bg-blue-500 dark:bg-blue-600';
+            iconClass = 'fa-info-circle';
+            break;
+    }
+
+    const colorClassesToRemove = [
+        'bg-green-500',
+        'dark:bg-green-600',
+        'bg-red-600',
+        'dark:bg-red-700',
+        'bg-yellow-500',
+        'dark:bg-yellow-600',
+        'bg-blue-500',
+        'dark:bg-blue-600',
+    ];
+    notificationElement.classList.remove(...colorClassesToRemove);
+
+    notificationElement.className = `fixed p-4 rounded-lg shadow-xl text-white text-sm font-medium transform transition-all duration-${FADE_DURATION_MS} ease-out max-w-sm sm:max-w-md ${bgColorClass}`;
+
+    notificationElement.style.top = '20px';
+    notificationElement.style.right = '20px';
+    notificationElement.style.bottom = 'auto';
+    notificationElement.style.left = 'auto';
+
+    notificationElement.style.zIndex = '200000';
+
+    let closeButton = notificationElement.querySelector('.notification-close-btn');
+    let messageSpan = notificationElement.querySelector('.notification-message-span');
+    let iconElement = notificationElement.querySelector('.notification-icon-i');
+
+    if (!closeButton || !messageSpan || !iconElement) {
+        notificationElement.innerHTML = '';
+
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'flex items-center';
+
+        iconElement = document.createElement('i');
+        try {
+            iconElement.style.color = 'var(--color-primary)';
+        } catch (e) {}
+
+        messageSpan = document.createElement('span');
+        messageSpan.className = 'flex-1 notification-message-span';
+
+        iconContainer.appendChild(iconElement);
+        iconContainer.appendChild(messageSpan);
+
+        closeButton = document.createElement('button');
+        closeButton.setAttribute('type', 'button');
+        closeButton.setAttribute('aria-label', 'Закрыть уведомление');
+        closeButton.className =
+            'ml-4 p-1 text-current opacity-70 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-white rounded-full flex items-center justify-center w-6 h-6 leading-none notification-close-btn';
+        closeButton.innerHTML = '<i class="fas fa-times fa-sm"></i>';
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'flex items-center justify-between w-full';
+        contentWrapper.appendChild(iconContainer);
+        contentWrapper.appendChild(closeButton);
+
+        notificationElement.appendChild(contentWrapper);
+    }
+
+    messageSpan.textContent = message;
+
+    const closeAndRemove = () => {
+        if (!document.body.contains(notificationElement)) {
+            console.log(
+                `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Элемент (msg: "${messageSpan.textContent}") уже удален, выход.`,
+            );
+            return;
+        }
+        console.log(
+            `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Запуск закрытия для (msg: "${messageSpan.textContent}").`,
+        );
+
+        clearTimeout(Number(notificationElement.dataset.hideTimeoutId));
+        clearTimeout(Number(notificationElement.dataset.removeTimeoutId));
+
+        notificationElement.style.transform = 'translateX(100%)';
+        notificationElement.style.opacity = '0';
+        console.log(
+            `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Анимация скрытия для (msg: "${messageSpan.textContent}") запущена.`,
+        );
+
+        const currentRemoveId = setTimeout(() => {
+            if (document.body.contains(notificationElement)) {
+                notificationElement.remove();
+                console.log(
+                    `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Элемент (msg: "${messageSpan.textContent}") удален из DOM по таймеру.`,
+                );
+            }
+        }, FADE_DURATION_MS);
+        notificationElement.dataset.removeTimeoutId = currentRemoveId.toString();
+    };
+
+    if (closeButton._clickHandler) {
+        closeButton.removeEventListener('click', closeButton._clickHandler);
+    }
+    closeButton._clickHandler = (e) => {
+        e.stopPropagation();
+        console.log(
+            `[ShowNotification_V5.2_INLINE_STYLE] Клик по крестику для (msg: "${messageSpan.textContent}").`,
+        );
+        closeAndRemove();
+    };
+    closeButton.addEventListener('click', closeButton._clickHandler);
+
+    if (isNewNotification) {
+        document.body.appendChild(notificationElement);
+        console.log(
+            `[ShowNotification_V5.2_INLINE_STYLE] Новое уведомление (msg: "${message}") добавлено в DOM.`,
+        );
+    }
+
+    if (!isNewNotification) {
+        notificationElement.style.transform = 'translateX(100%)';
+        notificationElement.style.opacity = '0';
+    }
+
+    notificationElement.dataset.animationFrameId = requestAnimationFrame(() => {
+        if (document.body.contains(notificationElement)) {
+            notificationElement.style.transform = 'translateX(0)';
+            notificationElement.style.opacity = '1';
+            console.log(
+                `[ShowNotification_V5.2_INLINE_STYLE] Анимация появления/обновления для (msg: "${message}") запущена.`,
+            );
+        }
+    }).toString();
+
+    if (duration > 0) {
+        const hideTimeoutId = setTimeout(closeAndRemove, duration);
+        notificationElement.dataset.hideTimeoutId = hideTimeoutId.toString();
+        console.log(
+            `[ShowNotification_V5.2_INLINE_STYLE] Установлен hideTimeoutId: ${hideTimeoutId} на ${duration}ms для (msg: "${message}").`,
+        );
+    } else if (duration === 0) {
+        console.log(
+            `[ShowNotification_V5.2_INLINE_STYLE] Duration is 0 для (msg: "${message}"). Автоматическое закрытие НЕ будет установлено.`,
+        );
+    }
+}

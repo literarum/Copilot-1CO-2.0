@@ -1,0 +1,49 @@
+# OpenAPI 3.0 spec for Yandex Cloud API Gateway → crl-checker function.
+# Прямой URL функции (functions.yandexcloud.net) не передаёт path в событие — только API Gateway.
+# Подставьте свой <FUNCTION_ID> перед созданием/обновлением API Gateway.
+# При 502: если функция не публичная, добавьте service_account_id (сервисный аккаунт с ролью serverless.functions.invoker).
+
+openapi: 3.0.0
+info:
+  title: Copilot 1CO Revocation API
+  version: 1.0.0
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: "<FUNCTION_ID>"
+        tag: "$latest"
+        payload_format_version: "0.1"
+    options:
+      summary: CORS preflight
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: "<FUNCTION_ID>"
+        tag: "$latest"
+        payload_format_version: "0.1"
+
+  /api/revocation/check:
+    get:
+      summary: Check revocation (query params)
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: "<FUNCTION_ID>"
+        tag: "$latest"
+        payload_format_version: "0.1"
+    post:
+      summary: Check revocation (JSON body)
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: "<FUNCTION_ID>"
+        tag: "$latest"
+        payload_format_version: "0.1"
+    options:
+      summary: CORS preflight
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: "<FUNCTION_ID>"
+        tag: "$latest"
+        payload_format_version: "0.1"

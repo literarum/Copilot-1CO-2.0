@@ -8,6 +8,7 @@ let deps = {
     saveToIndexedDB: null,
     deleteFromIndexedDB: null,
     processImageFile: null,
+    showAppConfirm: null,
 };
 
 /**
@@ -85,7 +86,16 @@ export function setupBackgroundImageControls() {
     uploadBtn.addEventListener('click', () => fileInput.click());
 
     removeBtn.addEventListener('click', async () => {
-        if (confirm('Вы уверены, что хотите удалить фоновое изображение?')) {
+        const confirmed = deps.showAppConfirm
+            ? await deps.showAppConfirm({
+                  title: 'Удаление фонового изображения',
+                  message: 'Вы уверены, что хотите удалить фоновое изображение?',
+                  confirmText: 'Удалить',
+                  cancelText: 'Отмена',
+                  confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+              })
+            : confirm('Вы уверены, что хотите удалить фоновое изображение?');
+        if (confirmed) {
             try {
                 await deps.deleteFromIndexedDB('preferences', 'customBackgroundImage');
                 removeCustomBackgroundImage();

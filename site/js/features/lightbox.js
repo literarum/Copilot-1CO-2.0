@@ -109,17 +109,23 @@ export function showImageAtIndex(index, blobs, stateManager, elements) {
     if (oldObjectUrl) {
         try {
             URL.revokeObjectURL(oldObjectUrl);
-        } catch (e) {}
+        } catch {
+            // ignore revoke failures for stale object URLs
+        }
     }
     if (oldPreloadedUrls?.next) {
         try {
             URL.revokeObjectURL(oldPreloadedUrls.next);
-        } catch (e) {}
+        } catch {
+            // ignore revoke failures for stale object URLs
+        }
     }
     if (oldPreloadedUrls?.prev) {
         try {
             URL.revokeObjectURL(oldPreloadedUrls.prev);
-        } catch (e) {}
+        } catch {
+            // ignore revoke failures for stale object URLs
+        }
     }
 
     updateCurrentIndex(index);
@@ -161,7 +167,9 @@ export function showImageAtIndex(index, blobs, stateManager, elements) {
             if (newObjectUrl) {
                 try {
                     URL.revokeObjectURL(newObjectUrl);
-                } catch (e) {}
+                } catch {
+                    // ignore revoke failures for failed image load
+                }
             }
             updateObjectUrl(null);
         };
@@ -186,7 +194,9 @@ export function showImageAtIndex(index, blobs, stateManager, elements) {
         if (newObjectUrl) {
             try {
                 URL.revokeObjectURL(newObjectUrl);
-            } catch (e) {}
+            } catch {
+                // ignore revoke failures during error cleanup
+            }
         }
         updateObjectUrl(null);
     }
@@ -416,19 +426,25 @@ export function openLightbox(blobs, initialIndex) {
         if (state.currentObjectUrl) {
             try {
                 URL.revokeObjectURL(state.currentObjectUrl);
-            } catch (e) {}
+            } catch {
+                // ignore revoke failures during lightbox close
+            }
             state.currentObjectUrl = null;
         }
         if (state.preloadedUrls.next) {
             try {
                 URL.revokeObjectURL(state.preloadedUrls.next);
-            } catch (e) {}
+            } catch {
+                // ignore revoke failures during lightbox close
+            }
             state.preloadedUrls.next = null;
         }
         if (state.preloadedUrls.prev) {
             try {
                 URL.revokeObjectURL(state.preloadedUrls.prev);
-            } catch (e) {}
+            } catch {
+                // ignore revoke failures during lightbox close
+            }
             state.preloadedUrls.prev = null;
         }
 
@@ -453,7 +469,9 @@ export function openLightbox(blobs, initialIndex) {
             setTimeout(() => {
                 try {
                     originalTriggerElement.focus();
-                } catch (e) {}
+                } catch {
+                    // ignore focus restore failures when origin node is detached
+                }
             }, 0);
         }
         originalTriggerElement = null;

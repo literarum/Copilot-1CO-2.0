@@ -28,6 +28,8 @@ let ExportService = null;
 let reglamentDetailModalConfig = null;
 let reglamentModalConfigGlobal = null;
 let handleViewToggleClick = null;
+let showAppConfirm = null;
+let CATEGORY_INFO_KEY = null;
 
 /**
  * Устанавливает зависимости модуля регламентов
@@ -51,9 +53,49 @@ export function setReglamentsDependencies(deps) {
     if (deps.toggleModalFullscreen) toggleModalFullscreen = deps.toggleModalFullscreen;
     if (deps.getVisibleModals) getVisibleModals = deps.getVisibleModals;
     if (deps.ExportService) ExportService = deps.ExportService;
-    if (deps.reglamentDetailModalConfig) reglamentDetailModalConfig = deps.reglamentDetailModalConfig;
-    if (deps.reglamentModalConfigGlobal) reglamentModalConfigGlobal = deps.reglamentModalConfigGlobal;
+    if (deps.reglamentDetailModalConfig)
+        reglamentDetailModalConfig = deps.reglamentDetailModalConfig;
+    if (deps.reglamentModalConfigGlobal)
+        reglamentModalConfigGlobal = deps.reglamentModalConfigGlobal;
     if (deps.handleViewToggleClick) handleViewToggleClick = deps.handleViewToggleClick;
+    if (deps.showAppConfirm) showAppConfirm = deps.showAppConfirm;
+    if (deps.CATEGORY_INFO_KEY !== undefined) CATEGORY_INFO_KEY = deps.CATEGORY_INFO_KEY;
+}
+
+// ========== loadCategoryInfo / saveCategoryInfo (для настроек категорий) ==========
+
+export async function loadCategoryInfo() {
+    if (!State?.db) {
+        console.warn('DB not ready, using default categories.');
+        return;
+    }
+    try {
+        const savedInfo = await getFromIndexedDB?.('preferences', CATEGORY_INFO_KEY);
+        if (savedInfo && typeof savedInfo.data === 'object' && categoryDisplayInfo) {
+            Object.assign(categoryDisplayInfo, savedInfo.data);
+        }
+    } catch (error) {
+        console.error('Error loading reglament category info:', error);
+    }
+}
+
+export async function saveCategoryInfo() {
+    if (!State?.db) {
+        console.error('Cannot save category info: DB not ready.');
+        showNotification?.('Ошибка сохранения настроек категорий: База данных недоступна', 'error');
+        return false;
+    }
+    try {
+        await saveToIndexedDB('preferences', { id: CATEGORY_INFO_KEY, data: categoryDisplayInfo });
+        populateReglamentCategoryDropdowns();
+        console.log('Reglament category info saved successfully.');
+        showNotification?.('Настройки категорий регламентов сохранены.', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error saving reglament category info:', error);
+        showNotification?.('Ошибка сохранения настроек категорий', 'error');
+        return false;
+    }
 }
 
 // ========== Utility Functions ==========
@@ -70,7 +112,10 @@ export function populateReglamentCategoryDropdowns() {
         select.innerHTML = '<option value="">Выберите категорию</option>';
 
         const fragment = document.createDocumentFragment();
-        const categoriesForSelect = categoryDisplayInfo && typeof categoryDisplayInfo === 'object' ? categoryDisplayInfo : {};
+        const categoriesForSelect =
+            categoryDisplayInfo && typeof categoryDisplayInfo === 'object'
+                ? categoryDisplayInfo
+                : {};
         const sortedCategories = Object.entries(categoriesForSelect).sort(([, a], [, b]) =>
             a.title.localeCompare(b.title),
         );
@@ -218,7 +263,8 @@ export function renderReglamentCategories() {
     }
     categoryGrid.innerHTML = '';
 
-    const categories = categoryDisplayInfo && typeof categoryDisplayInfo === 'object' ? categoryDisplayInfo : {};
+    const categories =
+        categoryDisplayInfo && typeof categoryDisplayInfo === 'object' ? categoryDisplayInfo : {};
     Object.entries(categories).forEach(([categoryId, info]) => {
         const categoryElement = createCategoryElement(
             categoryId,
@@ -334,7 +380,7 @@ export async function showReglamentsForCategory(categoryId) {
  * Обработчик действий с регламентами (просмотр, редактирование, удаление)
  * @param {Event} event - Событие клика
  */
-export function handleReglamentAction(event) {
+export async function handleReglamentAction(event) {
     const target = event.target;
 
     if (target.closest('.toggle-favorite-btn')) {
@@ -365,7 +411,16 @@ export function handleReglamentAction(event) {
             editReglament(reglamentId);
         } else if (action === 'delete') {
             const title = reglamentItem.querySelector('h4')?.title || `ID ${reglamentId}`;
-            if (confirm(`Вы уверены, что хотите удалить регламент "${title}"?`)) {
+            const confirmed = showAppConfirm
+                ? await showAppConfirm({
+                      title: 'Удаление регламента',
+                      message: `Вы уверены, что хотите удалить регламент "${title}"?`,
+                      confirmText: 'Удалить',
+                      cancelText: 'Отмена',
+                      confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+                  })
+                : confirm(`Вы уверены, что хотите удалить регламент "${title}"?`);
+            if (confirmed) {
                 deleteReglamentFromList(reglamentId, reglamentItem);
             }
         }
@@ -522,7 +577,7 @@ export async function showReglamentDetail(reglamentId) {
             </div>
         </div>`;
 
-    const setupDetailModal = (modalElement, isNew) => {
+    const setupDetailModal = (modalElement, _isNew) => {
         const editButton = modalElement.querySelector('#editReglamentFromDetailBtn');
         if (editButton) {
             if (editButton._clickHandler) {

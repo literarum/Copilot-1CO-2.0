@@ -3,6 +3,7 @@ name: Deploy Pages (main)
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,8 +19,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Publish ONLY site/ to gh-pages root,
-      # but keep pr-preview/ (PR previews) untouched
+      # Publish ONLY site/ to gh-pages root (includes install-mac.sh, install-linux.sh,
+      # install-windows.ps1 and files/ for CRL-Helper). Keeps pr-preview/ untouched.
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:

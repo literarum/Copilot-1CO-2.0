@@ -45,6 +45,7 @@ import {
     LINK_REGLAMENT_CARD_CLASSES,
     LIST_HOVER_TRANSITION_CLASSES,
     DEFAULT_CIB_LINKS,
+    FULLSCREEN_MODAL_CONFIGS,
 } from './js/config.js';
 
 // Настройки UI по умолчанию (используются в loadUserPreferences, applyUISettings и др.)
@@ -53,11 +54,34 @@ const DEFAULT_UI_SETTINGS = getDefaultUISettings(defaultPanelOrder);
 // Создаём мутабельную копию categoryDisplayInfo для совместимости со старым кодом
 let categoryDisplayInfo = { ...categoryDisplayInfoImported };
 
-import { escapeHtml, escapeHTML, normalizeBrokenEntities, decodeBasicEntitiesOnce, truncateText, highlightText, highlightTextInString, highlightElement, highlightTextInElement, linkify as linkifyModule } from './js/utils/html.js';
+import {
+    escapeHtml,
+    escapeHTML,
+    normalizeBrokenEntities,
+    decodeBasicEntitiesOnce,
+    truncateText,
+    highlightText,
+    highlightTextInString,
+    highlightElement,
+    highlightTextInElement,
+    linkify as linkifyModule,
+} from './js/utils/html.js';
 
-import { escapeRegExp, base64ToBlob, formatExampleForTextarea, getSectionName, getStepContentAsText, debounce, deepEqual as deepEqualModule, setupClearButton as setupClearButtonModule } from './js/utils/helpers.js';
+import {
+    escapeRegExp,
+    base64ToBlob,
+    formatExampleForTextarea,
+    getSectionName,
+    getStepContentAsText,
+    debounce,
+    deepEqual as deepEqualModule,
+    setupClearButton as setupClearButtonModule,
+} from './js/utils/helpers.js';
 
-import { setClipboardDependencies, copyToClipboard as copyToClipboardModule } from './js/utils/clipboard.js';
+import {
+    setClipboardDependencies,
+    copyToClipboard as copyToClipboardModule,
+} from './js/utils/clipboard.js';
 
 import {
     hexToRgb as hexToRgbModule,
@@ -77,29 +101,29 @@ import {
     closeAnimatedModal as closeAnimatedModalModule,
 } from './js/utils/modal.js';
 
-import { 
-    initDB, 
-    getAllFromIndexedDB, 
-    performDBOperation, 
-    saveToIndexedDB, 
-    getFromIndexedDB, 
-    deleteFromIndexedDB, 
-    clearIndexedDBStore, 
-    getAllFromIndex 
+import {
+    initDB,
+    getAllFromIndexedDB,
+    performDBOperation,
+    saveToIndexedDB,
+    getFromIndexedDB,
+    deleteFromIndexedDB,
+    clearIndexedDBStore,
+    getAllFromIndex,
 } from './js/db/indexeddb.js';
 
 import { storeConfigs } from './js/db/stores.js';
 
-import { 
-    addToFavoritesDB, 
-    removeFromFavoritesDB, 
-    isFavoriteDB, 
-    getAllFavoritesDB, 
-    clearAllFavoritesDB, 
-    loadInitialFavoritesCache 
+import {
+    addToFavoritesDB,
+    removeFromFavoritesDB,
+    isFavoriteDB,
+    getAllFavoritesDB,
+    clearAllFavoritesDB,
+    loadInitialFavoritesCache,
 } from './js/db/favorites.js';
 
-import { NotificationService } from './js/services/notification.js';
+import { NotificationService, showNotification } from './js/services/notification.js';
 
 import { ExportService, setLoadingOverlayManager } from './js/services/export.js';
 
@@ -107,15 +131,9 @@ import { loadingOverlayManager } from './js/ui/loading-overlay-manager.js';
 
 import { State } from './js/app/state.js';
 
-import {
-    setAppInitDependencies,
-    appInit as appInitModule,
-} from './js/app/app-init.js';
+import { setAppInitDependencies, appInit as appInitModule } from './js/app/app-init.js';
 
-import {
-    setOnloadHandlerDependencies,
-    registerOnloadHandler,
-} from './js/app/onload-handler.js';
+import { setOnloadHandlerDependencies, registerOnloadHandler } from './js/app/onload-handler.js';
 
 import {
     setDataLoaderDependencies,
@@ -140,6 +158,8 @@ import {
     setTheme as setThemeModule,
     migrateLegacyThemeVars as migrateLegacyThemeVarsModule,
     applyThemeOverrides as applyThemeOverridesModule,
+    applyThemeClass,
+    onSystemThemeChange,
 } from './js/components/theme.js';
 
 // Timer System
@@ -149,7 +169,7 @@ import {
     resetTimer,
     adjustTimerDuration,
     showAppNotification,
-    requestAppNotificationPermission
+    requestAppNotificationPermission,
 } from './js/features/timer.js';
 
 // PDF Attachment System
@@ -163,7 +183,7 @@ import {
     renderPdfAttachmentsSection,
     initPdfAttachmentSystem,
     attachAlgorithmAddPdfHandlers,
-    attachBookmarkPdfHandlers
+    attachBookmarkPdfHandlers,
 } from './js/features/pdf-attachments.js';
 
 // Google Docs Integration
@@ -173,47 +193,73 @@ import {
     renderGoogleDocContent,
     fetchGoogleDocs,
     handleShablonySearch,
-    parseShablonyContent
+    parseShablonyContent,
 } from './js/features/google-docs.js';
 
 // Background Health Tests
 import {
     setBackgroundHealthTestsDependencies,
-    initBackgroundHealthTestsSystem
+    initBackgroundHealthTestsSystem,
 } from './js/features/background-health-tests.js';
 
 // Algorithms PDF Export (PR11)
 import {
     setAlgorithmsPdfExportDependencies,
-    initAlgorithmsPdfExportSystem
+    initAlgorithmsPdfExportSystem,
 } from './js/features/algorithms-pdf-export.js';
 
 // FNS Certificate Revocation (PR11)
 import { initFNSCertificateRevocationSystem } from './js/features/fns-cert-revocation.js';
 
+// Анализатор XML для ТП 1СО
+import { initXmlAnalyzer } from './js/features/xml-analyzer.js';
+
 // UI Customization (PR11)
 import {
     setUICustomizationDependencies,
-    initUICustomization as initUICustomizationModule
+    initUICustomization as initUICustomizationModule,
 } from './js/ui/ui-customization.js';
 
 // UI Settings Modal Init (PR11)
 import {
     setUISettingsModalInitDependencies,
-    initUISettingsModalHandlers as initUISettingsModalHandlersModule
+    initUISettingsModalHandlers as initUISettingsModalHandlersModule,
 } from './js/ui/ui-settings-modal-init.js';
 
 // Background Status HUD
-import {
-    initBackgroundStatusHUD
-} from './js/ui/background-status-hud.js';
+import { initBackgroundStatusHUD } from './js/ui/background-status-hud.js';
 
 // UI modules from PR11
-import { setEscapeHandlerDependencies, addEscapeHandler as addEscapeHandlerModule, removeEscapeHandler as removeEscapeHandlerModule } from './js/ui/escape-handler.js';
-import { setHeaderButtonsDependencies, initHeaderButtons as initHeaderButtonsModule } from './js/ui/header-buttons.js';
-import { setThemeToggleDependencies, initThemeToggle as initThemeToggleModule } from './js/ui/theme-toggle.js';
-import { setModalOverlayHandlerDependencies, initModalOverlayHandler as initModalOverlayHandlerModule } from './js/ui/modal-overlay-handler.js';
-import { setAlgorithmModalControlDependencies, initAlgorithmModalControls as initAlgorithmModalControlsModule } from './js/ui/algorithm-modal-controls.js';
+import {
+    setEscapeHandlerDependencies,
+    addEscapeHandler as addEscapeHandlerModule,
+    removeEscapeHandler as removeEscapeHandlerModule,
+} from './js/ui/escape-handler.js';
+import {
+    setUnsavedConfirmModalDependencies,
+    showUnsavedConfirmModal as showUnsavedConfirmModalModule,
+} from './js/ui/unsaved-confirm-modal.js';
+import {
+    setAppConfirmModalDependencies,
+    showAppConfirm as showAppConfirmModule,
+    showAppAlert as showAppAlertModule,
+} from './js/ui/app-confirm-modal.js';
+import {
+    setHeaderButtonsDependencies,
+    initHeaderButtons as initHeaderButtonsModule,
+} from './js/ui/header-buttons.js';
+import {
+    setThemeToggleDependencies,
+    initThemeToggle as initThemeToggleModule,
+} from './js/ui/theme-toggle.js';
+import {
+    setModalOverlayHandlerDependencies,
+    initModalOverlayHandler as initModalOverlayHandlerModule,
+} from './js/ui/modal-overlay-handler.js';
+import {
+    setAlgorithmModalControlDependencies,
+    initAlgorithmModalControls as initAlgorithmModalControlsModule,
+} from './js/ui/algorithm-modal-controls.js';
 
 // SEDO System
 import {
@@ -225,7 +271,7 @@ import {
     loadSedoData,
     filterSedoData,
     handleSedoSearch,
-    highlightAndScrollSedoItem
+    highlightAndScrollSedoItem,
 } from './js/features/sedo.js';
 
 // Search System
@@ -253,6 +299,7 @@ import {
     expandQueryWithSynonyms,
     searchWithRegex,
     debug_checkIndex,
+    ensureSearchIndexIsBuilt,
 } from './js/features/search.js';
 
 // Algorithm Components
@@ -314,6 +361,8 @@ import {
     showAddReglamentModal as showAddReglamentModalModule,
     editReglament as editReglamentModule,
     initReglamentsSystem as initReglamentsSystemModule,
+    loadCategoryInfo,
+    saveCategoryInfo,
 } from './js/components/reglaments.js';
 
 // Bookmark Components
@@ -541,6 +590,19 @@ import {
     createClientNotesInnPreview as createClientNotesInnPreviewModule,
 } from './js/features/client-data.js';
 
+import {
+    initClientDataSystem,
+    ensureInnPreviewStyles,
+    setClientDataInitDependencies,
+} from './js/features/client-data-init.js';
+
+import {
+    setClientNotesWindowDependencies,
+    openClientNotesWindow as openClientNotesWindowModule,
+    highlightClientNotesWindow as highlightClientNotesWindowModule,
+    isClientNotesWindowOpen as isClientNotesWindowOpenModule,
+} from './js/features/client-notes-window.js';
+
 // Step Management System
 import {
     setStepManagementDependencies,
@@ -636,6 +698,8 @@ import {
     setUISettingsDependencies,
     applyUISettings as applyUISettingsModule,
     applyInitialUISettings as applyInitialUISettingsModule,
+    loadUISettings,
+    saveUISettings,
 } from './js/ui/ui-settings.js';
 
 // Preview Settings (extracted from script.js)
@@ -697,14 +761,7 @@ if (showFavoritesHeaderButton && !showFavoritesHeaderButton.dataset.listenerAtta
 
 // FIELD_WEIGHTS и DEFAULT_WELCOME_CLIENT_NOTES_TEXT теперь импортируются из constants.js
 
-// ensureNotificationIconlessStyles теперь в NotificationService (services/notification.js)
-// Оставляем функцию для совместимости
-function ensureNotificationIconlessStyles() {
-    // Функция теперь в NotificationService, но оставляем заглушку для совместимости
-    // Импортированный NotificationService уже содержит эту логику
-}
-
-// NotificationService теперь импортируется из services/notification.js
+// NotificationService и showNotification импортируются из services/notification.js
 // Дубликат кода NotificationService был удален (было ~440 строк дублирующего кода)
 // Весь функционал доступен через импортированный модуль из services/notification.js
 
@@ -882,7 +939,7 @@ const getTopmostModal = getTopmostModalModule;
 // Escape handlers для модальных окон
 function addEscapeHandler(modalElement) {
     if (!modalElement || modalElement._escapeHandlerInstance) return;
-    
+
     const handleEscape = (event) => {
         if (event.key === 'Escape') {
             const visibleModals = getVisibleModals();
@@ -894,7 +951,7 @@ function addEscapeHandler(modalElement) {
             }
         }
     };
-    
+
     modalElement._escapeHandlerInstance = handleEscape;
     document.addEventListener('keydown', handleEscape);
 }
@@ -903,6 +960,17 @@ function removeEscapeHandler(modalElement) {
     if (!modalElement || !modalElement._escapeHandlerInstance) return;
     document.removeEventListener('keydown', modalElement._escapeHandlerInstance);
     delete modalElement._escapeHandlerInstance;
+}
+
+/**
+ * Подключает обработчик Escape для закрытия модального окна деталей закладки.
+ * @param {string} modalId - ID элемента модального окна
+ */
+function wireBookmarkDetailModalCloseHandler(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal && typeof addEscapeHandler === 'function') {
+        addEscapeHandler(modal);
+    }
 }
 
 // debounce и setupClearButton импортируются из js/utils/helpers.js
@@ -1078,6 +1146,70 @@ const initViewToggles = initViewTogglesModule;
 // initUICustomization из PR11 модуля ui-customization.js
 const initUICustomization = initUICustomizationModule;
 
+// Адаптивное расширение полей ввода (textarea), кроме #clientNotes
+function initAutoExpandTextareas() {
+    const expand = (el) => {
+        if (!el || el.tagName !== 'TEXTAREA' || el.id === 'clientNotes') return;
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 600) + 'px';
+    };
+    document.addEventListener('input', (e) => {
+        if (e.target && e.target.tagName === 'TEXTAREA' && e.target.id !== 'clientNotes')
+            expand(e.target);
+    });
+    document.addEventListener(
+        'focus',
+        (e) => {
+            if (e.target && e.target.tagName === 'TEXTAREA' && e.target.id !== 'clientNotes')
+                expand(e.target);
+        },
+        true,
+    );
+    document.querySelectorAll('textarea:not(#clientNotes)').forEach(expand);
+}
+
+// Кнопки прокрутки вверх/вниз — показываются только если контент не помещается на экране; клик — в начало/конец страницы
+function initScrollNavButtons() {
+    const container = document.getElementById('scrollNavButtons');
+    const scrollUpBtn = document.getElementById('scrollUpBtn');
+    const scrollDownBtn = document.getElementById('scrollDownBtn');
+    if (!container || !scrollUpBtn || !scrollDownBtn) return;
+    const updateVisibility = () => {
+        const hasOpenModal = !!document.querySelector('[id$="Modal"]:not(.hidden)');
+        const scrollHeight = document.documentElement.scrollHeight;
+        const innerHeight = window.innerHeight;
+        const overflowDelta = scrollHeight - innerHeight;
+        const show = !hasOpenModal && overflowDelta > 24;
+        container.classList.toggle('opacity-0', !show);
+        container.classList.toggle('pointer-events-none', !show);
+        container.setAttribute('aria-hidden', show ? 'false' : 'true');
+    };
+    scrollUpBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    scrollDownBtn.addEventListener('click', () => {
+        window.scrollTo({
+            top: document.documentElement.scrollHeight - window.innerHeight,
+            behavior: 'smooth',
+        });
+    });
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    window.addEventListener('resize', updateVisibility);
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.tab-btn') || e.target.closest('[data-action]')) {
+            requestAnimationFrame(updateVisibility);
+            setTimeout(updateVisibility, 220);
+        }
+    });
+    const observer = new MutationObserver(() => requestAnimationFrame(updateVisibility));
+    observer.observe(document.body, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['class'],
+    });
+    updateVisibility();
+}
+
 // showNotification и showBookmarkDetailModal определены ниже как function declarations
 // Благодаря hoisting они доступны здесь, но мы не можем их переопределить
 // Поэтому используем их напрямую в зависимостях
@@ -1123,12 +1255,17 @@ setAppInitDependencies({
     initHotkeysModal,
     setupHotkeys,
     initFullscreenToggles,
+    fullscreenModalConfigs: FULLSCREEN_MODAL_CONFIGS,
     initHeaderButtons,
     initThemeToggle,
     initModalOverlayHandler,
     initAlgorithmModalControls,
     applyInitialUISettings,
     initUI,
+    initScrollNavButtons,
+    initAutoExpandTextareas,
+    highlightClientNotesWindow: highlightClientNotesWindowModule,
+    isClientNotesWindowOpen: isClientNotesWindowOpenModule,
 });
 console.log('[script.js] Зависимости модуля appInit установлены');
 
@@ -1181,6 +1318,7 @@ setBookmarksDependencies({
     handleViewBookmarkScreenshots: handleViewBookmarkScreenshotsModule,
     NotificationService,
     showScreenshotViewerModal,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Bookmarks установлены');
 
@@ -1218,15 +1356,35 @@ setOnloadHandlerDependencies({
     setupTabsOverflow,
     initTabClickDelegation,
     updateVisibleTabs,
-    initUISettingsModalHandlers: typeof initUISettingsModalHandlersModule === 'function' ? initUISettingsModalHandlersModule : null,
+    initUISettingsModalHandlers:
+        typeof initUISettingsModalHandlersModule === 'function'
+            ? initUISettingsModalHandlersModule
+            : null,
     backgroundStatusHUD: window.BackgroundStatusHUD || null,
     afterInitCallbacks: [
         () => {
             setAlgorithmsPdfExportDependencies({ algorithms, ExportService, showNotification });
-            if (typeof initAlgorithmsPdfExportSystem === 'function') initAlgorithmsPdfExportSystem();
+            if (typeof initAlgorithmsPdfExportSystem === 'function')
+                initAlgorithmsPdfExportSystem();
         },
         () => {
-            if (typeof initFNSCertificateRevocationSystem === 'function') initFNSCertificateRevocationSystem();
+            if (typeof initFNSCertificateRevocationSystem === 'function')
+                initFNSCertificateRevocationSystem();
+        },
+        () => {
+            setTimeout(() => {
+                if (typeof loadBookmarksModule === 'function') loadBookmarksModule();
+            }, 150);
+        },
+        () => {
+            const onTabShown = (e) => {
+                if (e?.detail?.tabId === 'xmlAnalyzer') {
+                    const root = document.getElementById('xmlAnalyzerContent');
+                    if (root && typeof initXmlAnalyzer === 'function') initXmlAnalyzer(root);
+                    document.removeEventListener('copilot1co:tabShown', onTabShown);
+                }
+            };
+            document.addEventListener('copilot1co:tabShown', onTabShown);
         },
     ],
 });
@@ -1242,64 +1400,29 @@ async function saveUserPreferences() {
 }
 
 // initDB теперь импортируется из db/indexeddb.js
-// Локальная функция удалена - используем импортированную версию
+// ensureSearchIndexIsBuilt импортируется из js/features/search.js
 
-async function ensureSearchIndexIsBuilt() {
-    console.log('Вызов ensureSearchIndexIsBuilt для проверки и построения поискового индекса.');
+async function rebuildSearchIndexNow() {
     if (!State.db) {
-        console.warn(
-            'ensureSearchIndexIsBuilt: База данных не инициализирована. Проверка индекса невозможна.',
+        showNotification(
+            'База данных не инициализирована. Пересборка индекса недоступна.',
+            'warning',
         );
-        return;
-    }
-    try {
-        await checkAndBuildIndex();
-        console.log(
-            'ensureSearchIndexIsBuilt: Проверка и построение индекса завершены (или не требовались).',
-        );
-    } catch (error) {
-        console.error(
-            'ensureSearchIndexIsBuilt: Ошибка во время проверки/построения поискового индекса:',
-            error,
-        );
-    }
-}
-
-async function loadCategoryInfo() {
-    if (!State.db) {
-        console.warn('DB not ready, using default categories.');
-        return;
-    }
-    try {
-        const savedInfo = await getFromIndexedDB('preferences', CATEGORY_INFO_KEY);
-        if (savedInfo && typeof savedInfo.data === 'object') {
-            categoryDisplayInfo = { ...categoryDisplayInfo, ...savedInfo.data };
-        }
-    } catch (error) {
-        console.error('Error loading reglament category info:', error);
-    }
-}
-
-async function saveCategoryInfo() {
-    if (!State.db) {
-        console.error('Cannot save category info: DB not ready.');
-        showNotification('Ошибка сохранения настроек категорий: База данных недоступна', 'error');
         return false;
     }
     try {
-        await saveToIndexedDB('preferences', { id: CATEGORY_INFO_KEY, data: categoryDisplayInfo });
-        populateReglamentCategoryDropdowns();
-        console.log('Reglament category info saved successfully.');
-
-        showNotification('Настройки категорий регламентов сохранены.', 'success');
-
+        showNotification('Запущена полная пересборка поискового индекса...', 'info', 3500);
+        await cleanAndRebuildSearchIndex();
+        showNotification('Поисковый индекс успешно пересобран.', 'success', 3500);
         return true;
     } catch (error) {
-        console.error('Error saving reglament category info:', error);
-        showNotification('Ошибка сохранения настроек категорий', 'error');
+        console.error('[rebuildSearchIndexNow] Ошибка пересборки индекса:', error);
+        showNotification('Ошибка пересборки поискового индекса.', 'error');
         return false;
     }
 }
+
+// loadCategoryInfo и saveCategoryInfo импортируются из js/components/reglaments.js
 
 // Wrapper для модуля reglaments.js
 // Reglaments operations functions теперь импортируются из js/components/reglaments.js
@@ -1343,98 +1466,7 @@ async function saveDataToIndexedDB() {
 
 // tabsConfig, allPanelIdsForDefault, defaultPanelOrder теперь импортируются из config.js
 
-async function loadUISettings() {
-    console.log('loadUISettings V2 (Unified): Загрузка настроек для модального окна...');
-
-    if (typeof State.userPreferences !== 'object' || Object.keys(State.userPreferences).length === 0) {
-        console.error(
-            'loadUISettings: Глобальные настройки (State.userPreferences) не загружены. Попытка аварийной загрузки.',
-        );
-        await loadUserPreferences();
-    }
-
-    State.originalUISettings = JSON.parse(JSON.stringify(State.userPreferences));
-    State.currentPreviewSettings = JSON.parse(JSON.stringify(State.userPreferences));
-
-    if (typeof applyPreviewSettings === 'function') {
-        await applyPreviewSettings(State.currentPreviewSettings);
-    } else {
-        console.warn(
-            '[loadUISettings] Функция applyPreviewSettings не найдена. Предпросмотр не будет применен.',
-        );
-    }
-
-    console.log(
-        'loadUISettings: Настройки для модального окна подготовлены:',
-        State.currentPreviewSettings,
-    );
-    return State.currentPreviewSettings;
-}
-
-async function saveUISettings() {
-    console.log('Saving UI settings (Unified Logic V3 - Fixed Checkboxes)...');
-
-    const newSettings = getSettingsFromModal();
-    if (!newSettings) {
-        showNotification('Ошибка: Не удалось получить настройки из модального окна.', 'error');
-        return false;
-    }
-
-    State.userPreferences = { ...State.userPreferences, ...newSettings };
-
-    try {
-        if (typeof saveUserPreferences === 'function') {
-            await saveUserPreferences();
-            console.log('Единые настройки пользователя сохранены через saveUserPreferences().');
-        } else {
-            throw new Error('saveUserPreferences function not found.');
-        }
-
-        State.originalUISettings = JSON.parse(JSON.stringify(State.userPreferences));
-        State.currentPreviewSettings = JSON.parse(JSON.stringify(State.userPreferences));
-        State.isUISettingsDirty = false;
-
-        if (typeof applyPreviewSettings === 'function') {
-            await applyPreviewSettings(State.userPreferences);
-            console.log('UI settings applied immediately after saving.');
-        } else {
-            throw new Error(
-                'applyPreviewSettings function not found! UI might not update after save.',
-            );
-        }
-
-        const fallbackOrder =
-            Array.isArray(defaultPanelOrder) && defaultPanelOrder.length
-                ? [...defaultPanelOrder]
-                : Array.isArray(tabsConfig)
-                ? tabsConfig.map((t) => t.id)
-                : [];
-        const order =
-            Array.isArray(State.userPreferences?.panelOrder) && State.userPreferences.panelOrder.length
-                ? [...State.userPreferences.panelOrder]
-                : fallbackOrder;
-        const visibility =
-            Array.isArray(State.userPreferences?.panelVisibility) &&
-            State.userPreferences.panelVisibility.length === order.length
-                ? [...State.userPreferences.panelVisibility]
-                : order.map((id) => !(id === 'sedoTypes' || id === 'blacklistedClients'));
-        if (typeof applyPanelOrderAndVisibility === 'function') {
-            applyPanelOrderAndVisibility(order, visibility);
-        } else {
-            console.warn(
-                'applyPanelOrderAndVisibility not found; tabs order may not update immediately after save.',
-            );
-        }
-
-        showNotification('Настройки успешно сохранены.', 'success');
-        return true;
-    } catch (error) {
-        console.error('Error saving unified UI settings:', error);
-        showNotification(`Ошибка при сохранении настроек: ${error.message}`, 'error');
-        State.userPreferences = JSON.parse(JSON.stringify(State.originalUISettings));
-        return false;
-    }
-}
+// loadUISettings и saveUISettings импортируются из js/ui/ui-settings.js
 
 // ============================================================================
 // SEDO SYSTEM - MIGRATED to js/features/sedo.js
@@ -1501,214 +1533,6 @@ async function performForcedBackup() {
     return performForcedBackupModule();
 }
 
-function showNotification(message, type = 'success', duration = 5000) {
-    ensureNotificationIconlessStyles();
-    console.log(
-        `[SHOW_NOTIFICATION_CALL_V5.2_INLINE_STYLE] Message: "${message}", Type: "${type}", Duration: ${duration}, Timestamp: ${new Date().toISOString()}`,
-    );
-    let callStackInfo = 'N/A';
-    try {
-        const err = new Error();
-        if (err.stack) {
-            const stackLines = err.stack.split('\n');
-            callStackInfo = stackLines
-                .slice(2, 5)
-                .map((line) => line.trim())
-                .join(' -> ');
-        }
-    } catch (e) {}
-    console.log(`[SHOW_NOTIFICATION_CALL_STACK_V5.2_INLINE_STYLE] Called from: ${callStackInfo}`);
-
-    if (!message || typeof message !== 'string' || message.trim() === '') {
-        console.warn(
-            '[ShowNotification_V5.2_INLINE_STYLE] Вызван с пустым или невалидным сообщением. Уведомление не будет показано.',
-            { messageContent: message, type, duration },
-        );
-        return;
-    }
-
-    const FADE_DURATION_MS = 300;
-    const NOTIFICATION_ID = 'notification';
-
-    let notificationElement = document.getElementById(NOTIFICATION_ID);
-    let isNewNotification = !notificationElement;
-
-    if (notificationElement) {
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Найдено существующее уведомление (ID: ${NOTIFICATION_ID}). Обновление...`,
-        );
-        cancelAnimationFrame(Number(notificationElement.dataset.animationFrameId || 0));
-        clearTimeout(Number(notificationElement.dataset.hideTimeoutId || 0));
-        clearTimeout(Number(notificationElement.dataset.removeTimeoutId || 0));
-        notificationElement.style.transform = 'translateX(0)';
-        notificationElement.style.opacity = '1';
-    } else {
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Существующее уведомление не найдено. Создание нового (ID: ${NOTIFICATION_ID}).`,
-        );
-        notificationElement = document.createElement('div');
-        notificationElement.id = NOTIFICATION_ID;
-        notificationElement.setAttribute('role', 'alert');
-        notificationElement.style.willChange = 'transform, opacity';
-        notificationElement.style.transform = 'translateX(100%)';
-        notificationElement.style.opacity = '0';
-    }
-
-    let bgColorClass = 'bg-green-500 dark:bg-green-600';
-    let iconClass = 'fa-check-circle';
-
-    switch (type) {
-        case 'error':
-            bgColorClass = 'bg-red-600 dark:bg-red-700';
-            iconClass = 'fa-times-circle';
-            break;
-        case 'warning':
-            bgColorClass = 'bg-yellow-500 dark:bg-yellow-600';
-            iconClass = 'fa-exclamation-triangle';
-            break;
-        case 'info':
-            bgColorClass = 'bg-blue-500 dark:bg-blue-600';
-            iconClass = 'fa-info-circle';
-            break;
-    }
-
-    const colorClassesToRemove = [
-        'bg-green-500',
-        'dark:bg-green-600',
-        'bg-red-600',
-        'dark:bg-red-700',
-        'bg-yellow-500',
-        'dark:bg-yellow-600',
-        'bg-blue-500',
-        'dark:bg-blue-600',
-    ];
-    notificationElement.classList.remove(...colorClassesToRemove);
-
-    notificationElement.className = `fixed p-4 rounded-lg shadow-xl text-white text-sm font-medium transform transition-all duration-${FADE_DURATION_MS} ease-out max-w-sm sm:max-w-md ${bgColorClass}`;
-
-    notificationElement.style.top = '20px';
-    notificationElement.style.right = '20px';
-    notificationElement.style.bottom = 'auto';
-    notificationElement.style.left = 'auto';
-
-    notificationElement.style.zIndex = '200000';
-
-    let closeButton = notificationElement.querySelector('.notification-close-btn');
-    let messageSpan = notificationElement.querySelector('.notification-message-span');
-    let iconElement = notificationElement.querySelector('.notification-icon-i');
-
-    if (!closeButton || !messageSpan || !iconElement) {
-        notificationElement.innerHTML = '';
-
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'flex items-center';
-
-        iconElement = document.createElement('i');
-        try {
-            iconElement.style.color = 'var(--color-primary)';
-        } catch (e) {}
-
-        messageSpan = document.createElement('span');
-        messageSpan.className = 'flex-1 notification-message-span';
-
-        iconContainer.appendChild(iconElement);
-        iconContainer.appendChild(messageSpan);
-
-        closeButton = document.createElement('button');
-        closeButton.setAttribute('type', 'button');
-        closeButton.setAttribute('aria-label', 'Закрыть уведомление');
-        closeButton.className =
-            'ml-4 p-1 text-current opacity-70 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-white rounded-full flex items-center justify-center w-6 h-6 leading-none notification-close-btn';
-        closeButton.innerHTML = '<i class="fas fa-times fa-sm"></i>';
-
-        const contentWrapper = document.createElement('div');
-        contentWrapper.className = 'flex items-center justify-between w-full';
-        contentWrapper.appendChild(iconContainer);
-        contentWrapper.appendChild(closeButton);
-
-        notificationElement.appendChild(contentWrapper);
-    }
-
-    messageSpan.textContent = message;
-
-    const closeAndRemove = () => {
-        if (!document.body.contains(notificationElement)) {
-            console.log(
-                `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Элемент (msg: "${messageSpan.textContent}") уже удален, выход.`,
-            );
-            return;
-        }
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Запуск закрытия для (msg: "${messageSpan.textContent}").`,
-        );
-
-        clearTimeout(Number(notificationElement.dataset.hideTimeoutId));
-        clearTimeout(Number(notificationElement.dataset.removeTimeoutId));
-
-        notificationElement.style.transform = 'translateX(100%)';
-        notificationElement.style.opacity = '0';
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Анимация скрытия для (msg: "${messageSpan.textContent}") запущена.`,
-        );
-
-        const currentRemoveId = setTimeout(() => {
-            if (document.body.contains(notificationElement)) {
-                notificationElement.remove();
-                console.log(
-                    `[ShowNotification_V5.2_INLINE_STYLE CloseAndRemove] Элемент (msg: "${messageSpan.textContent}") удален из DOM по таймеру.`,
-                );
-            }
-        }, FADE_DURATION_MS);
-        notificationElement.dataset.removeTimeoutId = currentRemoveId.toString();
-    };
-
-    if (closeButton._clickHandler) {
-        closeButton.removeEventListener('click', closeButton._clickHandler);
-    }
-    closeButton._clickHandler = (e) => {
-        e.stopPropagation();
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Клик по крестику для (msg: "${messageSpan.textContent}").`,
-        );
-        closeAndRemove();
-    };
-    closeButton.addEventListener('click', closeButton._clickHandler);
-
-    if (isNewNotification) {
-        document.body.appendChild(notificationElement);
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Новое уведомление (msg: "${message}") добавлено в DOM.`,
-        );
-    }
-
-    if (!isNewNotification) {
-        notificationElement.style.transform = 'translateX(100%)';
-        notificationElement.style.opacity = '0';
-    }
-
-    notificationElement.dataset.animationFrameId = requestAnimationFrame(() => {
-        if (document.body.contains(notificationElement)) {
-            notificationElement.style.transform = 'translateX(0)';
-            notificationElement.style.opacity = '1';
-            console.log(
-                `[ShowNotification_V5.2_INLINE_STYLE] Анимация появления/обновления для (msg: "${message}") запущена.`,
-            );
-        }
-    }).toString();
-
-    if (duration > 0) {
-        const hideTimeoutId = setTimeout(closeAndRemove, duration);
-        notificationElement.dataset.hideTimeoutId = hideTimeoutId.toString();
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Установлен hideTimeoutId: ${hideTimeoutId} на ${duration}ms для (msg: "${message}").`,
-        );
-    } else if (duration === 0) {
-        console.log(
-            `[ShowNotification_V5.2_INLINE_STYLE] Duration is 0 для (msg: "${message}"). Автоматическое закрытие НЕ будет установлено.`,
-        );
-    }
-}
-
 const DEFAULT_MAIN_ALGORITHM = JSON.parse(JSON.stringify(algorithms.main));
 
 const DEFAULT_OTHER_SECTIONS = {};
@@ -1759,7 +1583,6 @@ function handleTabsResize() {
     return handleTabsResizeModule();
 }
 
-
 // saveNewAlgorithm теперь импортируется из js/components/algorithms-save.js
 async function saveNewAlgorithm() {
     return saveNewAlgorithmModule();
@@ -1794,8 +1617,20 @@ function renderScreenshotThumbnails(container, screenshots, onOpenLightbox, moda
 }
 
 // Wrapper для модуля Screenshots
-function renderScreenshotList(container, screenshots, onOpenLightbox, onItemClick = null, modalState = null) {
-    return renderScreenshotListModule(container, screenshots, onOpenLightbox, onItemClick, modalState);
+function renderScreenshotList(
+    container,
+    screenshots,
+    onOpenLightbox,
+    onItemClick = null,
+    modalState = null,
+) {
+    return renderScreenshotListModule(
+        container,
+        screenshots,
+        onOpenLightbox,
+        onItemClick,
+        modalState,
+    );
 }
 
 // escapeHtml, normalizeBrokenEntities, decodeBasicEntitiesOnce импортируются из utils/html.js
@@ -1910,7 +1745,6 @@ function renderScreenshotIcon(algorithmId, stepIndex, hasScreenshots = false) {
 
 /* LEGACY SEARCH CODE REMOVED - See js/features/search.js */
 
-
 // Wrapper для модуля Client Data
 async function saveClientData() {
     return saveClientDataModule();
@@ -1936,77 +1770,7 @@ function clearClientData() {
     return clearClientDataModule();
 }
 
-const themeToggleBtn = document.getElementById('themeToggle');
-themeToggleBtn?.addEventListener('click', async () => {
-    if (!State.userPreferences) {
-        console.error('State.userPreferences не инициализирован. Невозможно переключить тему.');
-        showNotification('Ошибка: Не удалось загрузить настройки пользователя.', 'error');
-        return;
-    }
-
-    const currentAppTheme =
-        document.documentElement.dataset.theme ||
-        State.userPreferences.theme ||
-        DEFAULT_UI_SETTINGS.themeMode;
-    let nextTheme;
-
-    if (currentAppTheme === 'dark') {
-        nextTheme = 'light';
-    } else if (currentAppTheme === 'light') {
-        nextTheme = 'auto';
-    } else {
-        nextTheme = 'dark';
-    }
-
-    if (typeof setTheme === 'function') {
-        setTheme(nextTheme);
-    } else {
-        console.error('Функция setTheme не найдена!');
-        showNotification('Ошибка: Не удалось применить тему.', 'error');
-        return;
-    }
-
-    let prefsSaved = false;
-    if (typeof saveUserPreferences === 'function') {
-        prefsSaved = await saveUserPreferences();
-    } else {
-        console.error('Функция saveUserPreferences не найдена!');
-        showNotification('Ошибка: Не удалось сохранить настройки пользователя.', 'error');
-        if (typeof setTheme === 'function') setTheme(currentAppTheme);
-        return;
-    }
-
-    if (prefsSaved) {
-        const themeName =
-            nextTheme === 'dark' ? 'темная' : nextTheme === 'light' ? 'светлая' : 'автоматическая';
-
-        const customizeUIModal = document.getElementById('customizeUIModal');
-        if (customizeUIModal && !customizeUIModal.classList.contains('hidden')) {
-            const nextThemeRadio = customizeUIModal.querySelector(
-                `input[name="themeMode"][value="${nextTheme}"]`,
-            );
-            if (nextThemeRadio) {
-                nextThemeRadio.checked = true;
-            }
-
-            if (typeof State.currentPreviewSettings === 'object' && State.currentPreviewSettings !== null) {
-                State.currentPreviewSettings.themeMode = nextTheme;
-            }
-            if (typeof State.originalUISettings === 'object' && State.originalUISettings !== null) {
-                State.originalUISettings.themeMode = nextTheme;
-            }
-
-            if (typeof getSettingsFromModal === 'function' && typeof deepEqual === 'function') {
-                State.isUISettingsDirty = !deepEqual(State.originalUISettings, getSettingsFromModal());
-            }
-        }
-    } else {
-        showNotification('Ошибка сохранения темы', 'error');
-        if (typeof setTheme === 'function') {
-            setTheme(currentAppTheme);
-        }
-    }
-});
+// Переключение темы: обработчик вешается в initThemeToggle (theme-toggle.js), вызываемом из initUI.
 
 // Wrapper для модуля theme.js
 function migrateLegacyThemeVars() {
@@ -2122,7 +1886,6 @@ const populateExtLinkCategoryFilter = populateExtLinkCategoryFilterModule;
 const filterExtLinks = filterExtLinksModule;
 const handleExtLinkAction = handleExtLinkActionModule;
 
-
 // populateModalControls теперь импортируется из js/ui/ui-settings-modal.js
 function populateModalControls(settings) {
     return populateModalControlsModule(settings);
@@ -2207,25 +1970,7 @@ function createPanelItemElement(id, name, isVisible = true) {
 // ============================================================================
 // createPanelItemElement - imported from ui-settings-modal.js module
 
-let _themeMql = null;
-function _applyThemeClass(isDark) {
-    const root = document.documentElement;
-    root.classList.toggle('dark', !!isDark);
-    root.dataset.theme = isDark ? 'dark' : 'light';
-    const style = root.style;
-    style.setProperty(
-        '--color-background',
-        `var(--override-background-${isDark ? 'dark' : 'light'}, var(--override-background-base))`,
-    );
-    const body = document.body;
-    if (body.classList.contains('custom-bg-image-active')) {
-        body.classList.toggle('theme-dark-text', !!isDark);
-        body.classList.toggle('theme-light-text', !isDark);
-    }
-}
-function _onSystemThemeChange(e) {
-    _applyThemeClass(e.matches);
-}
+// applyThemeClass и onSystemThemeChange импортируются из js/components/theme.js
 
 // applyPreviewSettings теперь импортируется из js/ui/preview-settings.js
 async function applyPreviewSettings(settings) {
@@ -2284,11 +2029,26 @@ setUISettingsDependencies({
     defaultPanelVisibility,
     applyPreviewSettings: applyPreviewSettingsModule,
     showNotification,
-    loadUserPreferences: typeof loadUserPreferencesModule !== 'undefined' ? loadUserPreferencesModule : loadUserPreferences,
+    loadUserPreferences:
+        typeof loadUserPreferencesModule !== 'undefined'
+            ? loadUserPreferencesModule
+            : loadUserPreferences,
+    saveUserPreferences:
+        typeof saveUserPreferencesModule !== 'undefined'
+            ? saveUserPreferencesModule
+            : saveUserPreferences,
+    getSettingsFromModal: getSettingsFromModalModule,
     applyPanelOrderAndVisibility: applyPanelOrderAndVisibilityModule,
-    ensureTabPresent: typeof ensureTabPresentModule !== 'undefined' ? ensureTabPresentModule : ensureTabPresent,
-    setupTabsOverflow: typeof setupTabsOverflowModule !== 'undefined' ? setupTabsOverflowModule : setupTabsOverflow,
-    updateVisibleTabs: typeof updateVisibleTabsModule !== 'undefined' ? updateVisibleTabsModule : updateVisibleTabs,
+    ensureTabPresent:
+        typeof ensureTabPresentModule !== 'undefined' ? ensureTabPresentModule : ensureTabPresent,
+    setupTabsOverflow:
+        typeof setupTabsOverflowModule !== 'undefined'
+            ? setupTabsOverflowModule
+            : setupTabsOverflow,
+    updateVisibleTabs:
+        typeof updateVisibleTabsModule !== 'undefined'
+            ? updateVisibleTabsModule
+            : updateVisibleTabs,
 });
 console.log('[script.js] Зависимости модуля UI Settings установлены');
 
@@ -2386,11 +2146,19 @@ const newClickHandler = async (event) => {
         ? modalTitleElement.textContent
         : `алгоритм с ID ${algorithmIdToDelete}`;
 
-    if (
-        confirm(
-            `Вы уверены, что хотите удалить алгоритм "${algorithmTitle}"? Это действие необратимо.`,
-        )
-    ) {
+    const confirmed =
+        typeof showAppConfirmModule === 'function'
+            ? await showAppConfirmModule({
+                  title: 'Удаление алгоритма',
+                  message: `Вы уверены, что хотите удалить алгоритм «${algorithmTitle}»? Это действие необратимо.`,
+                  confirmText: 'Удалить',
+                  cancelText: 'Отмена',
+                  confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+              })
+            : confirm(
+                  `Вы уверены, что хотите удалить алгоритм "${algorithmTitle}"? Это действие необратимо.`,
+              );
+    if (confirmed) {
         algorithmModal.classList.add('hidden');
         console.log(
             `[newClickHandler] Modal #${algorithmModal.id} скрыто сразу после подтверждения.`,
@@ -2425,6 +2193,7 @@ const triggerSelectors = [
     '#deleteAlgorithmBtn',
     '#addProgramAlgorithmBtn',
     '#addSkziAlgorithmBtn',
+    '#addLk1cAlgorithmBtn',
     '#addWebRegAlgorithmBtn',
     '#customizeUIBtn',
     '#addBookmarkBtn',
@@ -2475,7 +2244,6 @@ document.addEventListener('click', (event) => {
 
     if (event.target === topmostModal) {
         const nonClosableModals = [
-            'customizeUIModal',
             'bookmarkModal',
             'extLinkModal',
             'foldersModal',
@@ -2504,15 +2272,20 @@ document.addEventListener('click', (event) => {
             `[Global Click Handler] Closing modal "${topmostModal.id}" due to click on overlay.`,
         );
 
-        if (topmostModal.id === 'editModal' || topmostModal.id === 'addModal') {
+        if (
+            topmostModal.id === 'editModal' ||
+            topmostModal.id === 'addModal' ||
+            topmostModal.id === 'customizeUIModal'
+        ) {
             if (typeof requestCloseModal === 'function') {
-                requestCloseModal(topmostModal);
-            } else {
-                console.warn('requestCloseModal function not found, hiding modal directly.');
-                topmostModal.classList.add('hidden');
-                if (typeof removeEscapeHandler === 'function') {
-                    removeEscapeHandler(topmostModal);
+                if (requestCloseModal(topmostModal) !== false) {
+                    topmostModal.classList.add('hidden');
+                    if (typeof removeEscapeHandler === 'function')
+                        removeEscapeHandler(topmostModal);
                 }
+            } else {
+                topmostModal.classList.add('hidden');
+                if (typeof removeEscapeHandler === 'function') removeEscapeHandler(topmostModal);
             }
         } else if (
             topmostModal.id === 'reglamentDetailModal' ||
@@ -2659,7 +2432,9 @@ const toggleActiveSectionView = toggleActiveSectionViewModule;
 
 function toggleActiveSectionViewOriginal() {
     if (typeof State.currentSection === 'undefined' || !State.currentSection) {
-        console.warn('toggleActiveSectionView: Переменная State.currentSection не определена или пуста.');
+        console.warn(
+            'toggleActiveSectionView: Переменная State.currentSection не определена или пуста.',
+        );
         showNotification('Не удалось определить активную секцию для переключения вида.', 'warning');
         return;
     }
@@ -2717,7 +2492,9 @@ function toggleActiveSectionViewOriginal() {
     }
 
     const currentView =
-        State.viewPreferences[sectionIdentifierForPrefs] || container.dataset.defaultView || 'cards';
+        State.viewPreferences[sectionIdentifierForPrefs] ||
+        container.dataset.defaultView ||
+        'cards';
     const nextView = currentView === 'cards' ? 'list' : 'cards';
 
     console.log(
@@ -3070,7 +2847,6 @@ function openLightbox(blobs, initialIndex) {
     return openLightboxModule(blobs, initialIndex);
 }
 
-
 // Wrapper для модуля Screenshots
 async function handleViewScreenshotClick(event) {
     return handleViewScreenshotClickModule(event);
@@ -3089,7 +2865,13 @@ function attachStepDeleteHandler(
     section,
     mode = 'edit',
 ) {
-    return attachStepDeleteHandlerModule(deleteButton, stepElement, containerElement, section, mode);
+    return attachStepDeleteHandlerModule(
+        deleteButton,
+        stepElement,
+        containerElement,
+        section,
+        mode,
+    );
 }
 
 // Wrapper для модуля step-management.js
@@ -3111,6 +2893,116 @@ function openAnimatedModal(modalElement) {
 function closeAnimatedModal(modalElement) {
     return closeAnimatedModalModule(modalElement);
 }
+
+/**
+ * Запрос на закрытие модалки (Escape / клик по оверлею).
+ * Для editModal/addModal проверяет несохранённые изменения; при наличии показывает окно «Выйти без сохранения?».
+ * @param {HTMLElement} modal - модальное окно
+ * @returns {boolean} false — закрытие отменено (показан диалог или не закрываем); true — модалка уже закрыта вызывающей стороной не должна закрывать (реальное закрытие делаем мы внутри)
+ */
+function requestCloseModal(modal) {
+    if (!modal) return true;
+    const modalId = modal.id;
+    const closeModalNow = () => {
+        modal.classList.add('hidden');
+        if (typeof removeEscapeHandler === 'function') removeEscapeHandler(modal);
+        if (getVisibleModals().length === 0) {
+            document.body.classList.remove('modal-open', 'overflow-hidden');
+        }
+    };
+
+    const confirmAndClose = () => {
+        if (typeof showUnsavedConfirmModalModule === 'function') {
+            showUnsavedConfirmModalModule().then((leave) => {
+                if (leave) closeModalNow();
+            });
+            return false;
+        }
+        return true;
+    };
+
+    if (modalId === 'editModal') {
+        if (typeof hasChanges === 'function' && hasChanges('edit')) {
+            return confirmAndClose();
+        }
+    } else if (modalId === 'addModal') {
+        if (typeof hasChanges === 'function' && hasChanges('add')) {
+            return confirmAndClose();
+        }
+    } else if (modalId === 'customizeUIModal') {
+        if (State && State.isUISettingsDirty) {
+            return confirmAndClose();
+        }
+    } else if (modalId === 'bookmarkModal') {
+        try {
+            const form = modal.querySelector('#bookmarkForm');
+            if (
+                form &&
+                State.initialBookmarkFormState &&
+                typeof getCurrentBookmarkFormState === 'function' &&
+                typeof deepEqual === 'function'
+            ) {
+                const currentState = getCurrentBookmarkFormState(form);
+                if (!deepEqual(State.initialBookmarkFormState, currentState)) {
+                    return confirmAndClose();
+                }
+            }
+        } catch (e) {
+            console.warn('[requestCloseModal] bookmarkModal dirty-check failed:', e);
+        }
+    } else if (modalId === 'extLinkModal') {
+        try {
+            const form = modal.querySelector('#extLinkForm');
+            const initialRaw = modal.dataset.initialFormState || '';
+            if (form && initialRaw && typeof deepEqual === 'function') {
+                const initialState = JSON.parse(initialRaw);
+                const currentState = {
+                    title: form.elements?.extLinkTitle?.value || '',
+                    url: form.elements?.extLinkUrl?.value || '',
+                    description: form.elements?.extLinkDescription?.value || '',
+                    category: form.elements?.extLinkCategory?.value || '',
+                };
+                if (!deepEqual(initialState, currentState)) {
+                    return confirmAndClose();
+                }
+            }
+        } catch (e) {
+            console.warn('[requestCloseModal] extLinkModal dirty-check failed:', e);
+        }
+    }
+    return true;
+}
+
+// Отмена и крестик в модалках редактирования/добавления алгоритма — через requestCloseModal (проверка несохранённых)
+document.addEventListener('click', (e) => {
+    const cancelEdit = e.target.closest('#cancelEditBtn');
+    const cancelAdd = e.target.closest('#cancelAddBtn');
+    const closeEdit = e.target.closest('#closeEditModalBtn');
+    const closeAdd = e.target.closest('#closeAddModalBtn');
+    const modal =
+        cancelEdit || closeEdit
+            ? document.getElementById('editModal')
+            : cancelAdd || closeAdd
+              ? document.getElementById('addModal')
+              : null;
+    if (!modal || modal.classList.contains('hidden')) return;
+    if (!cancelEdit && !cancelAdd && !closeEdit && !closeAdd) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof requestCloseModal !== 'function') {
+        modal.classList.add('hidden');
+        if (typeof removeEscapeHandler === 'function') removeEscapeHandler(modal);
+        if (getVisibleModals().length === 0)
+            document.body.classList.remove('modal-open', 'overflow-hidden');
+        return;
+    }
+    if (requestCloseModal(modal) !== false) {
+        modal.classList.add('hidden');
+        if (typeof removeEscapeHandler === 'function') removeEscapeHandler(modal);
+        if (getVisibleModals().length === 0)
+            document.body.classList.remove('modal-open', 'overflow-hidden');
+    }
+});
 
 closeModalBtn?.addEventListener('click', () => closeAnimatedModal(algorithmModal));
 
@@ -3213,7 +3105,6 @@ function showBlacklistWarning() {
     return showBlacklistWarningModule();
 }
 
-
 // applyClientNotesFontSize теперь импортируется из js/features/client-data.js
 function applyClientNotesFontSize() {
     return applyClientNotesFontSizeModule();
@@ -3224,339 +3115,28 @@ function applyClientNotesFontSize() {
 // ============================================================================
 // applyClientNotesFontSize - imported from client-data.js module
 
-async function initClientDataSystem() {
-    ensureInnPreviewStyles();
-    const LOG_PREFIX = '[ClientDataSystem]';
-    console.log(`${LOG_PREFIX} Запуск инициализации...`);
-
-    const clientNotes = document.getElementById('clientNotes');
-    if (!clientNotes) {
-        console.error(
-            `${LOG_PREFIX} КРИТИЧЕСКАЯ ОШИБКА: поле для заметок #clientNotes не найдено. Система не будет работать.`,
-        );
-        return;
-    }
-    console.log(`${LOG_PREFIX} Поле #clientNotes успешно найдено.`);
-
-    const clearClientDataBtn = document.getElementById('clearClientDataBtn');
-    if (!clearClientDataBtn) {
-        console.warn(`${LOG_PREFIX} Кнопка #clearClientDataBtn не найдена.`);
-    }
-
-    const buttonContainer = clearClientDataBtn?.parentNode;
-    if (!buttonContainer) {
-        console.warn(
-            `${LOG_PREFIX} Родительский контейнер для кнопок управления данными клиента не найден.`,
-        );
-    }
-
-    if (State.clientNotesInputHandler) {
-        clientNotes.removeEventListener('input', State.clientNotesInputHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'input' удален.`);
-    }
-    if (State.clientNotesKeydownHandler) {
-        clientNotes.removeEventListener('keydown', State.clientNotesKeydownHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keydown' удален.`);
-    }
-
-    if (State.clientNotesCtrlClickHandler) {
-        clientNotes.removeEventListener('mousedown', State.clientNotesCtrlClickHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'click' (Ctrl+Click INN) удален.`);
-    }
-    if (State.clientNotesBlurHandler) {
-        clientNotes.removeEventListener('blur', State.clientNotesBlurHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'blur' (сброс курсора) удален.`);
-    }
-    if (State.clientNotesCtrlKeyDownHandler) {
-        document.removeEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keydown' (Ctrl cursor) удален.`);
-    }
-    if (State.clientNotesCtrlKeyUpHandler) {
-        document.removeEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
-        console.log(`${LOG_PREFIX} Старый обработчик 'keyup' (Ctrl cursor) удален.`);
-    }
-
-    if (window.__clientNotesInnPreviewInputHandler) {
-        clientNotes.removeEventListener('input', window.__clientNotesInnPreviewInputHandler);
-        window.__clientNotesInnPreviewInputHandler = null;
-        console.log(`${LOG_PREFIX} Старый обработчик 'input' (ИНН-превью) удален.`);
-    }
-    if (
-        window.__clientNotesInnPreview &&
-        typeof window.__clientNotesInnPreview.destroy === 'function'
-    ) {
-        window.__clientNotesInnPreview.destroy();
-        window.__clientNotesInnPreview = null;
-        console.log(`${LOG_PREFIX} Старое ИНН-превью уничтожено.`);
-    }
-
-    State.clientNotesInputHandler = debounce(async () => {
-        try {
-            console.log(`${LOG_PREFIX} Debounce-таймер сработал. Выполняем действия...`);
-            const currentText = clientNotes.value;
-
-            console.log(`${LOG_PREFIX}   -> Вызов await saveClientData()`);
-            await saveClientData();
-
-            console.log(`${LOG_PREFIX}   -> Вызов await checkForBlacklistedInn()`);
-            await checkForBlacklistedInn(currentText);
-        } catch (error) {
-            console.error(`${LOG_PREFIX} Ошибка внутри debounced-обработчика:`, error);
-        }
-    }, 750);
-
-    clientNotes.addEventListener('input', State.clientNotesInputHandler);
-    console.log(`${LOG_PREFIX} Новый обработчик 'input' с debounce и await успешно привязан.`);
-
-    State.clientNotesKeydownHandler = (event) => {
-        if (event.key === 'Enter' && event.ctrlKey) {
-            event.preventDefault();
-            const textarea = event.target;
-            const value = textarea.value;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const textBeforeCursor = value.substring(0, start);
-            const regex = /(?:^|\n)\s*(\d+)([).])\s/g;
-            let lastNum = 0;
-            let delimiter = ')';
-            let match;
-            while ((match = regex.exec(textBeforeCursor)) !== null) {
-                const currentNum = parseInt(match[1], 10);
-                if (currentNum >= lastNum) {
-                    lastNum = currentNum;
-                    delimiter = match[2];
-                }
-            }
-            const nextNum = lastNum + 1;
-            let prefix = '\n\n';
-            if (start === 0) {
-                prefix = '';
-            } else {
-                const charBefore = value.substring(start - 1, start);
-                if (charBefore === '\n') {
-                    if (start >= 2 && value.substring(start - 2, start) === '\n\n') {
-                        prefix = '';
-                    } else {
-                        prefix = '\n';
-                    }
-                }
-            }
-            const insertionText = prefix + nextNum + delimiter + ' ';
-            textarea.value = value.substring(0, start) + insertionText + value.substring(end);
-            textarea.selectionStart = textarea.selectionEnd = start + insertionText.length;
-            textarea.scrollTop = textarea.scrollHeight;
-            textarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-        }
-    };
-    clientNotes.addEventListener('keydown', State.clientNotesKeydownHandler);
-    console.log(`${LOG_PREFIX} Обработчик 'keydown' (Ctrl+Enter) успешно привязан.`);
-
-    function getInnAtCursor(ta) {
-        const text = ta.value || '';
-        const n = text.length;
-        const isDigit = (ch) => ch >= '0' && ch <= '9';
-        const basePos = ta.selectionStart ?? 0;
-        console.log(`[getInnAtCursor] Base position (selectionStart): ${basePos}`);
-        const candidates = [basePos, basePos - 1, basePos + 1, basePos - 2, basePos + 2];
-        for (const p of candidates) {
-            if (p < 0 || p >= n) continue;
-            if (!isDigit(text[p])) continue;
-            let l = p,
-                r = p + 1;
-            while (l > 0 && isDigit(text[l - 1])) l--;
-            while (r < n && isDigit(text[r])) r++;
-            const token = text.slice(l, r);
-            if (token.length === 10 || token.length === 12) {
-                console.log(`[getInnAtCursor] Found valid INN: "${token}" at [${l}, ${r}]`);
-                return { inn: token, start: l, end: r };
-            }
-        }
-        console.log(`[getInnAtCursor] No INN found at position ${basePos}.`);
-        return null;
-    }
-
-    const clientNotesCtrlMouseDownHandler = async (event) => {
-        console.log(
-            `[ClientNotes Handler] Event triggered: ${event.type}. Ctrl/Meta: ${
-                event.ctrlKey || event.metaKey
-            }`,
-        );
-        if (!(event.ctrlKey || event.metaKey)) return;
-        if (typeof event.button === 'number' && event.button !== 0) return;
-        if (!__acquireCopyLock(250)) return;
-
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        console.log(
-            `[ClientNotes Handler] Before getInnAtCursor: selectionStart=${clientNotes.selectionStart}, selectionEnd=${clientNotes.selectionEnd}`,
-        );
-        const hit = getInnAtCursor(clientNotes);
-
-        if (!hit) {
-            console.log('[ClientNotes Handler] INN not found, handler exits without action.');
-            return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        try {
-            clientNotes.setSelectionRange(hit.start, hit.end);
-            await copyToClipboard(hit.inn, `ИНН ${hit.inn} скопирован!`);
-        } catch (e) {
-            console.error('[ClientDataSystem] Ошибка копирования ИНН по Ctrl+MouseDown:', e);
-        }
-    };
-
-    clientNotes.addEventListener('mousedown', clientNotesCtrlMouseDownHandler);
-    State.clientNotesCtrlClickHandler = clientNotesCtrlMouseDownHandler;
-    console.log(`${LOG_PREFIX} Обработчик 'mousedown' (Ctrl+Click INN→copy) привязан.`);
-
-    State.clientNotesCtrlKeyDownHandler = (e) => {
-        const isClientNotesFocused = document.activeElement === clientNotes;
-        const ctrlOrMeta = e.ctrlKey || e.metaKey;
-        if (ctrlOrMeta && isClientNotesFocused) {
-            ensureInnPreviewStyles();
-            if (!window.__clientNotesInnPreview) {
-                window.__clientNotesInnPreview = createClientNotesInnPreview(clientNotes);
-            }
-            const p = window.__clientNotesInnPreview;
-            p.show();
-            p.update();
-            if (!window.__clientNotesInnPreviewInputHandler) {
-                window.__clientNotesInnPreviewInputHandler = () => {
-                    if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.update();
-                };
-                clientNotes.addEventListener('input', window.__clientNotesInnPreviewInputHandler);
-            }
-        }
-    };
-    State.clientNotesCtrlKeyUpHandler = (e) => {
-        if (!e.ctrlKey && !e.metaKey) {
-            clientNotes.style.cursor = '';
-            if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
-        }
-    };
-    State.clientNotesBlurHandler = () => {
-        clientNotes.style.cursor = '';
-        if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
-    };
-    document.addEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
-    document.addEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
-    clientNotes.addEventListener('blur', State.clientNotesBlurHandler);
-    console.log(`${LOG_PREFIX} Индикация курсора при Ctrl/Meta активирована.`);
-
-    if (clearClientDataBtn) {
-        clearClientDataBtn.addEventListener('click', () => {
-            if (confirm('Вы уверены, что хотите очистить все данные по обращению?')) {
-                clearClientData();
-            }
-        });
-    }
-
-    if (buttonContainer) {
-        const existingExportBtn = document.getElementById('exportTextBtn');
-        if (!existingExportBtn) {
-            const exportTextBtn = document.createElement('button');
-            exportTextBtn.id = 'exportTextBtn';
-            exportTextBtn.innerHTML = `<i class="fas fa-file-download"></i><span class="hidden lg:inline lg:ml-1">Сохранить .txt</span>`;
-            exportTextBtn.className = `p-2 lg:px-3 lg:py-1.5 text-white rounded-md transition text-sm flex items-center border-b`;
-            exportTextBtn.title = 'Сохранить заметки как .txt файл';
-            exportTextBtn.addEventListener('click', exportClientDataToTxt);
-            buttonContainer.appendChild(exportTextBtn);
-        }
-    }
-
-    try {
-        console.log(`${LOG_PREFIX} Загрузка начальных данных для clientNotes...`);
-        let clientDataNotesValue = '';
-        if (State.db) {
-            const clientDataFromDB = await getFromIndexedDB('clientData', 'current');
-            if (clientDataFromDB && clientDataFromDB.notes) {
-                clientDataNotesValue = clientDataFromDB.notes;
-            }
-        } else {
-            const localData = localStorage.getItem('clientData');
-            if (localData) {
-                try {
-                    clientDataNotesValue = JSON.parse(localData).notes || '';
-                } catch (e) {
-                    console.warn(
-                        '[initClientDataSystem] Ошибка парсинга clientData из localStorage:',
-                        e,
-                    );
-                }
-            }
-        }
-        clientNotes.value = clientDataNotesValue;
-        console.log(`${LOG_PREFIX} Данные загружены. clientNotes.value установлен.`);
-
-        applyClientNotesFontSize();
-    } catch (error) {
-        console.error(`${LOG_PREFIX} Ошибка при загрузке данных клиента:`, error);
-    }
-
-    console.log(`${LOG_PREFIX} Инициализация системы данных клиента полностью завершена.`);
-    // ensureBodyScrollUnlocked вызывается внутри createClientNotesInnPreview при необходимости
-    // Убеждаемся, что нет открытых модальных окон перед разблокировкой скролла
-    try {
-        const visibleModals = typeof getVisibleModals === 'function' ? getVisibleModals() : [];
-        if (visibleModals.length === 0) {
-            document.body.classList.remove('modal-open', 'overflow-hidden');
-            if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
-            if (document.documentElement.style.overflow === 'hidden') document.documentElement.style.overflow = '';
-        }
-    } catch (e) {
-        console.warn('[initClientDataSystem] Ошибка при проверке модальных окон:', e);
-    }
-}
-
-function ensureInnPreviewStyles() {
-    if (document.getElementById('innPreviewStyles')) return;
-    const style = document.createElement('style');
-    style.id = 'innPreviewStyles';
-    style.textContent = `
-    .client-notes-preview{
-        position: absolute;
-        --inn-offset-x: -0.4px;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        overflow: hidden;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        background: transparent;
-        pointer-events: none;
-        z-index: 2;
-    }
-    .client-notes-preview::-webkit-scrollbar{
-        width: 0; height: 0; display: none;
-    }
-        .client-notes-preview__inner{
-        position: relative;
-        will-change: transform;
-    }
-    .client-notes-preview .inn-highlight{
-        color: var(--color-primary, #7aa2ff) !important;
-        text-decoration: underline;
-        text-decoration-color: var(--color-primary);
-        text-decoration-thickness: .1em;
-        text-underline-offset: .12em;
-        text-decoration-skip-ink: auto;
-        /* НИЧЕГО, что меняет метрики инлайна */
-        display: inline;
-        padding: 0;
-        margin: 0;
-    }
- 
-  `;
-    document.head.appendChild(style);
-}
-
 // createClientNotesInnPreview теперь импортируется из js/features/client-data.js
 function createClientNotesInnPreview(textarea) {
     return createClientNotesInnPreviewModule(textarea, escapeHtml, getVisibleModals);
 }
+
+// initClientDataSystem и ensureInnPreviewStyles импортируются из js/features/client-data-init.js
+setClientDataInitDependencies({
+    State,
+    debounce,
+    saveClientData,
+    checkForBlacklistedInn,
+    createClientNotesInnPreview,
+    copyToClipboard: copyToClipboardModule,
+    getFromIndexedDB,
+    applyClientNotesFontSize,
+    clearClientData,
+    exportClientDataToTxt,
+    getVisibleModals,
+    showAppConfirm: showAppConfirmModule,
+    openClientNotesWindow: openClientNotesWindowModule,
+});
+console.log('[script.js] Зависимости client-data-init установлены.');
 
 // ============================================================================
 // createClientNotesInnPreview - MIGRATED to js/features/client-data.js
@@ -3576,7 +3156,10 @@ async function checkAndSetWelcomeText() {
         return;
     }
 
-    if (!State.userPreferences || typeof State.userPreferences.welcomeTextShownInitially === 'undefined') {
+    if (
+        !State.userPreferences ||
+        typeof State.userPreferences.welcomeTextShownInitially === 'undefined'
+    ) {
         console.error(
             '[checkAndSetWelcomeText] State.userPreferences не загружены или не содержат флага welcomeTextShownInitially. Выход.',
         );
@@ -3689,8 +3272,22 @@ async function checkAndSetWelcomeText() {
 // - isFavorite, refreshAllFavoritableSectionsUI, initFavoritesSystem
 
 // Wrapper functions for backward compatibility
-async function toggleFavorite(originalItemId, itemType, originalItemSection, title, description, buttonElement) {
-    return toggleFavoriteModule(originalItemId, itemType, originalItemSection, title, description, buttonElement);
+async function toggleFavorite(
+    originalItemId,
+    itemType,
+    originalItemSection,
+    title,
+    description,
+    buttonElement,
+) {
+    return toggleFavoriteModule(
+        originalItemId,
+        itemType,
+        originalItemSection,
+        title,
+        description,
+        buttonElement,
+    );
 }
 
 async function updateFavoriteStatusUI(originalItemId, itemType, isFavoriteStatus) {
@@ -3701,8 +3298,22 @@ async function renderFavoritesPage() {
     return renderFavoritesPageModule();
 }
 
-function getFavoriteButtonHTML(originalItemId, itemType, originalItemSection, title, description, isCurrentlyFavorite) {
-    return getFavoriteButtonHTMLModule(originalItemId, itemType, originalItemSection, title, description, isCurrentlyFavorite);
+function getFavoriteButtonHTML(
+    originalItemId,
+    itemType,
+    originalItemSection,
+    title,
+    description,
+    isCurrentlyFavorite,
+) {
+    return getFavoriteButtonHTMLModule(
+        originalItemId,
+        itemType,
+        originalItemSection,
+        title,
+        description,
+        isCurrentlyFavorite,
+    );
 }
 
 function isFavorite(itemType, originalItemId) {
@@ -3712,8 +3323,6 @@ function isFavorite(itemType, originalItemId) {
 async function refreshAllFavoritableSectionsUI() {
     return refreshAllFavoritableSectionsUIModule();
 }
-
-
 
 async function isInnBlacklisted(inn) {
     return isInnBlacklistedModule(inn);
@@ -3775,7 +3384,7 @@ function setupBackgroundImageControls() {
     };
 
     const DISMISS_AFTER_ACTIVITY_DELAY_MS = 2000;
-    
+
     // Максимальное время показа HUD (30 секунд) - защита от зависания
     const MAX_HUD_DISPLAY_TIME = 30000;
 
@@ -3929,21 +3538,26 @@ function setupBackgroundImageControls() {
         if (STATE.tasks.size > 0) STATE.rafId = requestAnimationFrame(tick);
     }
 
+    function scheduleAutoHideTimeout() {
+        if (STATE.autoHideTimeoutId) clearTimeout(STATE.autoHideTimeoutId);
+        STATE.autoHideTimeoutId = setTimeout(() => {
+            if (STATE.tasks.size > 0) {
+                console.debug(
+                    '[BackgroundStatusHUD] Принудительное скрытие по таймауту. Незавершённые задачи:',
+                    [...STATE.tasks.keys()],
+                );
+            }
+            STATE.tasks.clear();
+            hide();
+        }, MAX_HUD_DISPLAY_TIME);
+    }
+
     function show() {
         ensureContainer();
         computeTopOffset();
         STATE.container.style.display = '';
         if (!STATE.rafId) STATE.rafId = requestAnimationFrame(tick);
-        
-        // Запускаем защитный таймаут для автоматического скрытия
-        if (STATE.autoHideTimeoutId) {
-            clearTimeout(STATE.autoHideTimeoutId);
-        }
-        STATE.autoHideTimeoutId = setTimeout(() => {
-            console.warn('[BackgroundStatusHUD] Принудительное скрытие по таймауту. Незавершённые задачи:', [...STATE.tasks.keys()]);
-            STATE.tasks.clear();
-            hide();
-        }, MAX_HUD_DISPLAY_TIME);
+        scheduleAutoHideTimeout();
     }
     function removeActivityListeners() {
         if (STATE.activityListenersRemoved) return;
@@ -4027,9 +3641,7 @@ function setupBackgroundImageControls() {
         const others = Math.max(0, active.length - 1);
         const prefix = main.id === 'app-init' ? 'Выполняется' : 'Индексируется';
         STATE.titleEl.textContent =
-            others > 0
-                ? `${prefix}: ${main.label} + ещё ${others}`
-                : `${prefix}: ${main.label}`;
+            others > 0 ? `${prefix}: ${main.label} + ещё ${others}` : `${prefix}: ${main.label}`;
     }
     function showCompletionCard() {
         if (!STATE.container || STATE.hasShownCompletion || STATE.completionCardEl) return;
@@ -4094,9 +3706,12 @@ function setupBackgroundImageControls() {
                 t.processed = Math.min(total ?? t.total, Math.max(0, processed));
             computeTopOffset();
             updateTitle();
+            scheduleAutoHideTimeout();
         },
         finishTask(id, success = true) {
-            console.log(`[BackgroundStatusHUD] finishTask: ${id} (success: ${success}). Оставшиеся задачи: ${STATE.tasks.size - 1}`);
+            console.log(
+                `[BackgroundStatusHUD] finishTask: ${id} (success: ${success}). Оставшиеся задачи: ${STATE.tasks.size - 1}`,
+            );
             STATE.tasks.delete(id);
             updateTitle();
             maybeFinishAll();
@@ -4152,8 +3767,24 @@ setBookmarksDependencies({
     handleViewBookmarkScreenshots,
     NotificationService,
     showScreenshotViewerModal,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Bookmarks установлены');
+
+// App confirm/alert modal (универсальная замена confirm/alert)
+setAppConfirmModalDependencies({
+    addEscapeHandler,
+    removeEscapeHandler,
+    getVisibleModals,
+});
+console.log('[script.js] Зависимости модуля App Confirm Modal установлены');
+
+// Unsaved confirm modal (для выхода из модалок без сохранения)
+setUnsavedConfirmModalDependencies({
+    addEscapeHandler,
+    removeEscapeHandler,
+    getVisibleModals,
+});
 
 // Bookmarks Modal Dependencies
 setBookmarksModalDependencies({
@@ -4173,6 +3804,7 @@ setBookmarksModalDependencies({
     populateBookmarkFolders,
     getFromIndexedDB,
     renderExistingThumbnail,
+    showUnsavedConfirmModal: showUnsavedConfirmModalModule,
 });
 console.log('[script.js] Зависимости модуля Bookmarks Modal установлены');
 
@@ -4240,6 +3872,8 @@ setExtLinksModalDependencies({
     addEscapeHandler,
     getVisibleModals,
     handleExtLinkFormSubmit: handleExtLinkFormSubmitModule,
+    showUnsavedConfirmModal: showUnsavedConfirmModalModule,
+    deepEqual,
 });
 console.log('[script.js] Зависимости модуля Ext Links Modal установлены');
 
@@ -4259,6 +3893,7 @@ setExtLinksCategoriesDependencies({
     renderExtLinks: renderExtLinksModule,
     getAllExtLinks,
     populateExtLinkCategoryFilter: populateExtLinkCategoryFilterModule,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Ext Links Categories установлены');
 
@@ -4272,6 +3907,7 @@ setExtLinksActionsDependencies({
     deleteFromIndexedDB,
     updateSearchIndex,
     escapeHtml,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Ext Links Actions установлены');
 
@@ -4293,7 +3929,8 @@ setFavoritesDependencies({
     renderAllAlgorithms,
     loadBookmarks,
     loadExtLinks,
-    renderReglamentCategoriesModule,
+    renderReglamentCategories: renderReglamentCategoriesModule,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Favorites установлены');
 
@@ -4329,6 +3966,7 @@ setCibLinksDependencies({
     removeEscapeHandler,
     getRequiredElements: getRequiredElementsHelper,
     DEFAULT_CIB_LINKS,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля CIB Links установлены');
 
@@ -4342,6 +3980,7 @@ setBlacklistDependencies({
     setActiveTab,
     updateSearchIndex,
     NotificationService,
+    showAppConfirm: showAppConfirmModule,
     XLSX: window.XLSX,
 });
 console.log('[script.js] Зависимости модуля Blacklist установлены');
@@ -4357,7 +3996,7 @@ setImportExportDependencies({
     loadBookmarks,
     loadExtLinks,
     loadCibLinks: loadCibLinksModule,
-    renderReglamentCategoriesModule,
+    renderReglamentCategories: renderReglamentCategoriesModule,
     showReglamentsForCategory,
     initSearchSystem,
     buildInitialSearchIndex,
@@ -4366,6 +4005,9 @@ setImportExportDependencies({
     applyPreviewSettings,
     applyThemeOverrides,
     importFileInput,
+    storeConfigs,
+    loadUISettings: typeof loadUISettings !== 'undefined' ? loadUISettings : null,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Import/Export установлены');
 
@@ -4394,10 +4036,21 @@ console.log('[script.js] Зависимости модуля Tabs Overflow ус�
 // Tabs UI Dependencies
 setTabsDependencies({
     setActiveTab: setActiveTabModule,
-    showBlacklistWarning: typeof showBlacklistWarningModule !== 'undefined' ? showBlacklistWarningModule : showBlacklistWarning,
-    renderFavoritesPage: typeof renderFavoritesPageModule !== 'undefined' ? renderFavoritesPageModule : renderFavoritesPage,
-    updateVisibleTabs: typeof updateVisibleTabsModule !== 'undefined' ? updateVisibleTabsModule : updateVisibleTabs,
-    getVisibleModals: typeof getVisibleModalsModule !== 'undefined' ? getVisibleModalsModule : getVisibleModals,
+    showBlacklistWarning:
+        typeof showBlacklistWarningModule !== 'undefined'
+            ? showBlacklistWarningModule
+            : showBlacklistWarning,
+    renderFavoritesPage:
+        typeof renderFavoritesPageModule !== 'undefined'
+            ? renderFavoritesPageModule
+            : renderFavoritesPage,
+    updateVisibleTabs:
+        typeof updateVisibleTabsModule !== 'undefined'
+            ? updateVisibleTabsModule
+            : updateVisibleTabs,
+    getVisibleModals:
+        typeof getVisibleModalsModule !== 'undefined' ? getVisibleModalsModule : getVisibleModals,
+    loadBookmarks: typeof loadBookmarksModule !== 'undefined' ? loadBookmarksModule : loadBookmarks,
 });
 console.log('[script.js] Зависимости модуля Tabs UI установлены');
 
@@ -4452,6 +4105,7 @@ console.log('[script.js] Зависимости модуля Systems Init уст
 
 // Background Health Tests Dependencies (IndexedDB API)
 setBackgroundHealthTestsDependencies({
+    State,
     saveToIndexedDB,
     getFromIndexedDB,
     deleteFromIndexedDB,
@@ -4475,6 +4129,7 @@ setHotkeysDependencies({
     getTopmostModal: getTopmostModalModule,
     getVisibleModals: getVisibleModalsModule,
     requestCloseModal: typeof requestCloseModal !== 'undefined' ? requestCloseModal : null,
+    removeEscapeHandler,
     showAddModal: showAddModalModule,
     showAddEditCibLinkModal: showAddEditCibLinkModalModule,
     showAddExtLinkModal: showAddExtLinkModalModule,
@@ -4485,11 +4140,15 @@ setHotkeysDependencies({
     exportClientDataToTxt: exportClientDataToTxtModule,
     clearClientData: clearClientDataModule,
     toggleActiveSectionView: toggleActiveSectionViewModule,
+    toggleTimer,
+    resetTimer,
+    adjustTimerDuration,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Hotkeys Handler установлены');
 
 // Escape Handler Dependencies (PR11)
-setEscapeHandlerDependencies({ getVisibleModals, getTopmostModal });
+setEscapeHandlerDependencies({ getVisibleModals, getTopmostModal, requestCloseModal });
 
 // Header Buttons Dependencies (PR11)
 setHeaderButtonsDependencies({ setActiveTab });
@@ -4520,6 +4179,8 @@ setAlgorithmModalControlDependencies({
     editAlgorithm: editAlgorithmModule,
     ExportService,
     closeAnimatedModal: closeAnimatedModalModule,
+    showAppConfirm: showAppConfirmModule,
+    showAddModal: showAddModalModule,
 });
 
 // Algorithms PDF Export Dependencies (PR11) — algorithms, ExportService, showNotification задаются после загрузки данных
@@ -4547,6 +4208,7 @@ setUISettingsModalInitDependencies({
     updatePreviewSettingsFromModal: updatePreviewSettingsFromModalModule,
     applyPreviewSettings: typeof applyPreviewSettings !== 'undefined' ? applyPreviewSettings : null,
     initColorPicker: initColorPickerModule,
+    showUnsavedConfirmModal: showUnsavedConfirmModalModule,
 });
 
 // UI Settings Modal Dependencies (applyPreviewSettings определена ниже, но доступна благодаря hoisting)
@@ -4633,6 +4295,7 @@ function getOrCreateModal(modalId, modalClassName, modalHTML, setupCallback) {
 setReglamentsDependencies({
     State,
     categoryDisplayInfo,
+    CATEGORY_INFO_KEY,
     getFromIndexedDB,
     saveToIndexedDB,
     deleteFromIndexedDB,
@@ -4651,6 +4314,7 @@ setReglamentsDependencies({
     reglamentDetailModalConfig,
     reglamentModalConfigGlobal,
     handleViewToggleClick,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Reglaments установлены');
 
@@ -4662,6 +4326,8 @@ setClipboardDependencies({
 console.log('[script.js] Зависимости модуля Clipboard установлены');
 
 // Client Data System Dependencies
+setClientNotesWindowDependencies({ highlightElement });
+
 setClientDataDependencies({
     showNotification,
     NotificationService,
@@ -4685,6 +4351,7 @@ console.log('[script.js] Зависимости модуля Step Management у�
 // App Reload System Dependencies
 setAppReloadDependencies({
     showNotification,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля App Reload установлены');
 
@@ -4701,6 +4368,7 @@ setBackgroundImageDependencies({
     saveToIndexedDB,
     deleteFromIndexedDB,
     processImageFile,
+    showAppConfirm: showAppConfirmModule,
 });
 console.log('[script.js] Зависимости модуля Background Image установлены');
 
@@ -4722,6 +4390,7 @@ setAlgorithmsRendererDependencies({
     renderScreenshotIcon: renderScreenshotIconModule,
     handleViewScreenshotClick: handleViewScreenshotClickModule,
     openAnimatedModal: openAnimatedModalModule,
+    copyToClipboard,
 });
 console.log('[script.js] Зависимости модуля Algorithms Renderer установлены');
 
@@ -4743,35 +4412,64 @@ console.log('[script.js] Зависимости модуля Data Clear уста
 if (typeof showNotification === 'function') window.showNotification = showNotification;
 if (typeof algorithms !== 'undefined') window.algorithms = algorithms;
 if (typeof isFavorite === 'function') window.isFavorite = isFavorite;
-if (typeof loadingOverlayManager !== 'undefined') window.loadingOverlayManager = loadingOverlayManager;
+if (typeof loadingOverlayManager !== 'undefined')
+    window.loadingOverlayManager = loadingOverlayManager;
 if (typeof showAlgorithmDetail === 'function') window.showAlgorithmDetail = showAlgorithmDetail;
 if (typeof copyToClipboard === 'function') window.copyToClipboard = copyToClipboard;
 if (typeof applyCurrentView === 'function') window.applyCurrentView = applyCurrentView;
 if (typeof debounce === 'function') window.debounce = debounce;
 if (typeof setupClearButton === 'function') window.setupClearButton = setupClearButton;
+
+// Закладки: глобальные функции, которые используются модульной системой (entry.js) и обработчиками кликов
 if (typeof showAddBookmarkModal === 'function') window.showAddBookmarkModal = showAddBookmarkModal;
 if (typeof showBookmarkDetail === 'function') window.showBookmarkDetail = showBookmarkDetail;
-if (typeof showOrganizeFoldersModal === 'function') window.showOrganizeFoldersModal = showOrganizeFoldersModal;
+if (typeof showOrganizeFoldersModal === 'function')
+    window.showOrganizeFoldersModal = showOrganizeFoldersModal;
 if (typeof filterBookmarks === 'function') window.filterBookmarks = filterBookmarks;
-if (typeof populateBookmarkFolders === 'function') window.populateBookmarkFolders = populateBookmarkFolders;
+if (typeof populateBookmarkFolders === 'function')
+    window.populateBookmarkFolders = populateBookmarkFolders;
+if (typeof loadFoldersList === 'function') window.loadFoldersList = loadFoldersList;
+if (typeof showEditBookmarkModal === 'function')
+    window.showEditBookmarkModal = showEditBookmarkModal;
+if (typeof deleteBookmark === 'function') window.deleteBookmark = deleteBookmark;
+if (typeof showBookmarkDetailModal === 'function')
+    window.showBookmarkDetailModal = showBookmarkDetailModal;
+if (typeof handleViewBookmarkScreenshots === 'function')
+    window.handleViewBookmarkScreenshots = handleViewBookmarkScreenshots;
+if (typeof showScreenshotViewerModal === 'function')
+    window.showScreenshotViewerModal = showScreenshotViewerModal;
+if (typeof showAppConfirmModule === 'function') window.showAppConfirm = showAppConfirmModule;
+
+// Внешние ссылки и регламенты
 if (typeof loadExtLinks === 'function') window.loadExtLinks = loadExtLinks;
 if (typeof filterExtLinks === 'function') window.filterExtLinks = filterExtLinks;
 if (typeof handleExtLinkAction === 'function') window.handleExtLinkAction = handleExtLinkAction;
-if (typeof showOrganizeExtLinkCategoriesModal === 'function') window.showOrganizeExtLinkCategoriesModal = showOrganizeExtLinkCategoriesModal;
-if (typeof populateExtLinkCategoryFilter === 'function') window.populateExtLinkCategoryFilter = populateExtLinkCategoryFilter;
+if (typeof showOrganizeExtLinkCategoriesModal === 'function')
+    window.showOrganizeExtLinkCategoriesModal = showOrganizeExtLinkCategoriesModal;
+if (typeof populateExtLinkCategoryFilter === 'function')
+    window.populateExtLinkCategoryFilter = populateExtLinkCategoryFilter;
 if (typeof editAlgorithm === 'function') window.editAlgorithm = editAlgorithm;
 if (typeof showAddModal === 'function') window.showAddModal = showAddModal;
-if (typeof handleReglamentAction === 'function') window.handleReglamentAction = handleReglamentAction;
-if (typeof populateReglamentCategoryDropdowns === 'function') window.populateReglamentCategoryDropdowns = populateReglamentCategoryDropdowns;
-if (typeof getFavoriteButtonHTML === 'function') window.getFavoriteButtonHTML = getFavoriteButtonHTML;
-if (typeof DEFAULT_MAIN_ALGORITHM !== 'undefined') window.DEFAULT_MAIN_ALGORITHM = DEFAULT_MAIN_ALGORITHM;
-if (typeof loadFoldersList === 'function') window.loadFoldersList = loadFoldersList;
+if (typeof handleReglamentAction === 'function')
+    window.handleReglamentAction = handleReglamentAction;
+if (typeof populateReglamentCategoryDropdowns === 'function')
+    window.populateReglamentCategoryDropdowns = populateReglamentCategoryDropdowns;
+
+// Прочие общие зависимости
+if (typeof getAllFromIndex === 'function') window.getAllFromIndex = getAllFromIndex;
+if (typeof getFavoriteButtonHTML === 'function')
+    window.getFavoriteButtonHTML = getFavoriteButtonHTML;
+if (typeof DEFAULT_MAIN_ALGORITHM !== 'undefined')
+    window.DEFAULT_MAIN_ALGORITHM = DEFAULT_MAIN_ALGORITHM;
 if (typeof removeEscapeHandler === 'function') window.removeEscapeHandler = removeEscapeHandler;
+if (typeof addEscapeHandler === 'function') window.addEscapeHandler = addEscapeHandler;
 if (typeof getVisibleModals === 'function') window.getVisibleModals = getVisibleModals;
 if (typeof initUI === 'function') window.initUI = initUI;
 if (typeof initStepInteractions === 'function') window.initStepInteractions = initStepInteractions;
-if (typeof initCollapseAllButtons === 'function') window.initCollapseAllButtons = initCollapseAllButtons;
+if (typeof initCollapseAllButtons === 'function')
+    window.initCollapseAllButtons = initCollapseAllButtons;
 if (typeof initHotkeysModal === 'function') window.initHotkeysModal = initHotkeysModal;
-if (typeof initClearDataFunctionality === 'function') window.initClearDataFunctionality = initClearDataFunctionality;
+if (typeof initClearDataFunctionality === 'function')
+    window.initClearDataFunctionality = initClearDataFunctionality;
 if (typeof showNoInnModal === 'function') window.showNoInnModal = showNoInnModal;
-
+window.rebuildSearchIndexNow = rebuildSearchIndexNow;

@@ -1,14 +1,11 @@
 'use strict';
 
-import { SEDO_CONFIG_KEY } from './constants.js';
-
 // ============================================================================
-// API ПРОВЕРКИ ОТЗЫВА СЕРТИФИКАТОВ (Cloudflare Worker)
+// API ПРОВЕРКИ ОТЗЫВА СЕРТИФИКАТОВ (Yandex Cloud Functions / любой внешний backend)
 // ============================================================================
-// Если задан URL Worker'а, проверка по спискам отзыва (CRL URL) идёт через бэкенд.
-// После первого деплоя Worker (Actions → Deploy Revocation Worker) скопируйте URL
-// из логов и подставьте сюда — тогда при каждом мерже PR в main фронт и бэкенд работают вместе.
-export const REVOCATION_API_BASE_URL = 'https://copilot-1co-revocation.gleb-998.workers.dev';
+// Пустая строка = тот же origin (если API проксируется через тот же домен).
+// API Gateway crl-api (обязательно для path /api/health и /api/revocation/check). Без завершающего слэша.
+export const REVOCATION_API_BASE_URL = 'https://d5do82fppanabn9naecn.kf69zffa.apigw.yandexcloud.net';
 
 // ============================================================================
 // КОНФИГУРАЦИЯ ВКЛАДОК
@@ -31,7 +28,8 @@ export const tabsConfig = [
         icon: 'fa-user-secret',
         isSpecial: true,
     },
-    { id: 'fnsCert', name: 'Проверка сертификата ФНС', icon: 'fa-certificate' },
+    { id: 'fnsCert', name: 'Проверка сертификата на отзыв', icon: 'fa-certificate' },
+    { id: 'xmlAnalyzer', name: 'Анализатор XML', icon: 'fa-file-code' },
 ];
 
 export const allPanelIdsForDefault = tabsConfig.map((t) => t.id);
@@ -220,6 +218,18 @@ export const hotkeysModalConfig = {
     contentAreaSelector: '.p-6.overflow-y-auto.flex-1',
 };
 
+/** Массив конфигов модалок для initFullscreenToggles (избегаем предупреждения "No modal configs provided") */
+export const FULLSCREEN_MODAL_CONFIGS = [
+    algorithmDetailModalConfig,
+    bookmarkModalConfigGlobal,
+    editAlgorithmModalConfig,
+    addAlgorithmModalConfig,
+    reglamentDetailModalConfig,
+    reglamentModalConfigGlobal,
+    bookmarkDetailModalConfigGlobal,
+    hotkeysModalConfig,
+];
+
 export const SAVE_BUTTON_SELECTORS =
     'button[type="submit"], #saveAlgorithmBtn, #createAlgorithmBtn, #saveCibLinkBtn, #saveBookmarkBtn, #saveExtLinkBtn';
 
@@ -289,6 +299,7 @@ export function getDefaultUISettings(allPanelIdsForDefault) {
                   )
                 : [],
         disableForcedBackupOnImport: false,
+        staticHeader: false,
     };
 }
 

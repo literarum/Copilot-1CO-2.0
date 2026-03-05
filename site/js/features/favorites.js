@@ -36,6 +36,7 @@ let deps = {
     loadBookmarks: null,
     loadExtLinks: null,
     renderReglamentCategories: null,
+    showAppConfirm: null,
 };
 
 /**
@@ -60,7 +61,7 @@ export async function toggleFavorite(
     originalItemSection,
     title,
     description,
-    buttonElement = null
+    buttonElement = null,
 ) {
     const isCurrentlyFavoriteInDB = await isFavoriteDB(itemType, originalItemId);
     let success = false;
@@ -68,7 +69,7 @@ export async function toggleFavorite(
     let newStatus = false;
 
     console.log(
-        `Toggling favorite: ID=${originalItemId}, Type=${itemType}, Section=${originalItemSection}, CurrentDBStatus=${isCurrentlyFavoriteInDB}`
+        `Toggling favorite: ID=${originalItemId}, Type=${itemType}, Section=${originalItemSection}, CurrentDBStatus=${isCurrentlyFavoriteInDB}`,
     );
 
     try {
@@ -114,7 +115,7 @@ export async function toggleFavorite(
 export async function updateFavoriteStatusUI(originalItemId, itemType, isFavoriteStatus) {
     const stringOriginalItemId = String(originalItemId);
     console.log(
-        `[updateFavoriteStatusUI] Обновление UI для элемента ${itemType}:${stringOriginalItemId} на isFavorite=${isFavoriteStatus}`
+        `[updateFavoriteStatusUI] Обновление UI для элемента ${itemType}:${stringOriginalItemId} на isFavorite=${isFavoriteStatus}`,
     );
 
     const updateButtonAppearance = (button) => {
@@ -128,19 +129,19 @@ export async function updateFavoriteStatusUI(originalItemId, itemType, isFavorit
     };
 
     const allRelatedButtons = document.querySelectorAll(
-        `.toggle-favorite-btn[data-item-id="${stringOriginalItemId}"][data-item-type="${itemType}"]`
+        `.toggle-favorite-btn[data-item-id="${stringOriginalItemId}"][data-item-type="${itemType}"]`,
     );
 
     if (allRelatedButtons.length > 0) {
         console.log(
-            `[updateFavoriteStatusUI] Найдено ${allRelatedButtons.length} кнопок для обновления для ${itemType}:${stringOriginalItemId}.`
+            `[updateFavoriteStatusUI] Найдено ${allRelatedButtons.length} кнопок для обновления для ${itemType}:${stringOriginalItemId}.`,
         );
         allRelatedButtons.forEach((button) => {
             updateButtonAppearance(button);
         });
     } else {
         console.warn(
-            `[updateFavoriteStatusUI] Кнопки "в избранное" не найдены в DOM для элемента ${itemType}:${stringOriginalItemId}.`
+            `[updateFavoriteStatusUI] Кнопки "в избранное" не найдены в DOM для элемента ${itemType}:${stringOriginalItemId}.`,
         );
     }
 }
@@ -170,7 +171,7 @@ export async function renderFavoritesPage() {
 
     State.currentFavoritesCache = favoritesToRender;
     favoritesToRender.sort(
-        (a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()
+        (a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime(),
     );
 
     const currentView =
@@ -235,7 +236,7 @@ export async function renderFavoritesPage() {
                 fav.originalItemSection,
                 fav.title,
                 fav.description,
-                true
+                true,
             );
             const goToOriginalBtnHTML = `
                 <button class="go-to-original-btn p-1.5 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Перейти к оригиналу">
@@ -255,7 +256,7 @@ export async function renderFavoritesPage() {
                     'flex',
                     'flex-col',
                     'justify-between',
-                    'h-full'
+                    'h-full',
                 );
 
                 itemElement.innerHTML = `
@@ -264,14 +265,14 @@ export async function renderFavoritesPage() {
                             <div class="flex items-center min-w-0 flex-1">
                                 <i class="fas ${iconClass} text-primary mr-2 text-lg"></i>
                                 <h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate flex-1" title="${escapeHtml(
-                                    fav.title
+                                    fav.title,
                                 )}">${escapeHtml(fav.title)}</h3>
                             </div>
                             <div class="actions-container flex-shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">${favButtonHTML}</div>
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Тип: ${typeText}</p>
                         <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-3" title="${escapeHtml(
-                            fav.description || ''
+                            fav.description || '',
                         )}">${escapeHtml(fav.description || 'Нет описания')}</p>
                     </div>
                     <div class="mt-auto pt-3 border-t border-gray-200 dark:border-gray-600 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
@@ -292,7 +293,7 @@ export async function renderFavoritesPage() {
                     'dark:border-gray-600',
                     'hover:bg-gray-50',
                     'dark:hover:bg-gray-700',
-                    'cursor-pointer'
+                    'cursor-pointer',
                 );
 
                 itemElement.innerHTML = `
@@ -300,7 +301,7 @@ export async function renderFavoritesPage() {
                          <i class="fas ${iconClass} text-primary mr-3 text-lg w-5 text-center"></i>
                          <div class="min-w-0 flex-1">
                              <h3 class="font-medium text-gray-900 dark:text-gray-100 truncate" title="${escapeHtml(
-                                 fav.title
+                                 fav.title,
                              )}">${escapeHtml(fav.title)}</h3>
                              <p class="text-xs text-gray-500 dark:text-gray-400">${typeText}</p>
                          </div>
@@ -309,7 +310,7 @@ export async function renderFavoritesPage() {
                          ${favButtonHTML}
                          ${goToOriginalBtnHTML.replace(
                              '</button>',
-                             '<span class="hidden sm:inline ml-1">Перейти</span></button>'
+                             '<span class="hidden sm:inline ml-1">Перейти</span></button>',
                          )}
                     </div>
                 `;
@@ -333,14 +334,14 @@ export function getFavoriteButtonHTML(
     originalItemSection,
     title,
     description,
-    isCurrentlyFavorite
+    isCurrentlyFavorite,
 ) {
     const iconClass = isCurrentlyFavorite ? 'fas fa-star text-yellow-400' : 'far fa-star';
     const tooltip = isCurrentlyFavorite ? 'Удалить из избранного' : 'Добавить в избранное';
 
     const safeTitle = (typeof title === 'string' ? escapeHtml(title) : 'Элемент').replace(
         /"/g,
-        '&quot;'
+        '&quot;',
     );
     const safeDescription = (
         typeof description === 'string' ? escapeHtml(description) : ''
@@ -377,10 +378,26 @@ export async function handleFavoriteContainerClick(event) {
     const title = favoriteItemCard.querySelector('h3')?.textContent || 'Элемент';
     const description = favoriteItemCard.querySelector('p.line-clamp-3')?.textContent || '';
 
+    const resolveAlgorithmById = (algoId, sectionHint) => {
+        if (!deps.algorithms || !algoId) return null;
+        if (sectionHint && Array.isArray(deps.algorithms[sectionHint])) {
+            const inHint = deps.algorithms[sectionHint].find(
+                (a) => String(a.id) === String(algoId),
+            );
+            if (inHint) return { algo: inHint, section: sectionHint };
+        }
+        for (const [section, list] of Object.entries(deps.algorithms)) {
+            if (!Array.isArray(list)) continue;
+            const found = list.find((a) => String(a.id) === String(algoId));
+            if (found) return { algo: found, section };
+        }
+        return null;
+    };
+
     if (button && button.classList.contains('go-to-original-btn')) {
         event.stopPropagation();
         console.log(
-            `Переход к оригиналу: Type=${itemType}, ID=${originalItemId}, Section=${originalItemSection}`
+            `Переход к оригиналу: Type=${itemType}, ID=${originalItemId}, Section=${originalItemSection}`,
         );
 
         if (itemType === 'mainAlgorithm') {
@@ -392,14 +409,17 @@ export async function handleFavoriteContainerClick(event) {
             await new Promise((resolve) => setTimeout(resolve, 200));
 
             if (itemType === 'algorithm') {
-                const algoData = deps.algorithms?.[originalItemSection]?.find(
-                    (a) => String(a.id) === String(originalItemId)
-                );
-                if (algoData) deps.showAlgorithmDetail?.(algoData, originalItemSection);
-                else deps.showNotification?.('Оригинальный алгоритм не найден.', 'warning');
+                const resolved = resolveAlgorithmById(originalItemId, originalItemSection);
+                if (resolved) {
+                    if (resolved.section && deps.setActiveTab) {
+                        deps.setActiveTab(resolved.section);
+                        await new Promise((resolve) => setTimeout(resolve, 200));
+                    }
+                    deps.showAlgorithmDetail?.(resolved.algo, resolved.section);
+                } else deps.showNotification?.('Оригинальный алгоритм не найден.', 'warning');
             } else if (itemType === 'link') {
                 const linkElement = document.querySelector(
-                    `.cib-link-item[data-id="${originalItemId}"]`
+                    `.cib-link-item[data-id="${originalItemId}"]`,
                 );
                 if (linkElement) {
                     linkElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -408,7 +428,7 @@ export async function handleFavoriteContainerClick(event) {
             } else if (itemType === 'bookmark' || itemType === 'bookmark_note') {
                 const bookmarkData = await getFromIndexedDB(
                     'bookmarks',
-                    parseInt(originalItemId, 10)
+                    parseInt(originalItemId, 10),
                 );
                 if (!bookmarkData) {
                     deps.showNotification?.('Не удалось найти оригинальную закладку.', 'error');
@@ -426,7 +446,7 @@ export async function handleFavoriteContainerClick(event) {
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
                 const bookmarkElement = document.querySelector(
-                    `.bookmark-item[data-id="${originalItemId}"]`
+                    `.bookmark-item[data-id="${originalItemId}"]`,
                 );
                 if (bookmarkElement) {
                     bookmarkElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -437,14 +457,14 @@ export async function handleFavoriteContainerClick(event) {
             } else if (itemType === 'reglament') {
                 const reglamentData = await getFromIndexedDB(
                     'reglaments',
-                    parseInt(originalItemId, 10)
+                    parseInt(originalItemId, 10),
                 );
                 if (reglamentData && reglamentData.category) {
                     await deps.showReglamentsForCategory?.(reglamentData.category);
                     await new Promise((resolve) => setTimeout(resolve, 50));
 
                     const reglamentElement = document.querySelector(
-                        `.reglament-item[data-id="${originalItemId}"]`
+                        `.reglament-item[data-id="${originalItemId}"]`,
                     );
                     if (reglamentElement) {
                         reglamentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -454,12 +474,12 @@ export async function handleFavoriteContainerClick(event) {
                 } else {
                     deps.showNotification?.(
                         'Оригинальный регламент или его категория не найдены.',
-                        'warning'
+                        'warning',
                     );
                 }
             } else if (itemType === 'extLink') {
                 const extLinkElement = document.querySelector(
-                    `.ext-link-item[data-id="${originalItemId}"]`
+                    `.ext-link-item[data-id="${originalItemId}"]`,
                 );
                 if (extLinkElement) {
                     extLinkElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -470,11 +490,14 @@ export async function handleFavoriteContainerClick(event) {
             } else {
                 deps.showNotification?.(
                     `Переход для типа "${itemType}" еще не полностью реализован.`,
-                    'info'
+                    'info',
                 );
             }
         } else {
-            deps.showNotification?.('Не удалось определить оригинальный раздел для перехода.', 'error');
+            deps.showNotification?.(
+                'Не удалось определить оригинальный раздел для перехода.',
+                'error',
+            );
         }
     } else if (button && button.classList.contains('toggle-favorite-btn')) {
         event.stopPropagation();
@@ -484,12 +507,12 @@ export async function handleFavoriteContainerClick(event) {
             originalItemSection,
             title,
             description,
-            button
+            button,
         );
     } else {
         event.stopPropagation();
         console.log(
-            `[FIXED] Клик по карточке избранного. Type=${itemType}, ID=${originalItemId}, Section=${originalItemSection}`
+            `[FIXED] Клик по карточке избранного. Type=${itemType}, ID=${originalItemId}, Section=${originalItemSection}`,
         );
 
         switch (itemType) {
@@ -502,63 +525,84 @@ export async function handleFavoriteContainerClick(event) {
                 break;
 
             case 'algorithm':
-                const algoData = deps.algorithms?.[originalItemSection]?.find(
-                    (a) => String(a.id) === String(originalItemId)
-                );
-                if (algoData) {
-                    deps.showAlgorithmDetail?.(algoData, originalItemSection);
-                } else {
-                    deps.showNotification?.('Не удалось найти данные для этого алгоритма.', 'error');
+                {
+                    const resolvedAlgo = resolveAlgorithmById(originalItemId, originalItemSection);
+                    if (resolvedAlgo) {
+                        if (resolvedAlgo.section && deps.setActiveTab) {
+                            deps.setActiveTab(resolvedAlgo.section);
+                            await new Promise((resolve) => setTimeout(resolve, 200));
+                        }
+                        deps.showAlgorithmDetail?.(resolvedAlgo.algo, resolvedAlgo.section);
+                    } else {
+                        deps.showNotification?.(
+                            'Не удалось найти данные для этого алгоритма.',
+                            'error',
+                        );
+                    }
                 }
                 break;
 
             case 'bookmark':
             case 'bookmark_note':
-                const bookmarkId = parseInt(originalItemId, 10);
-                if (!isNaN(bookmarkId)) {
-                    deps.showBookmarkDetailModal?.(bookmarkId);
-                } else {
-                    deps.showNotification?.('Некорректный ID закладки.', 'error');
+                {
+                    const bookmarkId = parseInt(originalItemId, 10);
+                    if (!isNaN(bookmarkId)) {
+                        deps.showBookmarkDetailModal?.(bookmarkId);
+                    } else {
+                        deps.showNotification?.('Некорректный ID закладки.', 'error');
+                    }
                 }
                 break;
 
             case 'reglament':
-                const reglamentId = parseInt(originalItemId, 10);
-                if (!isNaN(reglamentId)) {
-                    deps.showReglamentDetail?.(reglamentId);
-                } else {
-                    deps.showNotification?.('Некорректный ID регламента.', 'error');
+                {
+                    const reglamentId = parseInt(originalItemId, 10);
+                    if (!isNaN(reglamentId)) {
+                        deps.showReglamentDetail?.(reglamentId);
+                    } else {
+                        deps.showNotification?.('Некорректный ID регламента.', 'error');
+                    }
                 }
                 break;
 
             case 'extLink':
-                const linkData = await getFromIndexedDB('extLinks', parseInt(originalItemId, 10));
-                if (linkData && linkData.url) {
-                    try {
-                        new URL(linkData.url);
-                        window.open(linkData.url, '_blank', 'noopener,noreferrer');
-                    } catch (e) {
-                        deps.showNotification?.('Некорректный URL у этого ресурса.', 'error');
+                {
+                    const linkData = await getFromIndexedDB(
+                        'extLinks',
+                        parseInt(originalItemId, 10),
+                    );
+                    if (linkData && linkData.url) {
+                        try {
+                            new URL(linkData.url);
+                            window.open(linkData.url, '_blank', 'noopener,noreferrer');
+                        } catch {
+                            deps.showNotification?.('Некорректный URL у этого ресурса.', 'error');
+                        }
+                    } else {
+                        deps.showNotification?.('URL для этого ресурса не найден.', 'error');
                     }
-                } else {
-                    deps.showNotification?.('URL для этого ресурса не найден.', 'error');
                 }
                 break;
 
             case 'link':
-                const linkDataForCopy = await getFromIndexedDB(
-                    'links',
-                    parseInt(originalItemId, 10)
-                );
-                if (linkDataForCopy && linkDataForCopy.link) {
-                    deps.copyToClipboard?.(linkDataForCopy.link, 'Ссылка 1С скопирована!');
-                } else {
-                    deps.showNotification?.('Не удалось получить данные ссылки 1С.', 'error');
+                {
+                    const linkDataForCopy = await getFromIndexedDB(
+                        'links',
+                        parseInt(originalItemId, 10),
+                    );
+                    if (linkDataForCopy && linkDataForCopy.link) {
+                        deps.copyToClipboard?.(linkDataForCopy.link, 'Ссылка 1С скопирована!');
+                    } else {
+                        deps.showNotification?.('Не удалось получить данные ссылки 1С.', 'error');
+                    }
                 }
                 break;
 
             default:
-                deps.showNotification?.(`Просмотр деталей для типа "${itemType}" не реализован.`, 'info');
+                deps.showNotification?.(
+                    `Просмотр деталей для типа "${itemType}" не реализован.`,
+                    'info',
+                );
                 break;
         }
     }
@@ -583,7 +627,7 @@ export async function handleFavoriteActionClick(event) {
     if (!originalItemId || !itemType) {
         console.error(
             'handleFavoriteActionClick: Missing data attributes itemId or itemType on button.',
-            button.dataset
+            button.dataset,
         );
         deps.showNotification?.('Ошибка: Не удалось определить элемент.', 'error');
         return;
@@ -593,7 +637,7 @@ export async function handleFavoriteActionClick(event) {
         const cardElement = button.closest('.view-item[data-id]');
         if (cardElement) {
             const sectionContainer = cardElement.closest(
-                '[id$="Algorithms"], [id$="Container"], [id$="Content"]'
+                '[id$="Algorithms"], [id$="Container"], [id$="Content"]',
             );
             if (sectionContainer) {
                 if (sectionContainer.id.includes('program')) originalItemSection = 'program';
@@ -610,12 +654,12 @@ export async function handleFavoriteActionClick(event) {
                         try {
                             const reglamentData = await getFromIndexedDB(
                                 'reglaments',
-                                parseInt(originalItemId, 10)
+                                parseInt(originalItemId, 10),
                             );
                             originalItemSection = reglamentData?.category || 'reglaments';
-                        } catch (e) {
+                        } catch {
                             console.warn(
-                                'Не удалось получить категорию для регламента из БД в handleFavoriteActionClick'
+                                'Не удалось получить категорию для регламента из БД в handleFavoriteActionClick',
                             );
                             originalItemSection = 'reglaments';
                         }
@@ -633,14 +677,14 @@ export async function handleFavoriteActionClick(event) {
 
     if (!originalItemSection) {
         console.error(
-            `handleFavoriteActionClick: CRITICAL - originalItemSection could not be determined for ${itemType}:${originalItemId}.`
+            `handleFavoriteActionClick: CRITICAL - originalItemSection could not be determined for ${itemType}:${originalItemId}.`,
         );
         deps.showNotification?.('Ошибка: Не удалось определить раздел элемента.', 'error');
         return;
     }
 
     console.log(
-        `Favorite button clicked (Capturing Phase Logic Active): ID=${originalItemId}, Type=${itemType}, Section=${originalItemSection}`
+        `Favorite button clicked (Capturing Phase Logic Active): ID=${originalItemId}, Type=${itemType}, Section=${originalItemSection}`,
     );
     await toggleFavorite(originalItemId, itemType, originalItemSection, title, description, button);
 }
@@ -651,7 +695,7 @@ export async function handleFavoriteActionClick(event) {
 export function isFavorite(itemType, originalItemId) {
     if (!State.currentFavoritesCache) return false;
     return State.currentFavoritesCache.some(
-        (fav) => fav.itemType === itemType && String(fav.originalItemId) === String(originalItemId)
+        (fav) => fav.itemType === itemType && String(fav.originalItemId) === String(originalItemId),
     );
 }
 
@@ -722,7 +766,19 @@ export function initFavoritesSystem() {
     const clearFavoritesBtn = document.getElementById('clearFavoritesBtn');
     if (clearFavoritesBtn) {
         clearFavoritesBtn.addEventListener('click', async () => {
-            if (confirm('Вы уверены, что хотите очистить ВСЁ избранное? Это действие необратимо.')) {
+            const confirmed = deps.showAppConfirm
+                ? await deps.showAppConfirm({
+                      title: 'Очистка избранного',
+                      message:
+                          'Вы уверены, что хотите очистить ВСЁ избранное? Это действие необратимо.',
+                      confirmText: 'Очистить',
+                      cancelText: 'Отмена',
+                      confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+                  })
+                : confirm(
+                      'Вы уверены, что хотите очистить ВСЁ избранное? Это действие необратимо.',
+                  );
+            if (confirmed) {
                 if (deps.loadingOverlayManager?.createAndShow) {
                     deps.loadingOverlayManager.createAndShow();
                     deps.loadingOverlayManager.updateProgress(50, 'Очистка избранного...');

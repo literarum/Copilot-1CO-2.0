@@ -1,6 +1,17 @@
 'use strict';
 
+import { REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER } from '../config/revocation-sources.js';
+
 let deps = {};
+const WATCHDOG_INTERVAL_MS = 60000;
+const AUTOSAVE_STALE_MS = 45000;
+const REQUIRED_STORES = [
+    'algorithms',
+    'clientData',
+    'searchIndex',
+    'preferences',
+    'blacklistedClients',
+];
 
 export function setBackgroundHealthTestsDependencies(nextDeps) {
     deps = { ...nextDeps };
@@ -69,8 +80,254 @@ export function initBackgroundHealthTestsSystem() {
         }
     };
 
+    const autosaveState = {
+        lastText: null,
+        changedAt: 0,
+        lastPersistedAt: 0,
+    };
+    let watchdogInFlight = null;
+
+    const setWatchdogHudStatus = (patch = {}) => {
+        hud?.setWatchdogStatus?.({
+            statusText: patch.statusText || 'Работает',
+            lastRunAt: patch.lastRunAt || Date.now(),
+            lastAutosaveAt:
+                patch.lastAutosaveAt !== undefined
+                    ? patch.lastAutosaveAt
+                    : autosaveState.lastPersistedAt || null,
+            running: Boolean(patch.running),
+            severity: patch.severity || 'running',
+        });
+    };
+
+    const readPersistedClientData = async () => {
+        if (deps.getFromIndexedDB) {
+            try {
+                const fromDb = await runWithTimeout(
+                    deps.getFromIndexedDB('clientData', 'current'),
+                    5000,
+                );
+                if (fromDb && typeof fromDb === 'object') {
+                    return fromDb;
+                }
+            } catch {
+                // fallback to localStorage below
+            }
+        }
+
+        try {
+            const raw = localStorage.getItem('clientData');
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const runWatchdogCycle = async (source = 'interval') => {
+        if (watchdogInFlight) return watchdogInFlight;
+        setWatchdogHudStatus({
+            statusText: source === 'manual' ? 'Ручной прогон...' : 'Плановая проверка...',
+            running: true,
+            severity: 'running',
+        });
+
+        watchdogInFlight = (async () => {
+            const cycleChecks = [];
+            const addCheck = (level, title, message) => {
+                cycleChecks.push({ level, title, message });
+            };
+
+            // Watchdog 1: целостность структуры IndexedDB
+            try {
+                const db = deps.State?.db;
+                if (!db) {
+                    addCheck(
+                        'warn',
+                        'Watchdog / IndexedDB',
+                        'Соединение с IndexedDB не инициализировано.',
+                    );
+                } else {
+                    const availableStores = Array.from(db.objectStoreNames || []);
+                    const missingStores = REQUIRED_STORES.filter(
+                        (store) => !availableStores.includes(store),
+                    );
+                    if (missingStores.length > 0) {
+                        addCheck(
+                            'error',
+                            'Watchdog / IndexedDB',
+                            `Отсутствуют хранилища: ${missingStores.join(', ')}.`,
+                        );
+                    } else {
+                        addCheck(
+                            'info',
+                            'Watchdog / IndexedDB',
+                            'Все ключевые хранилища присутствуют.',
+                        );
+                    }
+
+                    if (deps.performDBOperation) {
+                        const counters = await Promise.allSettled([
+                            runWithTimeout(
+                                deps.performDBOperation('algorithms', 'readonly', (store) =>
+                                    store.count(),
+                                ),
+                                5000,
+                            ),
+                            runWithTimeout(
+                                deps.performDBOperation('clientData', 'readonly', (store) =>
+                                    store.count(),
+                                ),
+                                5000,
+                            ),
+                        ]);
+
+                        const hasCounterError = counters.some(
+                            (entry) => entry.status === 'rejected',
+                        );
+                        if (hasCounterError) {
+                            addCheck(
+                                'warn',
+                                'Watchdog / IndexedDB',
+                                'Одна из read-проверок не выполнена (count).',
+                            );
+                        }
+                    }
+                }
+            } catch (err) {
+                addCheck('error', 'Watchdog / IndexedDB', err.message);
+            }
+
+            // Watchdog 2: здоровье автосохранения notes
+            try {
+                const clientNotes = document.getElementById('clientNotes');
+                if (!clientNotes) {
+                    addCheck(
+                        'warn',
+                        'Watchdog / Автосохранение',
+                        'Поле #clientNotes не найдено (проверка пропущена).',
+                    );
+                } else {
+                    const currentText = clientNotes.value ?? '';
+                    if (autosaveState.lastText === null) {
+                        autosaveState.lastText = currentText;
+                        autosaveState.changedAt = Date.now();
+                    } else if (currentText !== autosaveState.lastText) {
+                        autosaveState.lastText = currentText;
+                        autosaveState.changedAt = Date.now();
+                    }
+
+                    if (!deps.State?.clientNotesInputHandler) {
+                        addCheck(
+                            'error',
+                            'Watchdog / Автосохранение',
+                            'Обработчик input для #clientNotes не привязан.',
+                        );
+                    }
+
+                    const persisted = await readPersistedClientData();
+                    const persistedText = persisted?.notes ?? '';
+                    const sameAsPersisted = persistedText === currentText;
+                    if (sameAsPersisted) {
+                        autosaveState.lastPersistedAt = Date.now();
+                        addCheck(
+                            'info',
+                            'Watchdog / Автосохранение',
+                            'Сохранённые данные синхронизированы.',
+                        );
+                    } else {
+                        const elapsed = Date.now() - autosaveState.changedAt;
+                        if (elapsed > AUTOSAVE_STALE_MS) {
+                            addCheck(
+                                'warn',
+                                'Watchdog / Автосохранение',
+                                `Несохранённые изменения дольше ${Math.round(
+                                    AUTOSAVE_STALE_MS / 1000,
+                                )}с.`,
+                            );
+                        } else {
+                            addCheck(
+                                'info',
+                                'Watchdog / Автосохранение',
+                                'Обнаружены несохранённые изменения, ожидается автосохранение.',
+                            );
+                        }
+                    }
+                }
+            } catch (err) {
+                addCheck('error', 'Watchdog / Автосохранение', err.message);
+            }
+
+            // Обновляем диагностику, добавляя watchdog-результаты к уже собранным.
+            if (hud?.setDiagnostics) {
+                const mergedChecks = [
+                    ...results.checks.filter((entry) => !entry.title.startsWith('Watchdog / ')),
+                    ...cycleChecks.map(({ title, message }) => ({ title, message })),
+                ];
+                const mergedErrors = [
+                    ...results.errors.filter((entry) => !entry.title.startsWith('Watchdog / ')),
+                    ...cycleChecks
+                        .filter((entry) => entry.level === 'error')
+                        .map(({ title, message }) => ({ title, message })),
+                ];
+                const mergedWarnings = [
+                    ...results.warnings.filter((entry) => !entry.title.startsWith('Watchdog / ')),
+                    ...cycleChecks
+                        .filter((entry) => entry.level === 'warn')
+                        .map(({ title, message }) => ({ title, message })),
+                ];
+
+                hud.setDiagnostics({
+                    errors: mergedErrors,
+                    warnings: mergedWarnings,
+                    checks: mergedChecks,
+                    updatedAt: nowLabel(),
+                });
+            }
+            const hasErrors = cycleChecks.some((entry) => entry.level === 'error');
+            const hasWarnings = cycleChecks.some((entry) => entry.level === 'warn');
+            setWatchdogHudStatus({
+                statusText: hasErrors
+                    ? 'Проблемы обнаружены'
+                    : hasWarnings
+                      ? 'Есть предупреждения'
+                      : 'Система в норме',
+                running: false,
+                lastRunAt: Date.now(),
+                lastAutosaveAt: autosaveState.lastPersistedAt || null,
+                severity: hasErrors ? 'error' : hasWarnings ? 'warn' : 'ok',
+            });
+        })()
+            .catch((err) => {
+                setWatchdogHudStatus({
+                    statusText: `Ошибка watchdog: ${err.message}`,
+                    running: false,
+                    lastRunAt: Date.now(),
+                    lastAutosaveAt: autosaveState.lastPersistedAt || null,
+                    severity: 'error',
+                });
+                throw err;
+            })
+            .finally(() => {
+                watchdogInFlight = null;
+            });
+
+        return watchdogInFlight;
+    };
+
     const start = async () => {
         await waitUntilAppAvailable(12000);
+        hud?.setWatchdogRunNowHandler?.(() => {
+            runWatchdogCycle('manual').catch((err) => {
+                console.error('[BackgroundHealthTests] Ошибка ручного watchdog-цикла:', err);
+            });
+        });
+        setWatchdogHudStatus({
+            statusText: 'Ожидание первого цикла',
+            running: false,
+            lastRunAt: null,
+            lastAutosaveAt: null,
+            severity: 'running',
+        });
         hud?.startTask?.(taskId, 'Фоновая диагностика', { weight: 0.4, total: 100 });
         updateHud(5);
 
@@ -95,7 +352,11 @@ export function initBackgroundHealthTestsSystem() {
                 // Тест 2: запись/чтение IndexedDB
                 const testId = `health-${Date.now()}`;
                 try {
-                    if (!deps.saveToIndexedDB || !deps.getFromIndexedDB || !deps.deleteFromIndexedDB) {
+                    if (
+                        !deps.saveToIndexedDB ||
+                        !deps.getFromIndexedDB ||
+                        !deps.deleteFromIndexedDB
+                    ) {
                         throw new Error('Отсутствуют методы работы с IndexedDB.');
                     }
                     await runWithTimeout(
@@ -116,7 +377,9 @@ export function initBackgroundHealthTestsSystem() {
                 } finally {
                     try {
                         await deps.deleteFromIndexedDB?.('clientData', testId);
-                    } catch (_) {}
+                    } catch {
+                        // cleanup failure should not fail health check sequence
+                    }
                 }
                 updateHud(40);
 
@@ -126,21 +389,13 @@ export function initBackgroundHealthTestsSystem() {
                         throw new Error('Метод performDBOperation не доступен.');
                     }
                     const count = await runWithTimeout(
-                        deps.performDBOperation('searchIndex', 'readonly', (store) => {
-                            return new Promise((resolve, reject) => {
-                                const req = store.count();
-                                req.onsuccess = () => resolve(req.result || 0);
-                                req.onerror = () => reject(req.error || new Error('Ошибка подсчета'));
-                            });
-                        }),
+                        deps.performDBOperation('searchIndex', 'readonly', (store) =>
+                            store.count(),
+                        ),
                         5000,
                     );
                     if (!count) {
-                        report(
-                            'warn',
-                            'Поисковый индекс',
-                            'Индекс пуст или не заполнен.',
-                        );
+                        report('warn', 'Поисковый индекс', 'Индекс пуст или не заполнен.');
                     } else {
                         report('info', 'Поисковый индекс', `Записей в индексе: ${count}.`);
                     }
@@ -156,11 +411,7 @@ export function initBackgroundHealthTestsSystem() {
                         5000,
                     );
                     if (!mainAlgo) {
-                        report(
-                            'warn',
-                            'Алгоритмы',
-                            'Основной алгоритм не найден в базе данных.',
-                        );
+                        report('warn', 'Алгоритмы', 'Основной алгоритм не найден в базе данных.');
                     } else {
                         report('info', 'Алгоритмы', 'База алгоритмов доступна.');
                     }
@@ -172,19 +423,39 @@ export function initBackgroundHealthTestsSystem() {
                 // Тест 5: целостность списка жаб
                 try {
                     const blacklistCount = await runWithTimeout(
-                        deps.performDBOperation?.('blacklistedClients', 'readonly', (store) => {
-                            return new Promise((resolve, reject) => {
-                                const req = store.count();
-                                req.onsuccess = () => resolve(req.result || 0);
-                                req.onerror = () => reject(req.error || new Error('Ошибка подсчета'));
-                            });
-                        }),
+                        deps.performDBOperation?.('blacklistedClients', 'readonly', (store) =>
+                            store.count(),
+                        ),
                         5000,
                     );
                     report('info', 'Черный список', `Записей в списке: ${blacklistCount}.`);
                 } catch (err) {
                     report('warn', 'Черный список', err.message);
                 }
+                // Тест 5.5: компонента проверки отзыва (CRL Helper)
+                if (REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER) {
+                    try {
+                        const avail = window.__revocationHelperAvailable;
+                        if (avail === true) {
+                            report(
+                                'info',
+                                'Компонента проверки отзыва',
+                                'Локальная компонента доступна.',
+                            );
+                        } else if (avail === false) {
+                            report(
+                                'info',
+                                'Компонента проверки отзыва',
+                                'Компонента не запущена. Нажмите «Установить» в разделе проверки сертификата.',
+                            );
+                        } else {
+                            report('info', 'Компонента проверки отзыва', 'Проверка в процессе.');
+                        }
+                    } catch (err) {
+                        report('warn', 'Компонента проверки отзыва', err.message);
+                    }
+                }
+
                 // Тест 6: надежность UI настроек
                 try {
                     const uiSettings = await runWithTimeout(
@@ -192,9 +463,15 @@ export function initBackgroundHealthTestsSystem() {
                         5000,
                     );
                     if (!uiSettings) {
-                        report('warn', 'UI настройки', 'Сохраненные uiSettings отсутствуют, используются дефолты.');
+                        report(
+                            'warn',
+                            'UI настройки',
+                            'Сохраненные uiSettings отсутствуют, используются дефолты.',
+                        );
                     } else {
-                        const hasOrder = Array.isArray(uiSettings.panelOrder) && uiSettings.panelOrder.length > 0;
+                        const hasOrder =
+                            Array.isArray(uiSettings.panelOrder) &&
+                            uiSettings.panelOrder.length > 0;
                         const hasVisibility =
                             Array.isArray(uiSettings.panelVisibility) &&
                             uiSettings.panelVisibility.length === uiSettings.panelOrder?.length;
@@ -205,7 +482,11 @@ export function initBackgroundHealthTestsSystem() {
                                 'Неконсистентный формат panelOrder/panelVisibility в uiSettings.',
                             );
                         } else {
-                            report('info', 'UI настройки', 'Структура сохраненных UI настроек корректна.');
+                            report(
+                                'info',
+                                'UI настройки',
+                                'Структура сохраненных UI настроек корректна.',
+                            );
                         }
                     }
                 } catch (err) {
@@ -218,6 +499,16 @@ export function initBackgroundHealthTestsSystem() {
             } finally {
                 updateHud(100);
                 finishHud(results.errors.length === 0);
+
+                // После стартовой диагностики запускаем постоянный watchdog.
+                runWatchdogCycle('startup').catch((err) => {
+                    console.error('[BackgroundHealthTests] Ошибка watchdog-цикла:', err);
+                });
+                initBackgroundHealthTestsSystem._watchdogIntervalId = setInterval(() => {
+                    runWatchdogCycle('interval').catch((err) => {
+                        console.error('[BackgroundHealthTests] Ошибка watchdog-цикла:', err);
+                    });
+                }, WATCHDOG_INTERVAL_MS);
             }
         })();
     };
@@ -228,4 +519,3 @@ export function initBackgroundHealthTestsSystem() {
 }
 
 window.initBackgroundHealthTestsSystem = initBackgroundHealthTestsSystem;
-

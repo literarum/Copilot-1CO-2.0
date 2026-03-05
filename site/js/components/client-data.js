@@ -13,7 +13,9 @@ const DEFAULT_CLIENT_DATA_ID = 'default';
 export async function getClientData() {
     try {
         const raw = await getAllFromIndexedDB(STORE_NAME);
-        const record = Array.isArray(raw) ? raw.find((r) => r && r.id === DEFAULT_CLIENT_DATA_ID) : raw;
+        const record = Array.isArray(raw)
+            ? raw.find((r) => r && r.id === DEFAULT_CLIENT_DATA_ID)
+            : raw;
         return record && record.notes !== undefined ? record.notes : '';
     } catch (e) {
         console.warn('[client-data.js] getClientData:', e);

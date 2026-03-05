@@ -22,6 +22,31 @@ let addEscapeHandler = null;
 let getVisibleModals = null;
 let renderExtLinks = null;
 let getAllExtLinks = null;
+let showAppConfirm = null;
+
+const CATEGORY_DOT_CLASSES = {
+    gray: 'bg-gray-500',
+    red: 'bg-red-600',
+    orange: 'bg-orange-500',
+    yellow: 'bg-yellow-400',
+    green: 'bg-green-500',
+    teal: 'bg-teal-500',
+    blue: 'bg-blue-600',
+    indigo: 'bg-indigo-600',
+    purple: 'bg-purple-600',
+    pink: 'bg-pink-600',
+    rose: 'bg-rose-500',
+};
+
+function normalizeCategoryColor(colorName) {
+    if (!colorName) return 'gray';
+    const raw = String(colorName).trim().toLowerCase();
+    const cleaned = raw
+        .replace(/^bg-/, '')
+        .replace(/\/.+$/, '')
+        .replace(/-(50|100|200|300|400|500|600|700|800|900|950)$/, '');
+    return CATEGORY_DOT_CLASSES[cleaned] ? cleaned : 'gray';
+}
 
 export function setExtLinksCategoriesDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
@@ -37,6 +62,7 @@ export function setExtLinksCategoriesDependencies(deps) {
     if (deps.getVisibleModals !== undefined) getVisibleModals = deps.getVisibleModals;
     if (deps.renderExtLinks !== undefined) renderExtLinks = deps.renderExtLinks;
     if (deps.getAllExtLinks !== undefined) getAllExtLinks = deps.getAllExtLinks;
+    if (deps.showAppConfirm !== undefined) showAppConfirm = deps.showAppConfirm;
 }
 
 /**
@@ -77,10 +103,8 @@ export async function populateExtLinkCategoryFilter(categoryFilterElement) {
  */
 export function showOrganizeExtLinkCategoriesModal() {
     let modal = document.getElementById('extLinkCategoriesModal');
-    let isNewModal = false;
 
     if (!modal) {
-        isNewModal = true;
         modal = document.createElement('div');
         modal.id = 'extLinkCategoriesModal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden z-50 p-4';
@@ -256,8 +280,7 @@ async function loadExtLinkCategoriesList(categoriesListElement) {
                 'category-item flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0';
             categoryItem.dataset.categoryId = category.id;
 
-            const colorName = category.color || 'gray';
-            const colorClass = `bg-${colorName}-500`;
+            const colorClass = CATEGORY_DOT_CLASSES[normalizeCategoryColor(category.color)];
 
             categoryItem.innerHTML = `
                 <div class="flex items-center flex-grow min-w-0 mr-2">
@@ -411,7 +434,10 @@ export async function handleSaveExtLinkCategorySubmit(event) {
                     indexError,
                 );
                 if (typeof showNotification === 'function') {
-                    showNotification('Ошибка обновления поискового индекса для категории.', 'warning');
+                    showNotification(
+                        'Ошибка обновления поискового индекса для категории.',
+                        'warning',
+                    );
                 }
             }
         } else {
@@ -462,7 +488,10 @@ export async function handleSaveExtLinkCategorySubmit(event) {
     } catch (error) {
         console.error('Ошибка при сохранении категории:', error);
         if (typeof showNotification === 'function') {
-            showNotification('Ошибка при сохранении категории: ' + (error.message || error), 'error');
+            showNotification(
+                'Ошибка при сохранении категории: ' + (error.message || error),
+                'error',
+            );
         }
     } finally {
         saveButton.disabled = false;
@@ -491,31 +520,46 @@ export async function handleDeleteExtLinkCategoryClick(categoryId, categoryItem)
         let confirmationMessage = `Вы уверены, что хотите удалить категорию "${
             categoryToDelete?.name || 'ID ' + categoryId
         }"?`;
-        let shouldDeleteLinks = false;
 
         if (linksInCategory && linksInCategory.length > 0) {
             confirmationMessage += `\n\nВ этой категории находит${
                 linksInCategory.length === 1 ? 'ся' : 'ся'
             } ${linksInCategory.length} внешн${
-                linksInCategory.length === 1 ? 'яя ссылка' : linksInCategory.length < 5 ? 'их ссылки' : 'их ссылок'
+                linksInCategory.length === 1
+                    ? 'яя ссылка'
+                    : linksInCategory.length < 5
+                      ? 'их ссылки'
+                      : 'их ссылок'
             }. Они не будут удалены, но потеряют привязку к категории.`;
-            shouldDeleteLinks = false; // Не удаляем ссылки, только убираем категорию
+            // Не удаляем ссылки, только убираем категорию.
         }
 
-        if (!confirm(confirmationMessage)) {
+        const confirmed = showAppConfirm
+            ? await showAppConfirm({
+                  title: 'Удаление категории',
+                  message: confirmationMessage,
+                  confirmText: 'Удалить',
+                  cancelText: 'Отмена',
+                  confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+              })
+            : confirm(confirmationMessage);
+        if (!confirmed) {
             console.log('Удаление категории отменено.');
             return;
         }
 
-        console.log(
-            `Начало удаления категории ID: ${categoryId}.`,
-        );
+        console.log(`Начало удаления категории ID: ${categoryId}.`);
 
         const indexUpdatePromises = [];
         if (categoryToDelete && typeof updateSearchIndex === 'function') {
             indexUpdatePromises.push(
-                updateSearchIndex('extLinkCategories', categoryId, categoryToDelete, 'delete').catch(
-                    (err) => console.error(`Ошибка индексации (удаление категории ${categoryId}):`, err),
+                updateSearchIndex(
+                    'extLinkCategories',
+                    categoryId,
+                    categoryToDelete,
+                    'delete',
+                ).catch((err) =>
+                    console.error(`Ошибка индексации (удаление категории ${categoryId}):`, err),
                 ),
             );
         } else {
@@ -542,9 +586,13 @@ export async function handleDeleteExtLinkCategoryClick(categoryId, categoryItem)
                 await saveToIndexedDB('extLinks', link);
                 if (typeof updateSearchIndex === 'function') {
                     const oldDataForIndex = { ...link, category: categoryId };
-                    await updateSearchIndex('extLinks', link.id, link, 'update', oldDataForIndex).catch(
-                        (err) => console.error(`Ошибка индексации ссылки ${link.id}:`, err),
-                    );
+                    await updateSearchIndex(
+                        'extLinks',
+                        link.id,
+                        link,
+                        'update',
+                        oldDataForIndex,
+                    ).catch((err) => console.error(`Ошибка индексации ссылки ${link.id}:`, err));
                 }
             }
         }
