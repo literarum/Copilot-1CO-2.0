@@ -164,4 +164,79 @@ describe('yandex crl-checker handler', () => {
         expect(fetchMock.mock.calls[0][0]).toBe('http://pki.tax.gov.ru/cdp/test.crl');
         expect(payload.error).toContain('CRL parse error');
     });
+
+    it('normalizes serial values when JSON list omits leading zeroes', async () => {
+        const { handler } = require('../../yandex-function/crl-checker/index.js');
+        vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+            new Response(JSON.stringify({ revoked: ['AB'] }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            }),
+        );
+
+        const result = await handler(
+            {
+                httpMethod: 'POST',
+                path: '/api/revocation/check',
+                headers: { 'content-type': 'application/json' },
+                queryStringParameters: {},
+                multiValueQueryStringParameters: {},
+                body: JSON.stringify({
+                    serial: '00ab',
+                    listUrl: 'https://example.com/revoked.json',
+                }),
+                isBase64Encoded: false,
+            },
+            {},
+        );
+
+        const payload = JSON.parse(result.body);
+        expect(result.statusCode).toBe(200);
+        expect(payload.revoked).toBe(true);
+    });
+
+    it('follows relative same-host redirect chain before parsing CRL/text payload', async () => {
+        const { handler } = require('../../yandex-function/crl-checker/index.js');
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(
+                new Response(null, {
+                    status: 302,
+                    headers: { Location: '/DDoS01/a035fbd8/cdp/test.crl' },
+                }),
+            )
+            .mockResolvedValueOnce(
+                new Response(null, {
+                    status: 302,
+                    headers: { Location: '/cdp/final-list.txt' },
+                }),
+            )
+            .mockResolvedValueOnce(
+                new Response('AB\nFFFF\n', {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+                }),
+            );
+
+        const result = await handler(
+            {
+                httpMethod: 'POST',
+                path: '/api/revocation/check',
+                headers: { 'content-type': 'application/json' },
+                queryStringParameters: {},
+                multiValueQueryStringParameters: {},
+                body: JSON.stringify({
+                    serial: 'AB',
+                    listUrl: 'https://cdp.tax.gov.ru/cdp/test.crl',
+                }),
+                isBase64Encoded: false,
+            },
+            {},
+        );
+
+        const payload = JSON.parse(result.body);
+        expect(result.statusCode).toBe(200);
+        expect(payload.revoked).toBe(true);
+        expect(fetchMock.mock.calls[0][0]).toBe('http://cdp.tax.gov.ru/cdp/test.crl');
+    });
 });

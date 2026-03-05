@@ -10,6 +10,7 @@ const CORS_HEADERS = {
 
 const CRL_FETCH_ATTEMPTS = 2;
 const CRL_FETCH_TIMEOUT_MS = 25000;
+const CRL_MAX_REDIRECT_HOPS = 4;
 const CHECK_REVOCATION_BUDGET_MS = 35000;
 const MAX_CRL_BASE64_LENGTH = 4 * 1024 * 1024;
 /** Max size of CRL response body to load (avoids OOM; server may omit Content-Length). FNS CRLs can be ~25 MB. */
@@ -50,6 +51,14 @@ function bytesToHex(bytes) {
 function normalizeHex(hex) {
     const normalized = String(hex || '').replace(/^0+/, '');
     return normalized.length ? normalized : '0';
+}
+
+function normalizeSerialInput(serial) {
+    const raw = String(serial || '').trim().toUpperCase();
+    if (!raw) return '';
+    const hexOnly = raw.replace(/[^0-9A-F]/g, '');
+    if (!hexOnly) return raw;
+    return normalizeHex(hexOnly);
 }
 
 function readDerLength(bytes, offset) {
@@ -289,6 +298,69 @@ async function fetchWithRetry(url, attempts = CRL_FETCH_ATTEMPTS, timeoutMs = CR
     throw lastError || new Error('fetch failed');
 }
 
+async function followSameHostRedirectChain(initialUrl, initialResponse) {
+    let response = initialResponse;
+    let effectiveUrl = initialUrl;
+    for (let hop = 0; hop < CRL_MAX_REDIRECT_HOPS; hop++) {
+        if (!(response.status >= 300 && response.status < 400)) {
+            return { response, effectiveUrl };
+        }
+        const location = (response.headers?.get?.('location') || '').trim();
+        if (!location) {
+            return {
+                errorCode: 'crl_redirect_unknown',
+                error: `${effectiveUrl}: redirect ${response.status}`,
+            };
+        }
+        if (location.startsWith('https://')) {
+            return {
+                errorCode: 'crl_redirect_https',
+                error: `${effectiveUrl}: redirect → HTTPS (GOST TLS unsupported)`,
+            };
+        }
+
+        let redirectUrl;
+        try {
+            redirectUrl = new URL(location, effectiveUrl).href;
+        } catch (e) {
+            return {
+                errorCode: 'crl_redirect_other',
+                error: `${effectiveUrl}: redirect → ${location} (${e?.message || 'invalid'})`,
+            };
+        }
+
+        const currentHost = new URL(effectiveUrl).hostname.toLowerCase();
+        const redirectParsed = new URL(redirectUrl);
+        const redirectHost = redirectParsed.hostname.toLowerCase();
+        if (redirectHost !== currentHost) {
+            return {
+                errorCode: 'crl_redirect_other',
+                error: `${effectiveUrl}: redirect → ${location} (different host)`,
+            };
+        }
+        if (redirectParsed.protocol === 'https:') {
+            return {
+                errorCode: 'crl_redirect_https',
+                error: `${effectiveUrl}: redirect → HTTPS (GOST TLS unsupported)`,
+            };
+        }
+
+        try {
+            response = await fetchWithRetry(redirectUrl);
+            effectiveUrl = redirectUrl;
+        } catch (e) {
+            return {
+                errorCode: e?.code || 'crl_fetch_failed',
+                error: `${effectiveUrl}: redirect → ${location} (${e?.message || 'fetch failed'})`,
+            };
+        }
+    }
+    return {
+        errorCode: 'crl_redirect_loop',
+        error: `${effectiveUrl}: too many redirects (>${CRL_MAX_REDIRECT_HOPS})`,
+    };
+}
+
 async function maybeDecompressGzip(buffer) {
     const bytes = new Uint8Array(buffer);
     if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
@@ -310,7 +382,7 @@ async function processCrlResponse(buffer, contentType, candidateUrl, normalizedS
         const list = Array.isArray(data) ? data : data.revoked || data.serials || data.list || [];
         const revoked = list.some((item) => {
             const s = typeof item === 'string' ? item : item.serial || item;
-            return String(s).trim().toUpperCase() === normalizedSerial;
+            return normalizeSerialInput(s) === normalizedSerial;
         });
         return { revoked, serial: normalizedSerial };
     }
@@ -334,7 +406,7 @@ async function processCrlResponse(buffer, contentType, candidateUrl, normalizedS
     const text = new TextDecoder().decode(new Uint8Array(buffer));
     const lines = text
         .split(/\r?\n/)
-        .map((s) => s.trim().toUpperCase())
+        .map((s) => normalizeSerialInput(s))
         .filter(Boolean);
     return { revoked: lines.includes(normalizedSerial), serial: normalizedSerial };
 }
@@ -347,7 +419,7 @@ async function checkRevocation(serial, listUrl, options = {}) {
         return { revoked: false, errorCode: 'list_url_missing', error: 'missing listUrl' };
     }
 
-    const normalizedSerial = serial.trim().toUpperCase();
+    const normalizedSerial = normalizeSerialInput(serial);
     const helperBaseUrl = normalizeHelperBaseUrl(options.helperBaseUrl);
     const sourceCandidates = buildSourceCandidates(listUrl, helperBaseUrl);
     const startedAt = Date.now();
@@ -375,51 +447,19 @@ async function checkRevocation(serial, listUrl, options = {}) {
         }
 
         if (res.status >= 300 && res.status < 400) {
-            const location = (res.headers?.get?.('location') || '').trim();
-            if (location.startsWith('https://')) {
-                lastError = lastError || `${effectiveUrl}: redirect → HTTPS (GOST TLS unsupported)`;
-                lastErrorCode = lastErrorCode || 'crl_redirect_https';
-                attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+            const redirectResult = await followSameHostRedirectChain(effectiveUrl, res);
+            if (redirectResult.error) {
+                lastError = lastError || redirectResult.error;
+                lastErrorCode = lastErrorCode || redirectResult.errorCode || 'crl_redirect_other';
+                attemptPath.push({
+                    url: effectiveUrl,
+                    source: candidateSource,
+                    errorCode: lastErrorCode,
+                });
                 continue;
             }
-            if (location.startsWith('/')) {
-                try {
-                    const redirectUrl = new URL(location, new URL(effectiveUrl).origin).href;
-                    const redirectHost = new URL(redirectUrl).hostname.toLowerCase();
-                    const candidateHost = new URL(effectiveUrl).hostname.toLowerCase();
-                    if (redirectHost === candidateHost) {
-                        res = await fetchWithRetry(redirectUrl);
-                        if (res.status >= 200 && res.status < 300) {
-                            effectiveUrl = redirectUrl;
-                        } else {
-                            lastError = lastError || `${effectiveUrl}: redirect → ${location} returned ${res.status}`;
-                            lastErrorCode = lastErrorCode || 'crl_redirect_other';
-                            attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
-                            continue;
-                        }
-                    } else {
-                        lastError = lastError || `${effectiveUrl}: redirect → ${location} (different host)`;
-                        lastErrorCode = lastErrorCode || 'crl_redirect_other';
-                        attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
-                        continue;
-                    }
-                } catch (e) {
-                    lastError = lastError || `${effectiveUrl}: redirect → ${location} (${e?.message || 'invalid'})`;
-                    lastErrorCode = lastErrorCode || 'crl_redirect_other';
-                    attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
-                    continue;
-                }
-            } else if (location) {
-                lastError = lastError || `${effectiveUrl}: redirect → ${location}`;
-                lastErrorCode = lastErrorCode || 'crl_redirect_other';
-                attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
-                continue;
-            } else {
-                lastError = lastError || `${effectiveUrl}: redirect ${res.status}`;
-                lastErrorCode = lastErrorCode || 'crl_redirect_unknown';
-                attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
-                continue;
-            }
+            res = redirectResult.response;
+            effectiveUrl = redirectResult.effectiveUrl;
         }
 
         if (!res.ok) {
@@ -484,7 +524,7 @@ function checkRevocationFromBase64(serial, base64Data) {
     try {
         const buffer = decodeBase64ToUint8(base64Data);
         const revokedSet = parseCrlRevokedSerials(buffer);
-        const normalizedSerial = serial.trim().toUpperCase();
+        const normalizedSerial = normalizeSerialInput(serial);
         return { revoked: revokedSet.has(normalizedSerial), serial: normalizedSerial };
     } catch (e) {
         return {
