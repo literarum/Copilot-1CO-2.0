@@ -1146,24 +1146,26 @@ const initViewToggles = initViewTogglesModule;
 // initUICustomization из PR11 модуля ui-customization.js
 const initUICustomization = initUICustomizationModule;
 
-// Адаптивное расширение полей ввода (textarea), включая #clientNotes
+// Адаптивное расширение полей ввода (textarea), кроме #clientNotes — размер окна заметок фиксирован (rows), растягивание только вручную (resize-y)
 function initAutoExpandTextareas() {
     const expand = (el) => {
-        if (!el || el.tagName !== 'TEXTAREA') return;
+        if (!el || el.tagName !== 'TEXTAREA' || el.id === 'clientNotes') return;
         el.style.height = 'auto';
         el.style.height = Math.min(el.scrollHeight, 600) + 'px';
     };
     document.addEventListener('input', (e) => {
-        if (e.target && e.target.tagName === 'TEXTAREA') expand(e.target);
+        if (e.target && e.target.tagName === 'TEXTAREA' && e.target.id !== 'clientNotes')
+            expand(e.target);
     });
     document.addEventListener(
         'focus',
         (e) => {
-            if (e.target && e.target.tagName === 'TEXTAREA') expand(e.target);
+            if (e.target && e.target.tagName === 'TEXTAREA' && e.target.id !== 'clientNotes')
+                expand(e.target);
         },
         true,
     );
-    document.querySelectorAll('textarea').forEach(expand);
+    document.querySelectorAll('textarea:not(#clientNotes)').forEach(expand);
 }
 
 // Кнопки прокрутки вверх/вниз — показываются только если контент не помещается на экране; клик — в начало/конец страницы
