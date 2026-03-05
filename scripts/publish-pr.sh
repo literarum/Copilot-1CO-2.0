@@ -248,7 +248,7 @@ if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; the
     info "Ссылка на приложение (preview): $PREVIEW_URL"
     info "Если комментарий со ссылкой в PR не появится — откройте вкладку Actions в репозитории или используйте ссылку выше."
   fi
-  info "На GitHub запустится workflow PR Preview; в PR должен появиться комментарий со ссылкой на сайт."
+  info "Готово. Workflow PR Preview (если он есть в ветке main) задеплоит превью и оставит комментарий со ссылкой в PR."
   open_pr_in_browser_if_possible "$NEW_PR_URL"
 else
   err "Не удалось создать PR через gh. Проверьте: gh auth status, права на push в origin, что ветка не защищена."
