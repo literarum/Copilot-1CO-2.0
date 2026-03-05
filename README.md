@@ -88,7 +88,11 @@ export const REVOCATION_API_BASE_URL = 'https://functions.yandexcloud.net/<FUNCT
 2. Скрипт при необходимости клонирует `literarum/Copilot-1CO-2.0` в подпапку `Copilot-1CO-2.0`, синхронизирует файлы, спросит подтверждение и сделает коммит и пуш ветки `feat/yandex-cloud-migration`.
 3. В конце скрипт выведет ссылку на сравнение веток — откройте её в браузере и нажмите **Create pull request** (base: `main`, compare: `feat/yandex-cloud-migration`).
 
-**Создание PR и превью сайта:** при выполнении **`./scripts/publish-pr.sh main`** создаётся новая ветка и PR. Workflow «PR Preview» (файл `.github/workflows/pr-preview.yml` **должен быть в ветке main**) автоматически деплоит `site/` в каталог превью на GitHub Pages и оставляет в PR комментарий со ссылкой. Формат ссылки: **`https://<owner>.github.io/<repo>/pr-preview/pr-<номер>/`**. В репозитории: Actions включены, **Pages → Source: Deploy from a branch**, ветка **gh-pages**. Если в PR «0 Checks» — в main ещё нет актуального `pr-preview.yml`; влейте его в main один раз, дальше всё будет автоматически.
+**Создание PR и превью сайта:** при выполнении **`./scripts/publish-pr.sh main`** создаётся новая ветка и PR. Workflow «PR Preview» автоматически деплоит `site/` в превью на GitHub Pages и оставляет в PR комментарий со ссылкой (**`https://<owner>.github.io/<repo>/pr-preview/pr-<номер>/`**). Нужно: Actions включены, **Settings → Pages → Deploy from a branch**, ветка **gh-pages**.
+
+**Однократная настройка (если в PR «0 Checks» и нет комментария со ссылкой):** GitHub запускает workflow только с ветки **main**. Значит, в main должен лежать файл `.github/workflows/pr-preview.yml`. Сделайте одно из двух:
+1. **Влейте этот PR в main** (Merge pull request). Тогда все следующие PR будут получать проверки и комментарий автоматически.
+2. Либо влейте в main только файл `pr-preview.yml` (отдельным коммитом или маленьким PR). После этого откройте **Actions → PR Preview → Run workflow**, введите номер нужного PR (например, 88) и нажмите Run — превью задеплоится и комментарий со ссылкой появится в PR.
 
 ### Проверка отзыва сертификатов ФНС
 
