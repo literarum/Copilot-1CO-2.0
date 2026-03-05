@@ -168,6 +168,11 @@ extract_pr_url_from_output() {
   printf '%s' "$1" | grep -oE 'https://github\.com/[^/]+/[^/]+/pull/[0-9]+' | head -1
 }
 
+# Из URL PR извлекает номер (для сборки ссылки на preview).
+extract_pr_number_from_url() {
+  printf '%s' "$1" | grep -oE '/pull/[0-9]+' | grep -oE '[0-9]+' | head -1
+}
+
 # ===== Основная логика =====
 
 require_cmd git
@@ -236,11 +241,17 @@ info "В origin запушена ветка: $REMOTE_PR_BRANCH"
 if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; then
   printf '%s\n' "$PR_CREATE_OUTPUT"
   info "Готово. Новый PR создан."
-  info "На GitHub автоматически запустится деплой preview; в PR появится комментарий со ссылкой на сайт (Pages)."
   NEW_PR_URL="$(extract_pr_url_from_output "$PR_CREATE_OUTPUT")"
+  PR_NUM="$(extract_pr_number_from_url "$NEW_PR_URL")"
+  if [[ -n "$PR_NUM" ]]; then
+    PREVIEW_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/pr-preview/pr-${PR_NUM}/"
+    info "Ссылка на приложение (preview): $PREVIEW_URL"
+    info "Если комментарий со ссылкой в PR не появится — откройте вкладку Actions в репозитории или используйте ссылку выше."
+  fi
+  info "На GitHub запустится workflow PR Preview; в PR должен появиться комментарий со ссылкой на сайт."
   open_pr_in_browser_if_possible "$NEW_PR_URL"
 else
-  info "Не удалось создать PR через gh."
+  err "Не удалось создать PR через gh. Проверьте: gh auth status, права на push в origin, что ветка не защищена."
   info "Откройте вручную:"
   info "https://github.com/${REPO_OWNER}/${REPO_NAME}/pull/new/${REMOTE_PR_BRANCH}"
   exit 1

@@ -25,6 +25,7 @@ jobs:
         run: rm -rf pr-preview || true
 
       - name: Deploy PR preview
+        id: pr-preview
         uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: site
@@ -34,3 +35,7 @@ jobs:
           comment: "true"
           # Action prepends "https://" and "/" itself; pass host+path only to avoid "https://https://..."
           pages-base-url: ${{ format('{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+      - name: Show preview URL in log
+        if: success() && steps.pr-preview.outputs.preview-url != ''
+        run: |
+          echo "Preview URL (если комментарий в PR не появился — скопируйте ссылку): ${{ steps.pr-preview.outputs.preview-url }}"
