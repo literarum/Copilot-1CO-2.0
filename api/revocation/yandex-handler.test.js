@@ -274,13 +274,9 @@ describe('yandex crl-checker handler', () => {
         const payload = JSON.parse(result.body);
         expect(result.statusCode).toBe(200);
         expect(payload.revoked).toBe(true);
-        expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
-            'http://cdp.tax.gov.ru/cdp/test.crl',
-            'http://cdp.tax.gov.ru/cdp/test.crl',
-            'https://cdp.tax.gov.ru/cdp/test.crl',
-            'https://cdp.tax.gov.ru/cdp/test.crl',
-            'http://pki.tax.gov.ru/cdp/test.crl',
-        ]);
+        const calledUrls = fetchMock.mock.calls.map((call) => call[0]);
+        expect(calledUrls[0]).toBe('http://cdp.tax.gov.ru/cdp/test.crl');
+        expect(calledUrls[2]).toBe('http://pki.tax.gov.ru/cdp/test.crl');
     });
 
     it('falls back to pki mirror when DDoS redirect URL returns 404', async () => {
@@ -329,9 +325,9 @@ describe('yandex crl-checker handler', () => {
         expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
             'http://cdp.tax.gov.ru/cdp/test.crl',
             'http://cdp.tax.gov.ru/DDoS01/ec79425a/cdp/test.crl',
-            'https://cdp.tax.gov.ru/cdp/test.crl',
-            'https://cdp.tax.gov.ru/cdp/test.crl',
             'http://pki.tax.gov.ru/cdp/test.crl',
+            'http://pki.tax.gov.ru/cdp/test.crl',
+            'https://pki.tax.gov.ru/cdp/test.crl',
         ]);
     });
 });

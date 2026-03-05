@@ -5,6 +5,9 @@ const {
     detectCertificateFormat,
     decodeRawBase64ToBytes,
     parseCertificate,
+    isCertificateExpired,
+    resolveFinalRevocationState,
+    resolveCrlUrls,
     resolveNetworkPolicy,
     shouldAttemptBrowserFetch,
     shouldRecommendProxy,
@@ -72,5 +75,40 @@ describe('fns revocation network policy', () => {
 
     it('does not attempt browser fetch in backend_first mode', () => {
         expect(shouldAttemptBrowserFetch('https://pki.tax.gov.ru/cdp/test.crl')).toBe(false);
+    });
+});
+
+describe('fns revocation effective status', () => {
+    it('treats expired certificate as revoked even when CRL has no hit', () => {
+        const certInfo = { notAfterEpochMs: Date.now() - 1000 };
+        expect(isCertificateExpired(certInfo)).toBe(true);
+        expect(resolveFinalRevocationState(false, true)).toEqual({
+            revoked: true,
+            reason: 'expired',
+        });
+    });
+
+    it('keeps non-expired certificate not revoked without CRL hit', () => {
+        const certInfo = { notAfterEpochMs: Date.now() + 60_000 };
+        expect(isCertificateExpired(certInfo)).toBe(false);
+        expect(resolveFinalRevocationState(false, false)).toEqual({
+            revoked: false,
+            reason: null,
+        });
+    });
+});
+
+describe('fns revocation CRL source selection', () => {
+    it('prioritizes certificate CDP URLs over static fallback list', () => {
+        const certInfo = {
+            crlDistributionPoints: [
+                'http://pki.tax.gov.ru/cdp/fcb21945f2bb7670b371b03cee94381d4f975cd5.crl',
+                'http://uc.nalog.ru/cdp/fcb21945f2bb7670b371b03cee94381d4f975cd5.crl',
+            ],
+        };
+
+        const urls = resolveCrlUrls(certInfo);
+        expect(urls[0]).toContain('/cdp/fcb21945f2bb7670b371b03cee94381d4f975cd5.crl');
+        expect(urls[1]).toContain('/cdp/fcb21945f2bb7670b371b03cee94381d4f975cd5.crl');
     });
 });

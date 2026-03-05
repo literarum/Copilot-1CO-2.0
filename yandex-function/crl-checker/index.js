@@ -243,7 +243,7 @@ function buildCandidateListUrls(listUrl) {
         const httpsUrl = `https://${host}${parsed.pathname}${parsed.search}`;
         let candidates = [];
         if (isGostHost) {
-            candidates = [httpUrl, httpsUrl];
+            candidates = [httpUrl];
         } else if (parsed.protocol === 'https:') {
             candidates = [httpsUrl, httpUrl];
         } else {
@@ -256,6 +256,11 @@ function buildCandidateListUrls(listUrl) {
                 `http://pki.tax.gov.ru${parsed.pathname}${parsed.search}`,
                 `https://pki.tax.gov.ru${parsed.pathname}${parsed.search}`,
             );
+            // Keep cdp HTTPS after mirror fallbacks to avoid spending timeout budget
+            // before trying the known mirror host.
+            candidates.push(httpsUrl);
+        } else if (isGostHost) {
+            candidates.push(httpsUrl);
         }
         return Array.from(new Set(candidates));
     } catch {

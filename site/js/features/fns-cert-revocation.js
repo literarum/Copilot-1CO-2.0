@@ -158,12 +158,66 @@ function buildBackendFirstEntries(urls) {
     }));
 }
 
-function resolveCrlUrls() {
+const PUBLIC_CRL_HOSTS = new Set(['pki.tax.gov.ru', 'uc.nalog.ru', 'cdp.tax.gov.ru']);
+
+function isPrivateLikeCrlHost(hostname) {
+    const host = String(hostname || '').toLowerCase();
+    if (!host) return true;
+    if (host === 'localhost' || host.endsWith('.localhost')) return true;
+    if (/^c\d{4}-/i.test(host)) return true;
+    if (
+        /^10\.|^127\.|^192\.168\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+        host === '::1'
+    ) {
+        return true;
+    }
+    return false;
+}
+
+function buildBackendReachableCrlUrls(urls) {
+    const normalized = [];
+    for (const rawUrl of Array.isArray(urls) ? urls : []) {
+        try {
+            const parsed = new URL(String(rawUrl || '').trim());
+            if (!['http:', 'https:'].includes(parsed.protocol)) continue;
+            const host = parsed.hostname.toLowerCase();
+            if (PUBLIC_CRL_HOSTS.has(host)) {
+                normalized.push(`${parsed.protocol}//${host}${parsed.pathname}${parsed.search}`);
+                continue;
+            }
+            if (isPrivateLikeCrlHost(host)) {
+                normalized.push(
+                    `https://pki.tax.gov.ru${parsed.pathname}${parsed.search}`,
+                    `https://uc.nalog.ru${parsed.pathname}${parsed.search}`,
+                );
+            }
+        } catch {
+            // Ignore malformed URL in certificate extensions.
+        }
+    }
+    return Array.from(new Set(normalized));
+}
+
+function resolveCrlUrls(certInfoData = null) {
+    const certCdpUrls = buildBackendReachableCrlUrls(certInfoData?.crlDistributionPoints || []);
+    const baseUrls = certCdpUrls.length > 0 ? certCdpUrls : [...FNS_CRL_URLS];
     if (!REVOCATION_PROXY_ENABLED || !REVOCATION_PROXY_URL) {
-        return [...FNS_CRL_URLS];
+        return baseUrls;
     }
     const proxyBase = REVOCATION_PROXY_URL.replace(/\/$/, '');
-    return FNS_CRL_URLS.map((url) => `${proxyBase}?url=${encodeURIComponent(url)}`);
+    return baseUrls.map((url) => `${proxyBase}?url=${encodeURIComponent(url)}`);
+}
+
+function isCertificateExpired(certInfoData, nowMs = Date.now()) {
+    const expiryMs = Number(certInfoData?.notAfterEpochMs);
+    if (!Number.isFinite(expiryMs)) return false;
+    return nowMs > expiryMs;
+}
+
+function resolveFinalRevocationState(hasCrlRevocation, certExpired) {
+    if (hasCrlRevocation) return { revoked: true, reason: 'crl' };
+    if (certExpired) return { revoked: true, reason: 'expired' };
+    return { revoked: false, reason: null };
 }
 
 function shouldRecommendProxy(totalChecks, failedChecks) {
@@ -355,7 +409,7 @@ function decodeDerString(node, bytes) {
     }
 }
 
-function decodeTime(node, bytes) {
+function decodeTimeDetails(node, bytes) {
     const text = new TextDecoder('ascii').decode(bytes.slice(node.valueStart, node.valueEnd));
     const trimmed = text.replace(/Z$/, '');
     if (node.tag === 0x17 && trimmed.length >= 12) {
@@ -366,7 +420,8 @@ function decodeTime(node, bytes) {
         const hour = parseInt(trimmed.slice(6, 8), 10);
         const minute = parseInt(trimmed.slice(8, 10), 10);
         const second = parseInt(trimmed.slice(10, 12), 10);
-        return new Date(Date.UTC(fullYear, month, day, hour, minute, second)).toLocaleString();
+        const date = new Date(Date.UTC(fullYear, month, day, hour, minute, second));
+        return { display: date.toLocaleString(), epochMs: date.getTime(), raw: text };
     }
     if (node.tag === 0x18 && trimmed.length >= 14) {
         const fullYear = parseInt(trimmed.slice(0, 4), 10);
@@ -375,9 +430,14 @@ function decodeTime(node, bytes) {
         const hour = parseInt(trimmed.slice(8, 10), 10);
         const minute = parseInt(trimmed.slice(10, 12), 10);
         const second = parseInt(trimmed.slice(12, 14), 10);
-        return new Date(Date.UTC(fullYear, month, day, hour, minute, second)).toLocaleString();
+        const date = new Date(Date.UTC(fullYear, month, day, hour, minute, second));
+        return { display: date.toLocaleString(), epochMs: date.getTime(), raw: text };
     }
-    return text;
+    return { display: text, epochMs: NaN, raw: text };
+}
+
+function decodeTime(node, bytes) {
+    return decodeTimeDetails(node, bytes).display;
 }
 
 function parseName(node, bytes) {
@@ -438,8 +498,15 @@ function formatDnAsLines(attrs) {
     return attrs.map((item) => `${item.label}: ${item.value}`).join('\n');
 }
 
+function extractCdpUrlsFromBytes(bytes) {
+    const text = new TextDecoder('latin1').decode(bytes);
+    const matches = text.match(/https?:\/\/[A-Za-z0-9._:-]+\/cdp\/[0-9a-f]{40}\.crl/gi) || [];
+    return buildBackendReachableCrlUrls(matches);
+}
+
 function renderCertificateInfo(certInfo, certInfoData, fileName) {
     certInfo.innerHTML = '';
+    const certExpired = isCertificateExpired(certInfoData);
 
     const card = document.createElement('div');
     card.className =
@@ -449,63 +516,81 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
 
     const header = document.createElement('div');
     header.className =
-        'px-4 py-2.5 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600 flex items-center gap-2';
-    header.innerHTML =
-        '<i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span>';
+        'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between gap-2';
+    const statusChip = certExpired
+        ? '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Истёк</span>'
+        : '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">Действителен</span>';
+    header.innerHTML = `<span class="inline-flex items-center gap-2"><i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span></span>${statusChip}`;
     card.appendChild(header);
 
     const body = document.createElement('div');
-    body.className = 'p-4 space-y-4';
+    body.className = 'p-4 grid grid-cols-1 lg:grid-cols-2 gap-4';
 
-    const addRow = (label, value, options = {}) => {
-        const row = document.createElement('div');
-        row.className = options.compact ? 'flex flex-col gap-0.5' : 'flex flex-col gap-1';
+    const addField = (label, value, options = {}) => {
+        const field = document.createElement('div');
+        field.className =
+            'rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50/70 dark:bg-gray-700/40 p-3.5';
         const labelEl = document.createElement('span');
         labelEl.className =
-            'text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400';
+            'block text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1';
         labelEl.textContent = label;
         const valueEl = document.createElement('span');
         valueEl.className = options.mono
-            ? 'font-mono text-xs text-gray-800 dark:text-gray-200 break-all'
-            : 'text-gray-900 dark:text-gray-100 break-words';
-        valueEl.textContent = value || '—';
+            ? 'font-mono text-xs text-gray-900 dark:text-gray-100 break-all'
+            : 'text-sm text-gray-900 dark:text-gray-100 break-words';
         if (options.lines && value && value.includes('\n')) {
             valueEl.innerHTML = value
                 .split('\n')
                 .map((line) => `<span class="block">${escapeHtmlForCert(line)}</span>`)
                 .join('');
-            valueEl.classList.add('space-y-0.5');
+        } else {
+            valueEl.textContent = value || '—';
         }
-        row.appendChild(labelEl);
-        row.appendChild(valueEl);
-        body.appendChild(row);
+        field.appendChild(labelEl);
+        field.appendChild(valueEl);
+        if (options.fullWidth) {
+            field.classList.add('lg:col-span-2');
+        }
+        body.appendChild(field);
     };
 
-    addRow('Файл', fileName, { compact: true });
-    addRow('Серийный номер', certInfoData.serialHex, { mono: true, compact: true });
+    addField('Файл', fileName);
+    addField('Серийный номер', certInfoData.serialHex, { mono: true });
 
     const issuerStr =
         formatDnAsLines(certInfoData.issuer) || formatDnAttributes(certInfoData.issuer);
-    addRow('Издатель (CA)', issuerStr, { lines: issuerStr && issuerStr.includes('\n') });
+    addField('Издатель (CA)', issuerStr, {
+        lines: issuerStr && issuerStr.includes('\n'),
+        fullWidth: true,
+    });
 
     const subjectStr =
         formatDnAsLines(certInfoData.subject) || formatDnAttributes(certInfoData.subject);
-    addRow('Владелец (Subject)', subjectStr, { lines: subjectStr && subjectStr.includes('\n') });
+    addField('Владелец (Subject)', subjectStr, {
+        lines: subjectStr && subjectStr.includes('\n'),
+        fullWidth: true,
+    });
 
     const validitySection = document.createElement('div');
-    validitySection.className = 'pt-2 border-t border-gray-100 dark:border-gray-700 space-y-2';
+    validitySection.className =
+        'rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50/70 dark:bg-gray-700/40 p-3.5';
     const notBefore = escapeHtmlForCert(certInfoData.notBefore || '—');
     const notAfter = escapeHtmlForCert(certInfoData.notAfter || '—');
     validitySection.innerHTML = `
-        <div class="flex flex-col gap-1">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Срок действия</span>
-            <div class="flex flex-wrap gap-x-4 gap-y-1 text-gray-900 dark:text-gray-100">
-                <span><i class="fas fa-play text-green-600 dark:text-green-400 mr-1.5 text-xs"></i>С ${notBefore}</span>
-                <span><i class="fas fa-stop text-amber-600 dark:text-amber-400 mr-1.5 text-xs"></i>До ${notAfter}</span>
-            </div>
+        <span class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Срок действия</span>
+        <div class="space-y-1 text-sm text-gray-900 dark:text-gray-100">
+            <div><i class="fas fa-play text-green-600 dark:text-green-400 mr-1.5 text-xs"></i>С ${notBefore}</div>
+            <div><i class="fas fa-stop text-amber-600 dark:text-amber-400 mr-1.5 text-xs"></i>До ${notAfter}</div>
         </div>
     `;
     body.appendChild(validitySection);
+
+    if (Array.isArray(certInfoData.crlDistributionPoints) && certInfoData.crlDistributionPoints.length) {
+        addField('CRL Distribution Points', certInfoData.crlDistributionPoints.join('\n'), {
+            lines: true,
+            fullWidth: true,
+        });
+    }
 
     card.appendChild(body);
     certInfo.appendChild(card);
@@ -568,16 +653,24 @@ function parseCertificate(buffer) {
 
     const serialHex = bytesToHex(bytes.slice(serialNode.valueStart, serialNode.valueEnd));
     const validityChildren = validityNode?.children || [];
-    const notBefore = validityChildren[0] ? decodeTime(validityChildren[0], bytes) : '—';
-    const notAfter = validityChildren[1] ? decodeTime(validityChildren[1], bytes) : '—';
+    const notBeforeDetails = validityChildren[0]
+        ? decodeTimeDetails(validityChildren[0], bytes)
+        : { display: '—', epochMs: NaN };
+    const notAfterDetails = validityChildren[1]
+        ? decodeTimeDetails(validityChildren[1], bytes)
+        : { display: '—', epochMs: NaN };
+    const cdpUrls = extractCdpUrlsFromBytes(bytes);
 
     return {
         serialHex,
         serialNormalized: normalizeHex(serialHex),
         issuer: parseName(issuerNode, bytes),
         subject: parseName(subjectNode, bytes),
-        notBefore,
-        notAfter,
+        notBefore: notBeforeDetails.display,
+        notAfter: notAfterDetails.display,
+        notBeforeEpochMs: notBeforeDetails.epochMs,
+        notAfterEpochMs: notAfterDetails.epochMs,
+        crlDistributionPoints: cdpUrls,
         formatDetected: detected.format,
         bytesLength: bytes.length,
     };
@@ -1044,7 +1137,7 @@ export function initFNSCertificateRevocationSystem() {
             });
             renderCertificateInfo(certInfo, certInfoData, file.name);
 
-            const resolvedCrlUrls = resolveCrlUrls();
+            const resolvedCrlUrls = resolveCrlUrls(certInfoData);
             let crlEntries;
             if (REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER && REVOCATION_LOCAL_HELPER_BASE_URL) {
                 setStatus('Загружаем списки отзыва…', 'neutral', true);
@@ -1111,10 +1204,10 @@ export function initFNSCertificateRevocationSystem() {
                 } else if (entry.revoked) {
                     successfulChecks += 1;
                     if (!revokedSource) revokedSource = url;
-                    item.textContent = `[${source}] ${url}: сертификат найден в списке отзыва.`;
+                    item.textContent = `[${source}] ${url}: найден в списке отзыва.`;
                 } else {
                     successfulChecks += 1;
-                    item.textContent = `[${source}] ${url}: сертификат не найден в списке отзыва.`;
+                    item.textContent = `[${source}] ${url}: в списке отзыва не обнаружен.`;
                 }
                 detailList.appendChild(item);
             });
@@ -1133,13 +1226,78 @@ export function initFNSCertificateRevocationSystem() {
             });
 
             let redirectToInstallGate = false;
+            const certExpired = isCertificateExpired(certInfoData);
+            const finalRevocationState = resolveFinalRevocationState(Boolean(revokedSource), certExpired);
+            const hasPartialResult = failedChecks > 0 || Boolean(batchResult.error);
+            const serverNetworkCodes = new Set(['crl_fetch_network', 'crl_fetch_timeout']);
+            const failedResults = results.filter((r) => r.error);
+            const hasNetworkFailures = failedResults.some(
+                (r) =>
+                    (r.source === 'server' || r.source === 'server-proxy') &&
+                    serverNetworkCodes.has(r.errorCode),
+            );
+
             if (detailsEl) {
                 detailsEl.innerHTML = '';
+                const summary = document.createElement('div');
+                summary.className =
+                    'mb-3 rounded-lg border p-3 text-sm flex items-start gap-2 ' +
+                    (finalRevocationState.revoked
+                        ? 'border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                        : hasPartialResult
+                          ? 'border-yellow-300 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                          : 'border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300');
+                const summaryTitle = finalRevocationState.revoked
+                    ? finalRevocationState.reason === 'expired'
+                        ? 'Итог проверки: Отозван (истёк)'
+                        : 'Итог проверки: Отозван'
+                    : hasPartialResult
+                      ? 'Итог проверки: Частично проверен'
+                      : 'Итог проверки: Действителен';
+                const summaryHint = finalRevocationState.reason === 'expired'
+                    ? 'Срок действия сертификата завершился. По бизнес-правилу статус приравнен к отозванному.'
+                    : hasPartialResult
+                      ? `Проверено источников: ${successfulChecks} из ${results.length}.`
+                      : `Успешно проверено источников: ${successfulChecks} из ${results.length}.`;
+                const summaryTags = [];
+                if (finalRevocationState.reason === 'expired') summaryTags.push('expired');
+                if (hasNetworkFailures) summaryTags.push('network');
+                if (hasPartialResult) summaryTags.push('partial');
+                const summaryTagMeta = {
+                    expired: {
+                        label: 'истёк',
+                        hint: 'Срок действия сертификата завершился; по бизнес-правилу статус приравнен к отзыву.',
+                    },
+                    network: {
+                        label: 'сеть',
+                        hint: 'Часть источников недоступна из-за сетевых ошибок при загрузке списков отзыва.',
+                    },
+                    partial: {
+                        label: 'частично',
+                        hint: 'Проверка выполнена не по всем источникам, итог сформирован по доступным данным.',
+                    },
+                };
+                const tagMarkup = summaryTags.length
+                    ? `<div class="mt-2 flex flex-wrap gap-1.5">${summaryTags
+                          .map(
+                              (tag) => {
+                                  const tagInfo = summaryTagMeta[tag];
+                                  if (!tagInfo) return '';
+                                  const tooltipId = `summary-tag-tooltip-${tag}`;
+                                  return `<span class="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide border-current/40 bg-white/40 dark:bg-black/10">
+                                      <span>${escapeHtmlForCert(tagInfo.label)}</span>
+                                      <span tabindex="0" aria-describedby="${escapeHtmlForCert(tooltipId)}" aria-label="${escapeHtmlForCert(tagInfo.hint)}" class="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current/50 text-[9px] leading-none opacity-80 focus:outline-none focus:ring-1 focus:ring-current">i</span>
+                                      <span id="${escapeHtmlForCert(tooltipId)}" role="tooltip" class="pointer-events-none absolute left-1/2 top-full z-10 mt-1 w-56 -translate-x-1/2 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-gray-700 dark:text-gray-200 shadow-md opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0">${escapeHtmlForCert(tagInfo.hint)}</span>
+                                  </span>`;
+                              },
+                          )
+                          .join('')}</div>`
+                    : '';
+                summary.innerHTML = `<i class="fas fa-shield-alt mt-0.5"></i><div><div class="font-semibold">${escapeHtmlForCert(summaryTitle)}</div><div class="text-xs opacity-90 mt-0.5">${escapeHtmlForCert(summaryHint)}</div>${tagMarkup}</div>`;
+                detailsEl.appendChild(summary);
                 const usedLocalHelperFromBrowser =
                     REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER && REVOCATION_LOCAL_HELPER_BASE_URL;
                 const allFailed = usedLocalHelperFromBrowser && localHelperSuccessCount === 0;
-                const failedResults = results.filter((r) => r.error);
-                const serverNetworkCodes = new Set(['crl_fetch_network', 'crl_fetch_timeout']);
                 const allFailuresFromServerNetwork =
                     failedResults.length > 0 &&
                     failedResults.every(
@@ -1209,8 +1367,16 @@ export function initFNSCertificateRevocationSystem() {
                     const clientInfo = document.createElement('li');
                     clientInfo.className =
                         'rounded-md border border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-600 p-2 text-xs text-gray-700 dark:text-gray-300';
-                    clientInfo.textContent = 'Backend-first: клиентские загрузки отключены.';
+                    clientInfo.textContent = 'Режим backend-first: клиентские загрузки отключены.';
                     detailList.insertBefore(clientInfo, detailList.firstChild);
+                }
+                if (finalRevocationState.reason === 'expired') {
+                    const expiredInfo = document.createElement('li');
+                    expiredInfo.className =
+                        'rounded-md border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-2 text-xs text-red-700 dark:text-red-300';
+                    expiredInfo.textContent =
+                        'Сертификат истёк: по бизнес-правилу автоматически приравнен к отозванному.';
+                    detailList.insertBefore(expiredInfo, detailList.firstChild);
                 }
                 if (detailList.children.length > 0 && !redirectToInstallGate) {
                     const useToggle = detailList.children.length > 1;
@@ -1236,14 +1402,19 @@ export function initFNSCertificateRevocationSystem() {
                 }
             }
 
-            if (revokedSource) {
-                setStatus('\u2716 Отозван', 'danger');
+            if (finalRevocationState.revoked) {
+                setStatus(
+                    finalRevocationState.reason === 'expired'
+                        ? '\u2716 Результат: сертификат недействителен (срок действия истёк)'
+                        : '\u2716 Результат: сертификат отозван',
+                    'danger',
+                );
             } else if (successfulChecks === 0) {
-                setStatus('\u2716 Ошибка', 'warn');
-            } else if (failedChecks > 0 || batchResult.error) {
-                setStatus('Частично проверен', 'warn');
+                setStatus('\u2716 Результат: проверка не завершена', 'warn');
+            } else if (hasPartialResult) {
+                setStatus('\u25B3 Результат: частичная проверка', 'warn');
             } else {
-                setStatus('\u2713 Ок', 'success');
+                setStatus('\u2713 Результат: сертификат действителен', 'success');
             }
         } catch (error) {
             if (runId !== activeRunId) return;
@@ -1328,7 +1499,10 @@ if (typeof window !== 'undefined') {
 export const __testables = {
     detectCertificateFormat,
     decodeRawBase64ToBytes,
+    isCertificateExpired,
     parseCertificate,
+    resolveCrlUrls,
+    resolveFinalRevocationState,
     resolveNetworkPolicy,
     shouldAttemptBrowserFetch,
     shouldRecommendProxy,
