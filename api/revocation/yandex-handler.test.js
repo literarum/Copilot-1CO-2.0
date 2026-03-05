@@ -239,4 +239,47 @@ describe('yandex crl-checker handler', () => {
         expect(payload.revoked).toBe(true);
         expect(fetchMock.mock.calls[0][0]).toBe('http://cdp.tax.gov.ru/cdp/test.crl');
     });
+
+    it('falls back from cdp host to pki mirror when cdp is unreachable', async () => {
+        const { handler } = require('../../yandex-function/crl-checker/index.js');
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockRejectedValueOnce(new TypeError('fetch failed'))
+            .mockRejectedValueOnce(new TypeError('fetch failed'))
+            .mockRejectedValueOnce(new TypeError('fetch failed'))
+            .mockRejectedValueOnce(new TypeError('fetch failed'))
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ revoked: ['AB'] }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' },
+                }),
+            );
+
+        const result = await handler(
+            {
+                httpMethod: 'POST',
+                path: '/api/revocation/check',
+                headers: { 'content-type': 'application/json' },
+                queryStringParameters: {},
+                multiValueQueryStringParameters: {},
+                body: JSON.stringify({
+                    serial: 'AB',
+                    listUrl: 'https://cdp.tax.gov.ru/cdp/test.crl',
+                }),
+                isBase64Encoded: false,
+            },
+            {},
+        );
+
+        const payload = JSON.parse(result.body);
+        expect(result.statusCode).toBe(200);
+        expect(payload.revoked).toBe(true);
+        expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+            'http://cdp.tax.gov.ru/cdp/test.crl',
+            'http://cdp.tax.gov.ru/cdp/test.crl',
+            'https://cdp.tax.gov.ru/cdp/test.crl',
+            'https://cdp.tax.gov.ru/cdp/test.crl',
+            'http://pki.tax.gov.ru/cdp/test.crl',
+        ]);
+    });
 });

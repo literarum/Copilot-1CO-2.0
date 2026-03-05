@@ -241,9 +241,23 @@ function buildCandidateListUrls(listUrl) {
         const isGostHost = FNS_PREFER_HTTP_HOSTS.has(host);
         const httpUrl = `http://${host}${parsed.pathname}${parsed.search}`;
         const httpsUrl = `https://${host}${parsed.pathname}${parsed.search}`;
-        if (isGostHost) return [httpUrl, httpsUrl];
-        if (parsed.protocol === 'https:') return [httpsUrl, httpUrl];
-        return [httpUrl, httpsUrl];
+        let candidates = [];
+        if (isGostHost) {
+            candidates = [httpUrl, httpsUrl];
+        } else if (parsed.protocol === 'https:') {
+            candidates = [httpsUrl, httpUrl];
+        } else {
+            candidates = [httpUrl, httpsUrl];
+        }
+        // cdp host is intermittently unreachable from some serverless egress ranges;
+        // try pki mirror with the same path before giving up.
+        if (host === 'cdp.tax.gov.ru') {
+            candidates.push(
+                `http://pki.tax.gov.ru${parsed.pathname}${parsed.search}`,
+                `https://pki.tax.gov.ru${parsed.pathname}${parsed.search}`,
+            );
+        }
+        return Array.from(new Set(candidates));
     } catch {
         const candidates = [original];
         if (lower.startsWith('https://')) candidates.push(`http://${original.slice('https://'.length)}`);
