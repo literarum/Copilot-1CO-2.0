@@ -29,12 +29,12 @@ export function setClipboardDependencies(dependencies) {
  */
 export async function copyToClipboard(text, successMessage = 'Скопировано!', opts = {}) {
     const notify = (msg, type = 'success') => {
-        if (deps.NotificationService && typeof deps.NotificationService.add === 'function') {
+        if (deps.showNotification && typeof deps.showNotification === 'function') {
+            deps.showNotification(msg, type, 3000);
+        } else if (deps.NotificationService && typeof deps.NotificationService.add === 'function') {
             deps.NotificationService.add(msg, type);
-        } else if (deps.showNotification && typeof deps.showNotification === 'function') {
-            deps.showNotification(msg, type);
         } else if (typeof window.showNotification === 'function') {
-            window.showNotification(msg, type);
+            window.showNotification(msg, type, 3000);
         }
     };
 

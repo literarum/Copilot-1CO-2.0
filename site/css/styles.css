@@ -742,6 +742,11 @@ div:has(> #clearClientDataBtn) {
     background: transparent;
 }
 
+/* Toast-элементы внутри контейнера должны получать клики (контейнер имеет pointer-events:none) */
+#notification-container > * {
+    pointer-events: auto;
+}
+
 #important-notifications-container.custom-scrollbar::-webkit-scrollbar {
     width: 8px;
 }
@@ -1144,7 +1149,7 @@ mark {
 .main-algo-group {
     margin-bottom: 0.75rem;
     border: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
-    border-radius: 0.5rem;
+    border-radius: var(--border-radius, 0.5rem);
     overflow: hidden;
     background: var(--color-surface-2, #f9fafb);
     transition:
@@ -1170,7 +1175,14 @@ html.dark .main-algo-group:hover {
     justify-content: space-between;
     background: var(--color-surface-2, #f3f4f6);
     color: var(--color-text-primary, #111827);
-    border-left: 4px solid var(--color-primary, #9933ff);
+    border-radius: inherit;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+/* При закрытой группе — скругление нижних углов заголовка */
+.main-algo-group.is-closed .main-algo-group-header {
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
 }
 .main-algo-group-header:hover {
     background: var(--color-surface-3, #e5e7eb);
