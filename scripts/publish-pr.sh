@@ -178,26 +178,51 @@ extract_pr_number_from_url() {
 
 # Создаёт короткую ссылку через clc.is (бесплатно, без регистрации).
 # Возвращает short URL или пусто при ошибке. Slug должен быть уникальным (409 = уже занят).
+# max_retries: число попыток при сетевой ошибке.
 create_short_link_clcis() {
   local long_url="$1"
   local slug="$2"
-  local resp status
-  resp="$(curl -sS -w '\n%{http_code}' -X POST 'https://clc.is/api/links' \
-    -H 'Content-Type: application/json' \
-    -d "{\"domain\":\"clc.is\",\"target_url\":\"${long_url}\",\"slug\":\"${slug}\"}" 2>/dev/null)" || true
-  status="$(printf '%s' "$resp" | tail -1)"
-  if [[ "$status" == "200" ]]; then
-    printf '%s' "$resp" | grep -oE 'https://clc\.is/[^"]+' | head -1
-  elif [[ "$status" == "409" ]]; then
-    # Slug уже занят (например, скрипт уже создал — workflow повторяет)
-    printf 'https://clc.is/%s\n' "$slug"
-  fi
+  local max_retries="${3:-3}"
+  local resp status i
+  for i in $(seq 1 "$max_retries"); do
+    resp="$(curl -sS -w '\n%{http_code}' -X POST 'https://clc.is/api/links' \
+      -H 'Content-Type: application/json' \
+      -d "{\"domain\":\"clc.is\",\"target_url\":\"${long_url}\",\"slug\":\"${slug}\"}" 2>/dev/null)" || true
+    status="$(printf '%s' "$resp" | tail -1)"
+    if [[ "$status" == "200" ]]; then
+      printf '%s' "$resp" | grep -oE 'https://clc\.is/[^"]+' | head -1
+      return 0
+    elif [[ "$status" == "409" ]]; then
+      # Slug уже занят (например, скрипт уже создал — workflow повторяет)
+      printf 'https://clc.is/%s\n' "$slug"
+      return 0
+    fi
+    [[ "$i" -lt "$max_retries" ]] && sleep 2
+  done
+  return 1
+}
+
+# Проверяет, что короткая ссылка отдаёт редирект (301/302), а не 404.
+verify_short_link_redirect() {
+  local short_url="$1"
+  local status
+  status="$(curl -sS -o /dev/null -w '%{http_code}' -I "$short_url" 2>/dev/null)" || true
+  [[ "$status" == "301" || "$status" == "302" || "$status" == "307" || "$status" == "308" ]]
+}
+
+# Проверяет, что PR существует и открыт.
+verify_pr_open() {
+  local pr_num="$1"
+  local state
+  state="$(gh pr view "$pr_num" --json state -q '.state' 2>/dev/null)" || true
+  [[ "$state" == "OPEN" ]]
 }
 
 # ===== Основная логика =====
 
 require_cmd git
 require_cmd gh
+require_cmd curl
 
 is_git_repo || { err "текущая папка не является git-репозиторием"; exit 1; }
 
@@ -274,12 +299,26 @@ if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; the
   NEW_PR_URL="$(extract_pr_url_from_output "$PR_CREATE_OUTPUT")"
   PR_NUM="$(extract_pr_number_from_url "$NEW_PR_URL")"
   if [[ -n "$PR_NUM" ]]; then
+    # Проверка корректности PR
+    if verify_pr_open "$PR_NUM"; then
+      info "PR #$PR_NUM проверен: существует и открыт."
+    else
+      info "Предупреждение: PR #$PR_NUM не найден или закрыт."
+    fi
+
     PREVIEW_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/pr-preview/pr-${PR_NUM}/"
     SHORT_SLUG="copilot-1co-2.0-pr-${PR_NUM}"
     DISPLAY_URL="$PREVIEW_URL"
-    if command -v curl >/dev/null 2>&1; then
-      SHORT_URL="$(create_short_link_clcis "$PREVIEW_URL" "$SHORT_SLUG")"
-      [[ -n "$SHORT_URL" ]] && DISPLAY_URL="$SHORT_URL"
+    SHORT_URL="$(create_short_link_clcis "$PREVIEW_URL" "$SHORT_SLUG")" || true
+    if [[ -n "$SHORT_URL" ]]; then
+      DISPLAY_URL="$SHORT_URL"
+      if verify_short_link_redirect "$SHORT_URL"; then
+        info "Короткая ссылка проверена: редирект работает."
+      else
+        info "Предупреждение: короткая ссылка не отдаёт редирект (возможно, ещё не применилась)."
+      fi
+    else
+      info "Предупреждение: не удалось создать короткую ссылку, используется длинная."
     fi
     info "Приложение (preview): copilot-1co-2.0 → $DISPLAY_URL"
     if gh pr comment "$PR_NUM" --body "## Ссылка на приложение (preview)
