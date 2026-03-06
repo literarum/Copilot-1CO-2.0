@@ -88,7 +88,7 @@ export async function renderAlgorithmCards(section) {
 
         const card = document.createElement('div');
         card.className =
-            'algorithm-card js-algorithm-card-style-target view-item transition cursor-pointer h-full flex flex-col bg-white dark:bg-gray-700 shadow-sm hover:shadow-md rounded-lg p-4';
+            'algorithm-card js-algorithm-card-style-target view-item transition cursor-pointer h-full flex flex-col bg-white dark:bg-gray-700 shadow-sm rounded-lg p-4';
         card.dataset.id = algorithm.id;
 
         const titleText = algorithm.title || 'Без заголовка';

@@ -215,7 +215,7 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
 
     if (viewMode === 'cards') {
         linkElement.className =
-            'ext-link-item view-item group relative flex flex-col justify-between p-4 rounded-lg shadow-sm hover:shadow-md bg-white dark:bg-gray-700 transition-shadow duration-200 border border-gray-200 dark:border-gray-700 h-full';
+            'ext-link-item view-item group relative flex flex-col justify-between p-4 rounded-lg shadow-sm bg-white dark:bg-gray-700 transition-shadow duration-200 border border-gray-200 dark:border-gray-700 h-full';
 
         const mainContentHTML = `
             <div class="flex-grow min-w-0 cursor-pointer" data-action="open-link">

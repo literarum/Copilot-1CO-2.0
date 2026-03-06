@@ -1233,14 +1233,16 @@ mark {
     cursor: pointer !important;
 }
 
-/* Лёгкий ховер для карточек: закладки, ссылки, алгоритмы, регламенты — через переменные темы и кастома */
-#appContent .view-item {
+/* Единый ховер для всех карточек: закладки, ссылки, алгоритмы, регламенты, избранное, скриншоты — через переменные темы */
+#appContent .view-item,
+.modal-overlay .view-item {
     transition:
         box-shadow 0.2s ease,
         background-color 0.2s ease,
         transform 0.2s ease;
 }
-#appContent .view-item:hover {
+#appContent .view-item:hover,
+.modal-overlay .view-item:hover {
     background-color: var(--color-hover-subtle);
     box-shadow: var(--card-hover-shadow);
 }

@@ -699,24 +699,24 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
             Используйте поиск для быстрого перехода к нужному коду или названию.
         </p>
         <div class="mt-3 overflow-x-auto rounded-md border border-gray-200 dark:border-gray-600">
-            <table class="w-full text-xs">
+            <table class="w-full text-xs border-collapse">
                 <thead class="bg-gray-100 dark:bg-gray-700">
                     <tr>
-                        <th class="px-3 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-300 dark:border-gray-600">Параметр</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 border-b border-r border-gray-300 dark:border-gray-600">Параметр</th>
                         <th class="px-3 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-300 dark:border-gray-600">Значение</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-900 dark:text-gray-100">
                     <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <td class="px-3 py-2">Назначение</td>
+                        <td class="px-3 py-2 border-r border-gray-200 dark:border-gray-600">Назначение</td>
                         <td class="px-3 py-2">Обмен сообщениями с СФР (ФСС) по пособиям и выплатам.</td>
                     </tr>
                     <tr class="border-b border-gray-200 dark:border-gray-700">
-                        <td class="px-3 py-2">Ключевые сущности</td>
+                        <td class="px-3 py-2 border-r border-gray-200 dark:border-gray-600">Ключевые сущности</td>
                         <td class="px-3 py-2">Код сообщения, название, место отображения в 1С.</td>
                     </tr>
                     <tr>
-                        <td class="px-3 py-2">Что искать</td>
+                        <td class="px-3 py-2 border-r border-gray-200 dark:border-gray-600">Что искать</td>
                         <td class="px-3 py-2">Коды (10, 11, 87 и др.), ключевые слова, типы входящих/исходящих.</td>
                     </tr>
                 </tbody>
@@ -884,7 +884,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                     '<p class="p-4 text-center text-gray-500 dark:text-gray-400">Нет данных в таблице.</p>';
             } else {
                 const table = document.createElement('table');
-                table.className = 'w-full text-sm';
+                table.className = 'w-full text-sm border-collapse';
 
                 // Table header
                 const thead = document.createElement('thead');
@@ -894,7 +894,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                 columns.forEach((col) => {
                     const th = document.createElement('th');
                     th.className =
-                        'px-4 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600';
+                        'px-4 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border-b border-r border-gray-300 dark:border-gray-600 last:border-r-0';
                     th.textContent = col;
                     headerRow.appendChild(th);
                 });
@@ -915,7 +915,7 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
                         if (colIndex >= columns.length) return;
                         const td = document.createElement('td');
                         td.className =
-                            'px-4 py-2 border-b border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-inherit';
+                            'px-4 py-2 border-b border-r border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-inherit last:border-r-0';
                         const cellValue = item[field] || '';
 
                         if (isEditing) {

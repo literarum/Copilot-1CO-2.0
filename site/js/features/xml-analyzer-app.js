@@ -161,7 +161,7 @@ class ReportAnalyzerApp {
             this.dropZone.addEventListener('click', () => {
                 const fileInput = document.createElement('input');
                 fileInput.type = 'file';
-                fileInput.accept = '.xml,.json,text/plain';
+                fileInput.accept = '.xml,.json,.zip,text/plain,application/zip';
                 fileInput.style.display = 'none';
                 fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
                 document.body.appendChild(fileInput);

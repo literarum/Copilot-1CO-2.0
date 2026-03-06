@@ -256,7 +256,7 @@ export function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'card
 
     if (viewMode === 'cards') {
         bookmarkElement.className =
-            'bookmark-item view-item group relative cursor-pointer bg-white dark:bg-gray-700 hover:shadow-md transition-shadow duration-200 rounded-lg border border-gray-200 dark:border-gray-700 p-4';
+            'bookmark-item view-item group relative cursor-pointer bg-white dark:bg-gray-700 transition-shadow duration-200 rounded-lg border border-gray-200 dark:border-gray-700 p-4';
 
         const descriptionHTML = safeDescription
             ? `<p class="bookmark-description text-gray-600 dark:text-gray-300 text-sm line-clamp-3" title="${safeDescription}">${safeDescription}</p>`

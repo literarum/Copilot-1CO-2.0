@@ -23,7 +23,77 @@ function loadJSZip() {
 }
 
 /**
+ * Определяет кодировку из XML-декларации в первых байтах (Latin-1 для поиска).
+ * @param {Uint8Array} bytes - первые байты файла
+ * @returns {string|null} - 'windows-1251', 'cp1251', 'utf-8' или null (по умолчанию UTF-8)
+ */
+function detectXmlEncoding(bytes) {
+    if (!bytes || bytes.length < 20) return null;
+    const head = String.fromCharCode.apply(null, bytes.subarray(0, Math.min(600, bytes.length)));
+    const m = head.match(/encoding\s*=\s*["']([^"']+)["']/i);
+    if (!m) return null;
+    const enc = (m[1] || '').trim().toLowerCase();
+    if (enc === 'windows-1251' || enc === 'cp1251') return 'windows-1251';
+    if (enc === 'utf-8' || enc === 'utf8') return 'utf-8';
+    return null;
+}
+
+/**
+ * Декодирует байты в строку с учётом XML-декларации encoding.
+ * @param {ArrayBuffer|Uint8Array} buf - сырые байты
+ * @returns {string}
+ */
+function decodeBytesToXmlString(buf) {
+    const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    let encoding = 'UTF-8';
+    if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+        encoding = 'UTF-8';
+    } else {
+        const detected = detectXmlEncoding(bytes);
+        if (detected) encoding = detected;
+    }
+    return new TextDecoder(encoding).decode(bytes);
+}
+
+/**
+ * Извлекает первый XML (или JSON при отсутствии XML) из архива ZIP.
+ * @param {ArrayBuffer} zipBuffer - сырые байты ZIP
+ * @returns {Promise<{ data: string }|{ error: string }>}
+ */
+async function extractXmlFromZip(zipBuffer) {
+    const JSZip = await loadJSZip();
+    let zip;
+    try {
+        zip = await JSZip.loadAsync(zipBuffer);
+    } catch (e) {
+        return { error: `Ошибка чтения архива: ${e.message}` };
+    }
+    const xmlFiles = Object.keys(zip.files)
+        .filter((name) => /\.xml$/i.test(name) && !zip.files[name].dir)
+        .sort();
+    const jsonFiles = Object.keys(zip.files)
+        .filter((name) => /\.json$/i.test(name) && !zip.files[name].dir)
+        .sort();
+    const firstXml = xmlFiles[0];
+    const firstJson = jsonFiles[0];
+    const entryName = firstXml || firstJson;
+    if (!entryName) {
+        return { error: 'В архиве не найдено XML или JSON файлов.' };
+    }
+    let entryBytes;
+    try {
+        entryBytes = await zip.files[entryName].async('arraybuffer');
+    } catch (e) {
+        return { error: `Ошибка извлечения ${entryName}: ${e.message}` };
+    }
+    const data = firstXml ? decodeBytesToXmlString(entryBytes) : new TextDecoder('UTF-8').decode(entryBytes);
+    return { data };
+}
+
+/**
  * Читает содержимое файла (браузер: File API).
+ * Поддерживает .xml, .json, .txt и .zip (извлекает первый XML из архива).
+ * Для XML с encoding="windows-1251" автоматически использует правильную кодировку.
  * @param {File} file - объект File из input/drop
  * @returns {Promise<{ data: string }|{ error: string }>}
  */
@@ -31,11 +101,29 @@ export function readFileContent(file) {
     if (!file || !(file instanceof File)) {
         return Promise.resolve({ error: 'Не передан объект файла.' });
     }
+    const isZip = /\.zip$/i.test(file.name);
     return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => resolve({ data: reader.result });
+        reader.onload = async () => {
+            try {
+                const buf = reader.result;
+                if (!(buf instanceof ArrayBuffer)) {
+                    resolve({ data: String(buf) });
+                    return;
+                }
+                if (isZip) {
+                    const result = await extractXmlFromZip(buf);
+                    resolve(result);
+                    return;
+                }
+                const data = decodeBytesToXmlString(buf);
+                resolve({ data });
+            } catch (e) {
+                resolve({ error: `Ошибка декодирования: ${e.message}` });
+            }
+        };
         reader.onerror = () => resolve({ error: 'Ошибка чтения файла.' });
-        reader.readAsText(file, 'UTF-8');
+        reader.readAsArrayBuffer(file);
     });
 }
 

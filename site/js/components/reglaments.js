@@ -226,7 +226,7 @@ export function getReglamentsByCategory(category) {
  */
 export function createCategoryElement(categoryId, title, iconClass = 'fa-folder', color = 'gray') {
     const categoryElement = document.createElement('div');
-    categoryElement.className = `reglament-category view-item bg-white dark:bg-gray-700 p-content rounded-lg shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group relative border-l-4 border-transparent`;
+    categoryElement.className = `reglament-category view-item bg-white dark:bg-gray-700 p-content rounded-lg shadow-sm transition cursor-pointer flex flex-col justify-between group relative border-l-4 border-transparent`;
     categoryElement.dataset.category = categoryId;
 
     const iconColorMap = {

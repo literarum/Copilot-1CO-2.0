@@ -242,7 +242,6 @@ export const CARD_ITEM_BASE_CLASSES = [
     'p-4',
     'rounded-lg',
     'shadow-sm',
-    'hover:shadow-md',
     'bg-white',
     'dark:bg-gray-700',
 ];

@@ -355,7 +355,7 @@ export function renderScreenshotThumbnails(
 
         const item = document.createElement('div');
         item.className =
-            'group relative aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden shadow hover:shadow-md transition cursor-pointer border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900';
+            'view-item group relative aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden shadow transition cursor-pointer border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900';
         item.tabIndex = 0;
         item.title = `Скриншот ${screenshot.id || index + 1}`;
 

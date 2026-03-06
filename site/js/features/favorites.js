@@ -251,7 +251,6 @@ export async function renderFavoritesPage() {
                     'p-4',
                     'rounded-lg',
                     'shadow-md',
-                    'hover:shadow-lg',
                     'transition-shadow',
                     'flex',
                     'flex-col',

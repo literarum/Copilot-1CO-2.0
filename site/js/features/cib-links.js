@@ -448,7 +448,7 @@ export async function renderCibLinks(links) {
             `;
         } else {
             linkElement.className =
-                'cib-link-item view-item group relative border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#374151] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer';
+                'cib-link-item view-item group relative border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#374151] rounded-lg shadow-sm transition-shadow duration-200 cursor-pointer';
             linkElement.innerHTML = `
                 <div class="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                     ${buttonsHTML}
