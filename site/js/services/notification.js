@@ -484,7 +484,9 @@ export function showNotification(message, type = 'success', duration = 5000) {
                 .map((line) => line.trim())
                 .join(' -> ');
         }
-    } catch (e) {}
+    } catch (_e) {
+        // ignore stack parse errors
+    }
     console.log(`[SHOW_NOTIFICATION_CALL_STACK_V5.2_INLINE_STYLE] Called from: ${callStackInfo}`);
 
     if (!message || typeof message !== 'string' || message.trim() === '') {
@@ -574,7 +576,9 @@ export function showNotification(message, type = 'success', duration = 5000) {
         iconElement = document.createElement('i');
         try {
             iconElement.style.color = 'var(--color-primary)';
-        } catch (e) {}
+        } catch (_e) {
+            // ignore style errors in edge cases
+        }
 
         messageSpan = document.createElement('span');
         messageSpan.className = 'flex-1 notification-message-span';

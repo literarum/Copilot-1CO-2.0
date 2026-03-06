@@ -1,6 +1,9 @@
 'use strict';
 
+import { CURRENT_SCHEMA_VERSION } from '../constants.js';
 import { REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER } from '../config/revocation-sources.js';
+import { REVOCATION_API_BASE_URL } from '../config.js';
+import { probeHelperAvailability } from './revocation-helper-probe.js';
 
 let deps = {};
 const WATCHDOG_INTERVAL_MS = 60000;
@@ -11,6 +14,7 @@ const REQUIRED_STORES = [
     'searchIndex',
     'preferences',
     'blacklistedClients',
+    'favorites',
 ];
 
 export function setBackgroundHealthTestsDependencies(nextDeps) {
@@ -175,6 +179,12 @@ export function initBackgroundHealthTestsSystem() {
                             ),
                             runWithTimeout(
                                 deps.performDBOperation('clientData', 'readonly', (store) =>
+                                    store.count(),
+                                ),
+                                5000,
+                            ),
+                            runWithTimeout(
+                                deps.performDBOperation('favorites', 'readonly', (store) =>
                                     store.count(),
                                 ),
                                 5000,
@@ -404,7 +414,7 @@ export function initBackgroundHealthTestsSystem() {
                 }
                 updateHud(60);
 
-                // Тест 4: доступность базы алгоритмов
+                // Тест 4: доступность и структура базы алгоритмов
                 try {
                     const mainAlgo = await runWithTimeout(
                         deps.getFromIndexedDB?.('algorithms', 'main'),
@@ -413,7 +423,30 @@ export function initBackgroundHealthTestsSystem() {
                     if (!mainAlgo) {
                         report('warn', 'Алгоритмы', 'Основной алгоритм не найден в базе данных.');
                     } else {
-                        report('info', 'Алгоритмы', 'База алгоритмов доступна.');
+                        const stepsValid = Array.isArray(mainAlgo.steps);
+                        const hasSection =
+                            mainAlgo.section === 'main' ||
+                            mainAlgo.id === 'main' ||
+                            mainAlgo.section;
+                        if (!stepsValid) {
+                            report(
+                                'warn',
+                                'Алгоритмы',
+                                'Структура основного алгоритма некорректна: steps не является массивом.',
+                            );
+                        } else if (!hasSection) {
+                            report(
+                                'warn',
+                                'Алгоритмы',
+                                'Структура основного алгоритма: отсутствует идентификатор секции.',
+                            );
+                        } else {
+                            report(
+                                'info',
+                                'Алгоритмы',
+                                'База алгоритмов доступна, структура корректна.',
+                            );
+                        }
                     }
                 } catch (err) {
                     report('error', 'Алгоритмы', err.message);
@@ -432,8 +465,51 @@ export function initBackgroundHealthTestsSystem() {
                 } catch (err) {
                     report('warn', 'Черный список', err.message);
                 }
+                // Тест 5.1: избранное
+                try {
+                    const favCount = await runWithTimeout(
+                        deps.performDBOperation?.('favorites', 'readonly', (store) =>
+                            store.count(),
+                        ),
+                        5000,
+                    );
+                    report('info', 'Избранное', `Записей в избранном: ${favCount}.`);
+                } catch (err) {
+                    report('warn', 'Избранное', err.message);
+                }
                 // Тест 5.5: компонента проверки отзыва (CRL Helper)
-                if (REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER) {
+                if (!REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER) {
+                    // Облачный API: проверяем /api/health
+                    try {
+                        const apiBase =
+                            typeof REVOCATION_API_BASE_URL === 'string'
+                                ? REVOCATION_API_BASE_URL.trim().replace(/\/$/, '')
+                                : '';
+                        if (apiBase) {
+                            const ok = await runWithTimeout(
+                                probeHelperAvailability(apiBase, { path: '/api/health' }),
+                                5000,
+                            );
+                            if (ok) {
+                                report(
+                                    'info',
+                                    'API проверки отзыва',
+                                    'Облачный API проверки сертификатов доступен.',
+                                );
+                            } else {
+                                report(
+                                    'warn',
+                                    'API проверки отзыва',
+                                    'Облачный API недоступен. Проверка сертификатов может не работать.',
+                                );
+                            }
+                        } else {
+                            report('info', 'API проверки отзыва', 'URL API не настроен.');
+                        }
+                    } catch (err) {
+                        report('warn', 'API проверки отзыва', err.message);
+                    }
+                } else if (REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER) {
                     try {
                         const avail = window.__revocationHelperAvailable;
                         if (avail === true) {
@@ -493,17 +569,70 @@ export function initBackgroundHealthTestsSystem() {
                     report('warn', 'UI настройки', err.message);
                 }
 
+                // Тест 6.1: версия схемы
+                try {
+                    const storedSchema = await runWithTimeout(
+                        deps.getFromIndexedDB?.('preferences', 'schemaVersion'),
+                        3000,
+                    );
+                    const storedVer =
+                        storedSchema && typeof storedSchema === 'object'
+                            ? storedSchema.value
+                            : storedSchema;
+                    if (storedVer && String(storedVer) !== String(CURRENT_SCHEMA_VERSION)) {
+                        report(
+                            'warn',
+                            'Версия схемы',
+                            `Сохранённая версия (${storedVer}) отличается от текущей (${CURRENT_SCHEMA_VERSION}).`,
+                        );
+                    } else {
+                        report(
+                            'info',
+                            'Версия схемы',
+                            `Текущая версия: ${CURRENT_SCHEMA_VERSION}.`,
+                        );
+                    }
+                } catch (_err) {
+                    report('info', 'Версия схемы', `Текущая: ${CURRENT_SCHEMA_VERSION}.`);
+                }
+
+                // Тест 6.2: clipboard
+                try {
+                    if (
+                        navigator.clipboard &&
+                        typeof navigator.clipboard.writeText === 'function'
+                    ) {
+                        await navigator.clipboard.writeText('');
+                        report('info', 'Буфер обмена', 'Clipboard API доступен.');
+                    } else {
+                        report(
+                            'warn',
+                            'Буфер обмена',
+                            'Clipboard API недоступен (контекст или разрешения).',
+                        );
+                    }
+                } catch (err) {
+                    report('warn', 'Буфер обмена', `Clipboard недоступен: ${err.message}.`);
+                }
+
                 updateHud(95);
             } catch (err) {
                 report('error', 'Фоновая диагностика', err.message);
             } finally {
                 updateHud(100);
+                // Задача watchdog-first: HUD не показывает completion до завершения первого цикла
+                hud?.startTask?.('watchdog-first', 'Watchdog', { weight: 0.1, total: 100 });
                 finishHud(results.errors.length === 0);
 
                 // После стартовой диагностики запускаем постоянный watchdog.
-                runWatchdogCycle('startup').catch((err) => {
-                    console.error('[BackgroundHealthTests] Ошибка watchdog-цикла:', err);
-                });
+                runWatchdogCycle('startup')
+                    .then(() => {
+                        hud?.finishTask?.('watchdog-first', true);
+                    })
+                    .catch((err) => {
+                        console.error('[BackgroundHealthTests] Ошибка watchdog-цикла:', err);
+                        hud?.finishTask?.('watchdog-first', false);
+                    });
                 initBackgroundHealthTestsSystem._watchdogIntervalId = setInterval(() => {
                     runWatchdogCycle('interval').catch((err) => {
                         console.error('[BackgroundHealthTests] Ошибка watchdog-цикла:', err);

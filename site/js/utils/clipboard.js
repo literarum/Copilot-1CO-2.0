@@ -33,6 +33,8 @@ export async function copyToClipboard(text, successMessage = 'Скопирова
             deps.NotificationService.add(msg, type);
         } else if (deps.showNotification && typeof deps.showNotification === 'function') {
             deps.showNotification(msg, type);
+        } else if (typeof window.showNotification === 'function') {
+            window.showNotification(msg, type);
         }
     };
 

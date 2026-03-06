@@ -23,7 +23,8 @@ export function setClientDataInitDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
     if (deps.debounce !== undefined) debounce = deps.debounce;
     if (deps.saveClientData !== undefined) saveClientData = deps.saveClientData;
-    if (deps.checkForBlacklistedInn !== undefined) checkForBlacklistedInn = deps.checkForBlacklistedInn;
+    if (deps.checkForBlacklistedInn !== undefined)
+        checkForBlacklistedInn = deps.checkForBlacklistedInn;
     if (deps.createClientNotesInnPreview !== undefined)
         createClientNotesInnPreview = deps.createClientNotesInnPreview;
     if (deps.copyToClipboard !== undefined) copyToClipboard = deps.copyToClipboard;
@@ -31,10 +32,12 @@ export function setClientDataInitDependencies(deps) {
     if (deps.applyClientNotesFontSize !== undefined)
         applyClientNotesFontSize = deps.applyClientNotesFontSize;
     if (deps.clearClientData !== undefined) clearClientData = deps.clearClientData;
-    if (deps.exportClientDataToTxt !== undefined) exportClientDataToTxt = deps.exportClientDataToTxt;
+    if (deps.exportClientDataToTxt !== undefined)
+        exportClientDataToTxt = deps.exportClientDataToTxt;
     if (deps.getVisibleModals !== undefined) getVisibleModals = deps.getVisibleModals;
     if (deps.showAppConfirm !== undefined) showAppConfirm = deps.showAppConfirm;
-    if (deps.openClientNotesWindow !== undefined) openClientNotesWindow = deps.openClientNotesWindow;
+    if (deps.openClientNotesWindow !== undefined)
+        openClientNotesWindow = deps.openClientNotesWindow;
 }
 
 let __lastCopyLockTime = 0;

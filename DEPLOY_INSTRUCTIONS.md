@@ -19,10 +19,10 @@
 4. Замените во вставленной спецификации все вхождения **`<FUNCTION_ID>`** на идентификатор вашей функции (например `d4ek2is78822funrr85b`). Сохраните.
 5. После создания скопируйте **URL шлюза** (вид `https://<id>.apigw.yandexcloud.net` или указанный домен).
 6. В `site/js/config.js` задайте:
-   ```js
-   export const REVOCATION_API_BASE_URL = 'https://<id>.apigw.yandexcloud.net';
-   ```
-   (без завершающего слэша).
+    ```js
+    export const REVOCATION_API_BASE_URL = 'https://<id>.apigw.yandexcloud.net';
+    ```
+    (без завершающего слэша).
 
 Проверка после деплоя: `curl "https://<id>.apigw.yandexcloud.net/api/health"` должен вернуть `{"ok":true,...}`.
 

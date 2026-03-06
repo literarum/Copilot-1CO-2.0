@@ -71,9 +71,7 @@ export function formatExampleForTextarea(exampleData) {
     if (typeof exampleData === 'object' && exampleData !== null && exampleData.type === 'list') {
         const intro = exampleData.intro ? stripHtmlTags(String(exampleData.intro)) + '\n' : '';
         const items = Array.isArray(exampleData.items)
-            ? exampleData.items
-                  .map((item) => `- ${stripHtmlTags(String(item))}`)
-                  .join('\n')
+            ? exampleData.items.map((item) => `- ${stripHtmlTags(String(item))}`).join('\n')
             : '';
         return (intro + items).trim();
     }

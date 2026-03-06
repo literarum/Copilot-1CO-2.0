@@ -54,7 +54,9 @@ function normalizeHex(hex) {
 }
 
 function normalizeSerialInput(serial) {
-    const raw = String(serial || '').trim().toUpperCase();
+    const raw = String(serial || '')
+        .trim()
+        .toUpperCase();
     if (!raw) return '';
     const hexOnly = raw.replace(/[^0-9A-F]/g, '');
     if (!hexOnly) return raw;
@@ -118,7 +120,10 @@ function parseCrlRevokedSerials(buffer) {
     const maybeText = new TextDecoder('utf-8').decode(bytes);
     if (maybeText.trimStart().startsWith('<')) {
         const preview = maybeText.slice(0, 200).replace(/\s+/g, ' ');
-        throw createError(`Server returned HTML instead of CRL: "${preview}..."`, 'crl_html_response');
+        throw createError(
+            `Server returned HTML instead of CRL: "${preview}..."`,
+            'crl_html_response',
+        );
     }
 
     if (maybeText.includes('BEGIN X509 CRL')) {
@@ -265,7 +270,8 @@ function buildCandidateListUrls(listUrl) {
         return Array.from(new Set(candidates));
     } catch {
         const candidates = [original];
-        if (lower.startsWith('https://')) candidates.push(`http://${original.slice('https://'.length)}`);
+        if (lower.startsWith('https://'))
+            candidates.push(`http://${original.slice('https://'.length)}`);
         return Array.from(new Set(candidates));
     }
 }
@@ -287,7 +293,11 @@ function buildSourceCandidates(listUrl, helperBaseUrl) {
     return candidates;
 }
 
-async function fetchWithRetry(url, attempts = CRL_FETCH_ATTEMPTS, timeoutMs = CRL_FETCH_TIMEOUT_MS) {
+async function fetchWithRetry(
+    url,
+    attempts = CRL_FETCH_ATTEMPTS,
+    timeoutMs = CRL_FETCH_TIMEOUT_MS,
+) {
     let lastError = null;
     for (let i = 0; i < attempts; i++) {
         const controller = new AbortController();
@@ -311,7 +321,8 @@ async function fetchWithRetry(url, attempts = CRL_FETCH_ATTEMPTS, timeoutMs = CR
             lastError = isAbort
                 ? createError('timeout', 'crl_fetch_timeout')
                 : createError(e?.message || 'fetch failed', 'crl_fetch_network');
-            if (i < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 300 * (i + 1)));
+            if (i < attempts - 1)
+                await new Promise((resolve) => setTimeout(resolve, 300 * (i + 1)));
         }
     }
     throw lastError || new Error('fetch failed');
@@ -396,7 +407,10 @@ async function processCrlResponse(buffer, contentType, candidateUrl, normalizedS
         try {
             data = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer)));
         } catch (e) {
-            return { errorCode: 'crl_json_invalid', error: `invalid JSON list (${candidateUrl}): ${e.message}` };
+            return {
+                errorCode: 'crl_json_invalid',
+                error: `invalid JSON list (${candidateUrl}): ${e.message}`,
+            };
         }
         const list = Array.isArray(data) ? data : data.revoked || data.serials || data.list || [];
         const revoked = list.some((item) => {
@@ -418,7 +432,10 @@ async function processCrlResponse(buffer, contentType, candidateUrl, normalizedS
             const revokedSet = parseCrlRevokedSerials(decompressed);
             return { revoked: revokedSet.has(normalizedSerial), serial: normalizedSerial };
         } catch (e) {
-            return { errorCode: e?.code || 'crl_parse_failed', error: `CRL parse error (${candidateUrl}): ${e.message}` };
+            return {
+                errorCode: e?.code || 'crl_parse_failed',
+                error: `CRL parse error (${candidateUrl}): ${e.message}`,
+            };
         }
     }
 
@@ -461,7 +478,11 @@ async function checkRevocation(serial, listUrl, options = {}) {
         } catch (e) {
             lastError = lastError || `${effectiveUrl}: ${e.message}`;
             lastErrorCode = lastErrorCode || e?.code || 'crl_fetch_failed';
-            attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+            attemptPath.push({
+                url: effectiveUrl,
+                source: candidateSource,
+                errorCode: lastErrorCode,
+            });
             continue;
         }
 
@@ -484,7 +505,11 @@ async function checkRevocation(serial, listUrl, options = {}) {
         if (!res.ok) {
             lastError = lastError || `${effectiveUrl}: HTTP ${res.status}`;
             lastErrorCode = lastErrorCode || 'crl_http_error';
-            attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+            attemptPath.push({
+                url: effectiveUrl,
+                source: candidateSource,
+                errorCode: lastErrorCode,
+            });
             continue;
         }
 
@@ -492,20 +517,35 @@ async function checkRevocation(serial, listUrl, options = {}) {
         if (contentLength != null) {
             const len = parseInt(contentLength, 10);
             if (!Number.isNaN(len) && len > MAX_CRL_RESPONSE_BYTES) {
-                lastError = lastError || `${effectiveUrl}: CRL too large (${len} bytes, max ${MAX_CRL_RESPONSE_BYTES})`;
+                lastError =
+                    lastError ||
+                    `${effectiveUrl}: CRL too large (${len} bytes, max ${MAX_CRL_RESPONSE_BYTES})`;
                 lastErrorCode = lastErrorCode || 'crl_too_large';
-                attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+                attemptPath.push({
+                    url: effectiveUrl,
+                    source: candidateSource,
+                    errorCode: lastErrorCode,
+                });
                 continue;
             }
         }
 
         const contentType = (res.headers?.get?.('Content-Type') || '').toLowerCase();
         const buffer = await res.arrayBuffer();
-        const result = await processCrlResponse(buffer, contentType, effectiveUrl, normalizedSerial);
+        const result = await processCrlResponse(
+            buffer,
+            contentType,
+            effectiveUrl,
+            normalizedSerial,
+        );
         if (result.error) {
             lastError = lastError || result.error;
             lastErrorCode = lastErrorCode || result.errorCode || 'crl_processing_failed';
-            attemptPath.push({ url: effectiveUrl, source: candidateSource, errorCode: lastErrorCode });
+            attemptPath.push({
+                url: effectiveUrl,
+                source: candidateSource,
+                errorCode: lastErrorCode,
+            });
             continue;
         }
 
@@ -662,9 +702,7 @@ function parseEventBody(event) {
     if (typeof b === 'object') {
         return JSON.stringify(b);
     }
-    return event.isBase64Encoded
-        ? Buffer.from(String(b), 'base64').toString('utf-8')
-        : String(b);
+    return event.isBase64Encoded ? Buffer.from(String(b), 'base64').toString('utf-8') : String(b);
 }
 
 function getQueryMulti(event, key) {
@@ -716,7 +754,8 @@ module.exports.handler = async function handler(event) {
             const serial = ev?.queryStringParameters?.serial || null;
             const listUrl = ev?.queryStringParameters?.listUrl || null;
             const listUrls = getQueryMulti(ev, 'listUrl');
-            const helperBaseUrl = HELPER_BASE_FROM_ENV || ev?.queryStringParameters?.helperBaseUrl || '';
+            const helperBaseUrl =
+                HELPER_BASE_FROM_ENV || ev?.queryStringParameters?.helperBaseUrl || '';
             const options = { helperBaseUrl };
             const result =
                 listUrls.length > 1
@@ -738,7 +777,9 @@ module.exports.handler = async function handler(event) {
             const helperBaseUrl = HELPER_BASE_FROM_ENV || body.helperBaseUrl || '';
             const options = { helperBaseUrl };
 
-            const crlEntries = Array.isArray(body.crlEntries) ? body.crlEntries.filter(Boolean) : null;
+            const crlEntries = Array.isArray(body.crlEntries)
+                ? body.crlEntries.filter(Boolean)
+                : null;
             if (crlEntries && crlEntries.length > 0) {
                 const result = await checkRevocationHybridBatch(serial, crlEntries, options);
                 return json(200, result);
@@ -755,7 +796,7 @@ module.exports.handler = async function handler(event) {
 
         return json(405, { error: 'Method not allowed' });
     } catch (err) {
-        const msg = (err && typeof err.message === 'string') ? err.message : 'unknown';
+        const msg = err && typeof err.message === 'string' ? err.message : 'unknown';
         return json(500, { revoked: false, error: `Internal server error: ${msg}` });
     }
 };

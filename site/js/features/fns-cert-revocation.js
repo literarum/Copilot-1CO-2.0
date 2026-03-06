@@ -23,7 +23,8 @@ import {
 const FNS_DEBUG_TAG = '[FNS Revocation]';
 
 /** Fallback URL for install scripts when origin (e.g. GitHub Pages) returns 404. */
-const RAW_INSTALL_SCRIPT_BASE = 'https://raw.githubusercontent.com/literarum/Copilot-1CO-2.0/main/site';
+const RAW_INSTALL_SCRIPT_BASE =
+    'https://raw.githubusercontent.com/literarum/Copilot-1CO-2.0/main/site';
 
 const CERT_BASE64_MIN_LENGTH = 100;
 const CLIENT_POLICY_VALUES = new Set([
@@ -101,7 +102,10 @@ async function buildCrlEntriesViaLocalHelper(resolvedCrlUrls, helperBaseUrl) {
         resolvedCrlUrls.map(async (url) => {
             const attempt = async () => {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), LOCAL_HELPER_FETCH_TIMEOUT_MS);
+                const timeoutId = setTimeout(
+                    () => controller.abort(),
+                    LOCAL_HELPER_FETCH_TIMEOUT_MS,
+                );
                 try {
                     const res = await fetch(`${base}/helper?url=${encodeURIComponent(url)}`, {
                         method: 'GET',
@@ -517,7 +521,8 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
     header.className =
         'px-4 py-3 bg-gray-50 dark:bg-gray-700/60 border-b border-gray-200 dark:border-gray-600';
     header.setAttribute('data-fns-cert-header', '');
-    header.innerHTML = '<span class="inline-flex items-center gap-2"><i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span></span>';
+    header.innerHTML =
+        '<span class="inline-flex items-center gap-2"><i class="fas fa-certificate text-primary opacity-80"></i><span class="font-semibold text-gray-900 dark:text-gray-100">Данные сертификата</span></span>';
     card.appendChild(header);
 
     /* Светящаяся панель статуса: обновляется после завершения проверки (runCheck). Красная — ИСТЕК/ОТОЗВАН, зелёная — ДЕЙСТВИТЕЛЕН. */
@@ -546,7 +551,9 @@ function renderCertificateInfo(certInfo, certInfoData, fileName) {
         th.textContent = label;
         tr.appendChild(th);
         const td = document.createElement('td');
-        const baseValueClass = options.mono ? 'fns-cert-table__value fns-cert-table__value--mono' : 'fns-cert-table__value';
+        const baseValueClass = options.mono
+            ? 'fns-cert-table__value fns-cert-table__value--mono'
+            : 'fns-cert-table__value';
         td.className = baseValueClass;
         const safeValue = value || '—';
         if (options.lines && safeValue && String(safeValue).includes('\n')) {
@@ -755,40 +762,54 @@ export function initFNSCertificateRevocationSystem() {
                         <i class="fas fa-copy"></i><span>Скопировать команду</span>
                     </button>
                 </div>
-                ${cmdFallbackEscaped ? `
+                ${
+                    cmdFallbackEscaped
+                        ? `
                 <p class="text-sm text-amber-700 dark:text-amber-400 mb-2 mt-4">Если команда выше выдаёт ошибку 404, используйте (скрипт с GitHub):</p>
                 <div class="flex flex-col sm:flex-row gap-3 mb-4">
                     <code data-fns-install-cmd-fallback class="flex-1 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl font-mono text-sm border border-gray-300 dark:border-gray-600 cursor-copy overflow-x-auto select-all hover:border-primary/50 transition-colors" title="Нажмите, чтобы скопировать">${cmdFallbackEscaped}</code>
                     <button type="button" data-fns-copy-cmd-fallback class="shrink-0 px-4 py-3 rounded-xl border border-amber-500/50 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-center gap-2">
                         <i class="fas fa-copy"></i><span>Скопировать запасную команду</span>
                     </button>
-                </div>` : ''}
+                </div>`
+                        : ''
+                }
                 <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
                     После запуска команды в Терминале страница обновится автоматически или нажмите «Проверить снова».
                 </p>
                 <button type="button" data-fns-probe-again class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                     <i class="fas fa-sync-alt"></i><span>Проверить снова</span>
                 </button>
-                ${runCmdEscaped ? `
+                ${
+                    runCmdEscaped
+                        ? `
                 <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-600">
                     <p class="text-base md:text-lg text-gray-700 dark:text-gray-300 mb-2">
                         <strong>Уже устанавливали?</strong> Если компонента не запущена, скопируйте команду запуска и выполните в <strong>${terminalHint}</strong>:
                     </p>
-                    ${platform === 'macos' ? `
+                    ${
+                        platform === 'macos'
+                            ? `
                     <p class="text-sm text-amber-700 dark:text-amber-400 mb-2">
                         Если macOS пишет «Объект от неподтвержденного разработчика»: <strong>Системные настройки</strong> → <strong>Конфиденциальность и безопасность</strong> → внизу нажмите <strong>«Всё равно открыть»</strong> рядом с CRL-Helper-macos.
                     </p>
                     <p class="text-sm text-amber-700 dark:text-amber-400 mb-3">
                         Если при запуске появляется <strong>«Адрес уже используется»</strong> (Address already in use): сначала остановите службу (команда ниже), затем снова запустите компоненту.
-                    </p>` : ''}
-                    ${unloadCmdEscaped && platform === 'macos' ? `
+                    </p>`
+                            : ''
+                    }
+                    ${
+                        unloadCmdEscaped && platform === 'macos'
+                            ? `
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Освободить порт 7777 (завершить процесс и/или остановить службу):</p>
                     <div class="flex flex-col sm:flex-row gap-3 mb-3">
                         <code data-fns-unload-cmd class="flex-1 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg font-mono text-xs border border-gray-300 dark:border-gray-600 cursor-copy overflow-x-auto" title="Нажмите, чтобы скопировать">${unloadCmdEscaped}</code>
                         <button type="button" data-fns-copy-unload-cmd class="shrink-0 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-1">
                             <i class="fas fa-copy"></i><span>Скопировать</span>
                         </button>
-                    </div>` : ''}
+                    </div>`
+                            : ''
+                    }
                     <p class="text-base md:text-lg text-gray-700 dark:text-gray-300 mb-2">Команда запуска:</p>
                     <div class="flex flex-col sm:flex-row gap-3 mb-2">
                         <code data-fns-run-cmd class="flex-1 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl font-mono text-sm md:text-base border border-gray-300 dark:border-gray-600 cursor-copy overflow-x-auto select-all hover:border-primary/50 transition-colors" title="Нажмите, чтобы скопировать">${runCmdEscaped}</code>
@@ -797,7 +818,9 @@ export function initFNSCertificateRevocationSystem() {
                         </button>
                     </div>
                     <p class="text-sm text-green-700 dark:text-green-400 mt-4 mb-1"><strong>Если бинарник не запускается:</strong> при наличии Node.js 18+ откройте папку с исходным кодом проекта в Терминале и выполните <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">node helper/crl-helper.js</code> (оставьте окно открытым). Порт 7777 будет занят этим процессом.</p>
-                </div>` : ''}
+                </div>`
+                        : ''
+                }
             </div>
         `;
         const codeEl = installGateEl.querySelector('[data-fns-install-cmd]');
@@ -820,10 +843,12 @@ export function initFNSCertificateRevocationSystem() {
         if (probeAgainBtn) {
             probeAgainBtn.addEventListener('click', () => {
                 probeAgainBtn.disabled = true;
-                probeAgainBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Проверяю…</span>';
+                probeAgainBtn.innerHTML =
+                    '<i class="fas fa-spinner fa-spin"></i><span>Проверяю…</span>';
                 runProbeAndMaybeShowMain().finally(() => {
                     probeAgainBtn.disabled = false;
-                    probeAgainBtn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Проверить снова</span>';
+                    probeAgainBtn.innerHTML =
+                        '<i class="fas fa-sync-alt"></i><span>Проверить снова</span>';
                 });
             });
         }
@@ -1226,7 +1251,10 @@ export function initFNSCertificateRevocationSystem() {
 
             let redirectToInstallGate = false;
             const certExpired = isCertificateExpired(certInfoData);
-            const finalRevocationState = resolveFinalRevocationState(Boolean(revokedSource), certExpired);
+            const finalRevocationState = resolveFinalRevocationState(
+                Boolean(revokedSource),
+                certExpired,
+            );
             const hasPartialResult = failedChecks > 0 || Boolean(batchResult.error);
             const serverNetworkCodes = new Set(['crl_fetch_network', 'crl_fetch_timeout']);
             const failedResults = results.filter((r) => r.error);

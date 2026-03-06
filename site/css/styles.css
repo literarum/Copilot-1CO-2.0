@@ -129,9 +129,7 @@ html.dark #appContent header.header-sticky {
 .fns-cert-shell-danger {
     --fns-cert-danger-bg: rgba(254, 242, 242, 0.95);
     --fns-cert-danger-border: rgba(248, 113, 113, 1);
-    --fns-cert-danger-shadow:
-        0 0 0 1px rgba(248, 113, 113, 0.7),
-        0 0 24px rgba(248, 113, 113, 0.6);
+    --fns-cert-danger-shadow: 0 0 0 1px rgba(248, 113, 113, 0.7), 0 0 24px rgba(248, 113, 113, 0.6);
     background-color: var(--fns-cert-danger-bg);
     box-shadow: var(--fns-cert-danger-shadow);
 }
@@ -286,8 +284,7 @@ html.dark .fns-cert-shell-danger {
     --fns-cert-danger-bg: rgba(127, 29, 29, 0.5);
     --fns-cert-danger-border: rgba(252, 165, 165, 1);
     --fns-cert-danger-shadow:
-        0 0 0 1px rgba(252, 165, 165, 0.8),
-        0 0 28px rgba(248, 113, 113, 0.85);
+        0 0 0 1px rgba(252, 165, 165, 0.8), 0 0 28px rgba(248, 113, 113, 0.85);
     background-color: var(--fns-cert-danger-bg);
     box-shadow: var(--fns-cert-danger-shadow);
 }
@@ -1131,7 +1128,9 @@ mark {
     padding-top: 0;
     padding-bottom: 0;
     margin-top: 0;
-    transition: max-height 0.3s ease, opacity 0.2s ease;
+    transition:
+        max-height 0.3s ease,
+        opacity 0.2s ease;
 }
 #mainAlgorithm .algorithm-step.headers-only-step.is-expanded .collapsible-body {
     max-height: 2000px;
@@ -1144,21 +1143,23 @@ mark {
 /* Группы главного алгоритма (аккордеон) */
 .main-algo-group {
     margin-bottom: 0.75rem;
-    border: 1px solid var(--color-border, rgba(0,0,0,0.1));
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
     border-radius: 0.5rem;
     overflow: hidden;
     background: var(--color-surface-2, #f9fafb);
-    transition: box-shadow 0.2s ease, background-color 0.2s ease;
+    transition:
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
 }
 .main-algo-group:hover {
-    background-color: var(--color-hover-subtle, rgba(0,0,0,0.02));
-    box-shadow: var(--card-hover-shadow, 0 4px 12px rgba(0,0,0,0.08));
+    background-color: var(--color-hover-subtle, rgba(0, 0, 0, 0.02));
+    box-shadow: var(--card-hover-shadow, 0 4px 12px rgba(0, 0, 0, 0.08));
 }
 html.dark .main-algo-group {
     background: var(--color-surface-2, #374151);
 }
 html.dark .main-algo-group:hover {
-    background-color: var(--color-hover-subtle, rgba(255,255,255,0.05));
+    background-color: var(--color-hover-subtle, rgba(255, 255, 255, 0.05));
 }
 .main-algo-group-header {
     padding: 0.5rem 0.75rem;

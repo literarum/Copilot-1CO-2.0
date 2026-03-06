@@ -118,10 +118,7 @@ export function registerOnloadHandler() {
                                 'Функция initGoogleDocSections не найдена в window.onload!',
                             );
                         }
-                        const hud = deps.backgroundStatusHUD || window.BackgroundStatusHUD;
-                        if (hud?.finishTask) {
-                            hud.finishTask('app-init', true);
-                        }
+                        // finishTask('app-init') вызывается в app-init.js при завершении инициализации
                     }
 
                     requestAnimationFrame(() => {

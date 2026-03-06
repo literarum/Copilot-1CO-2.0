@@ -86,7 +86,9 @@ async function extractXmlFromZip(zipBuffer) {
     } catch (e) {
         return { error: `Ошибка извлечения ${entryName}: ${e.message}` };
     }
-    const data = firstXml ? decodeBytesToXmlString(entryBytes) : new TextDecoder('UTF-8').decode(entryBytes);
+    const data = firstXml
+        ? decodeBytesToXmlString(entryBytes)
+        : new TextDecoder('UTF-8').decode(entryBytes);
     return { data };
 }
 
@@ -165,8 +167,10 @@ function getCertExtensions(cert) {
         name: ext.name,
         critical: ext.critical,
         value: ext.value,
-        subjectKeyIdentifier: ext.name === 'subjectKeyIdentifier' ? ext.subjectKeyIdentifier : undefined,
-        authorityKeyIdentifier: ext.name === 'authorityKeyIdentifier' ? ext.keyIdentifier : undefined,
+        subjectKeyIdentifier:
+            ext.name === 'subjectKeyIdentifier' ? ext.subjectKeyIdentifier : undefined,
+        authorityKeyIdentifier:
+            ext.name === 'authorityKeyIdentifier' ? ext.keyIdentifier : undefined,
     }));
 }
 
@@ -241,7 +245,8 @@ function lightParseCertDetails(forge, derCert) {
             throw new Error('Неверная структура сертификата.');
         }
         const tbsCertificate = asn1.value[0];
-        if (tbsCertificate.type !== forge.asn1.Type.SEQUENCE) throw new Error('TBSCertificate не найден.');
+        if (tbsCertificate.type !== forge.asn1.Type.SEQUENCE)
+            throw new Error('TBSCertificate не найден.');
         const tbs = tbsCertificate.value;
         const result = {
             version: 'N/A',
@@ -251,7 +256,11 @@ function lightParseCertDetails(forge, derCert) {
             validity: { notBefore: null, notAfter: null },
         };
         let i = 0;
-        if (i < tbs.length && tbs[i].tagClass === forge.asn1.Class.CONTEXT_SPECIFIC && tbs[i].type === 0) {
+        if (
+            i < tbs.length &&
+            tbs[i].tagClass === forge.asn1.Class.CONTEXT_SPECIFIC &&
+            tbs[i].type === 0
+        ) {
             const versionNode = tbs[i].value[0];
             if (versionNode?.type === forge.asn1.Type.INTEGER) {
                 result.version = versionNode.value.charCodeAt(0) + 1;
@@ -269,7 +278,11 @@ function lightParseCertDetails(forge, derCert) {
             result.issuer = extractRdn(forge, tbs[i]);
             i++;
         }
-        if (i < tbs.length && tbs[i].type === forge.asn1.Type.SEQUENCE && tbs[i].value?.length >= 2) {
+        if (
+            i < tbs.length &&
+            tbs[i].type === forge.asn1.Type.SEQUENCE &&
+            tbs[i].value?.length >= 2
+        ) {
             result.validity.notBefore = robustParseDate(forge, tbs[i].value[0]);
             result.validity.notAfter = robustParseDate(forge, tbs[i].value[1]);
             i++;
@@ -330,7 +343,8 @@ export async function parseCertificate(base64Cert) {
                 return { error: 'Не удалось распарсить сертификат.' };
             }
             const ownerFio =
-                lightData.subject.CN || `${lightData.subject.G || ''} ${lightData.subject.SN || ''}`.trim();
+                lightData.subject.CN ||
+                `${lightData.subject.G || ''} ${lightData.subject.SN || ''}`.trim();
             return {
                 thumbprint,
                 isParsed: false,

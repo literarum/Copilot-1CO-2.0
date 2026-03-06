@@ -82,6 +82,7 @@ describe('FNS certificate revocation UI smoke', () => {
         globalThis.document = {
             createElement: vi.fn(() => new MockElement('created')),
             getElementById: vi.fn((id) => elements[id] || null),
+            querySelector: vi.fn(() => null),
             addEventListener: vi.fn((type, cb) => {
                 if (!docListeners.has(type)) docListeners.set(type, []);
                 docListeners.get(type).push(cb);

@@ -5,7 +5,8 @@
 // ============================================================================
 // Пустая строка = тот же origin (если API проксируется через тот же домен).
 // API Gateway crl-api (обязательно для path /api/health и /api/revocation/check). Без завершающего слэша.
-export const REVOCATION_API_BASE_URL = 'https://d5do82fppanabn9naecn.kf69zffa.apigw.yandexcloud.net';
+export const REVOCATION_API_BASE_URL =
+    'https://d5do82fppanabn9naecn.kf69zffa.apigw.yandexcloud.net';
 
 // ============================================================================
 // КОНФИГУРАЦИЯ ВКЛАДОК

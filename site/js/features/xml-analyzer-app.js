@@ -1,10 +1,10 @@
 /* eslint-disable no-dupe-keys, no-dupe-class-members, no-control-regex, no-empty, no-case-declarations, no-unused-vars -- ported from external XML analyzer app */
 const XML_ANALYZER_ID_MAP = {
     'data-input': 'xmlAnalyzerDataInput',
-    'output': 'xmlAnalyzerOutput',
+    output: 'xmlAnalyzerOutput',
     'analyze-btn': 'xmlAnalyzerAnalyzeBtn',
     'drop-zone': 'xmlAnalyzerDropZone',
-    'placeholder': 'xmlAnalyzerPlaceholder',
+    placeholder: 'xmlAnalyzerPlaceholder',
     'file-input-mode': 'xmlAnalyzerFileMode',
     'text-input-mode': 'xmlAnalyzerTextMode',
     'certificate-manager-wrapper': 'xmlAnalyzerCertManagerWrapper',
@@ -41,61 +41,61 @@ class ReportAnalyzerApp {
         this.isAnalysisDone = false;
 
         this.controllingAuthorityMap = {
-            'FNS': 'Федеральная налоговая служба (ФНС)',
-            'PFR': 'Социальный фонд России (СФР, бывш. ПФР)',
-            'FSS': 'Социальный фонд России (СФР, бывш. ФСС)',
-            'ROSSTAT': 'Федеральная служба государственной статистики (Росстат)',
-            'RARP': 'Росалкогольрегулирование (ФСРАР)',
-            'RPN': 'Росприроднадзор (РПН)',
+            FNS: 'Федеральная налоговая служба (ФНС)',
+            PFR: 'Социальный фонд России (СФР, бывш. ПФР)',
+            FSS: 'Социальный фонд России (СФР, бывш. ФСС)',
+            ROSSTAT: 'Федеральная служба государственной статистики (Росстат)',
+            RARP: 'Росалкогольрегулирование (ФСРАР)',
+            RPN: 'Росприроднадзор (РПН)',
 
-            'ФНС': 'Федеральная налоговая служба',
-            'СФР': 'Социальный фонд России',
-            'ПФР': 'Социальный фонд России (СФР, бывш. ПФР)',
-            'ФСС': 'Социальный фонд России (СФР, бывш. ФСС)',
-            'ФСГС': 'Федеральная служба государственной статистики (Росстат)',
-            'РПН': 'Федеральная служба по надзору в сфере природопользования (Росприроднадзор)',
-            'ФТС': 'Федеральная таможенная служба',
-            'ЦБ': 'Центральный банк РФ'
+            ФНС: 'Федеральная налоговая служба',
+            СФР: 'Социальный фонд России',
+            ПФР: 'Социальный фонд России (СФР, бывш. ПФР)',
+            ФСС: 'Социальный фонд России (СФР, бывш. ФСС)',
+            ФСГС: 'Федеральная служба государственной статистики (Росстат)',
+            РПН: 'Федеральная служба по надзору в сфере природопользования (Росприроднадзор)',
+            ФТС: 'Федеральная таможенная служба',
+            ЦБ: 'Центральный банк РФ',
         };
 
         this.additionalInfoKeyMap = {
-            'ЖурналРегистрации': 'Журнал системных событий',
-            'Нерасшифрованные': 'Нерасшифрованные сообщения',
-            'ПодключенныеНаправления': 'Направления обмена с контролирующими органами',
-            'ИмяКонфигурации': 'Конфигурация 1С',
-            'ВерсияОС': 'Версия операционной системы',
-            'РазрядностьОС': 'Разрядность ОС',
-            'ВерсияIE': 'Версия Internet Explorer',
-            'ВерсияОС': 'Версия ОС (клиент)',
+            ЖурналРегистрации: 'Журнал системных событий',
+            Нерасшифрованные: 'Нерасшифрованные сообщения',
+            ПодключенныеНаправления: 'Направления обмена с контролирующими органами',
+            ИмяКонфигурации: 'Конфигурация 1С',
+            ВерсияОС: 'Версия операционной системы',
+            РазрядностьОС: 'Разрядность ОС',
+            ВерсияIE: 'Версия Internet Explorer',
+            ВерсияОС: 'Версия ОС (клиент)',
             'Сервер.ВерсияОС': 'Версия ОС (сервер)',
-            'РазрядностьОС': 'Разрядность ОС',
-            'ВерсияIE': 'Версия Internet Explorer',
-            'Процессор': 'Процессор (клиент)',
+            РазрядностьОС: 'Разрядность ОС',
+            ВерсияIE: 'Версия Internet Explorer',
+            Процессор: 'Процессор (клиент)',
             'Сервер.Процессор': 'Процессор (сервер)',
-            'ОперативнаяПамять': 'ОЗУ (клиент), МБ',
+            ОперативнаяПамять: 'ОЗУ (клиент), МБ',
             'Сервер.ОперативнаяПамять': 'ОЗУ (сервер), МБ',
-            'ТипПлатформы': 'Тип платформы',
-            'АвтонастройкаПриСтартеПричина': 'Причина ошибки автонастройки',
-            'ПродолжительностьПроверкиСекунд': 'Продолжительность проверки, сек',
-            'ВнешнийМодульВерсия': 'Версия внешнего модуля',
-            'ВнешнийМодульИспользуется': 'Внешний модуль используется',
-            'ТипКлиентскогоПодключения': 'Тип клиента',
-            'ТипКлиентскогоПодключенияЧислом': 'Тип клиента (код)',
-            'АвтонастройкаПриСтарте': 'Результат автонастройки',
-            'ВерсияПриложения': 'Версия платформы 1С',
-            'УровеньЛогированияЖурнала': 'Уровень логирования',
-            'ИнициализированныйКриптопровайдерКК': 'Инициализированный криптопровайдер',
-            'РежимИБ': 'Режим работы ИБ',
+            ТипПлатформы: 'Тип платформы',
+            АвтонастройкаПриСтартеПричина: 'Причина ошибки автонастройки',
+            ПродолжительностьПроверкиСекунд: 'Продолжительность проверки, сек',
+            ВнешнийМодульВерсия: 'Версия внешнего модуля',
+            ВнешнийМодульИспользуется: 'Внешний модуль используется',
+            ТипКлиентскогоПодключения: 'Тип клиента',
+            ТипКлиентскогоПодключенияЧислом: 'Тип клиента (код)',
+            АвтонастройкаПриСтарте: 'Результат автонастройки',
+            ВерсияПриложения: 'Версия платформы 1С',
+            УровеньЛогированияЖурнала: 'Уровень логирования',
+            ИнициализированныйКриптопровайдерКК: 'Инициализированный криптопровайдер',
+            РежимИБ: 'Режим работы ИБ',
             'Криптокомпонента.Версия': 'Версия криптокомпоненты',
-            'Экран0': 'Разрешение экрана',
+            Экран0: 'Разрешение экрана',
             'Метаданные.Синоним': 'Синоним конфигурации',
             'Метаданные.Версия': 'Версия конфигурации',
-            'КаталогВременныхФайлов': 'Каталог временных файлов',
-            'ЧасовойПояс': 'Часовой пояс',
+            КаталогВременныхФайлов: 'Каталог временных файлов',
+            ЧасовойПояс: 'Часовой пояс',
             'ЖурналРегистрации.Начало': 'Журнал: начало периода',
             'ЖурналРегистрации.Окончание': 'Журнал: окончание периода',
             'ЖурналРегистрации.ЗатраченоСек': 'Журнал: затрачено на выгрузку, сек',
-            'ЖурналРегистрации.Получен': 'Журнал: успешно получен'
+            'ЖурналРегистрации.Получен': 'Журнал: успешно получен',
         };
 
         this.inputArea = getEl('data-input');
@@ -132,7 +132,6 @@ class ReportAnalyzerApp {
         this.init();
     }
 
-
     init() {
         if (this.themeToggle) {
             this.initTheme();
@@ -143,7 +142,9 @@ class ReportAnalyzerApp {
         if (this.analyzeBtn) {
             this.analyzeBtn.addEventListener('click', () => this.handleAnalyzeButtonClick());
         } else {
-            console.error('КРИТИЧЕСКАЯ ОШИБКА: Кнопка анализатора #analyze-btn не найдена в DOM! Основная функция не будет работать.');
+            console.error(
+                'КРИТИЧЕСКАЯ ОШИБКА: Кнопка анализатора #analyze-btn не найдена в DOM! Основная функция не будет работать.',
+            );
         }
 
         if (this.resetInputBtn) {
@@ -155,8 +156,13 @@ class ReportAnalyzerApp {
         }
 
         if (this.dropZone) {
-            this.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('drag-over'); });
-            this.dropZone.addEventListener('dragleave', () => this.dropZone.classList.remove('drag-over'));
+            this.dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                this.dropZone.classList.add('drag-over');
+            });
+            this.dropZone.addEventListener('dragleave', () =>
+                this.dropZone.classList.remove('drag-over'),
+            );
             this.dropZone.addEventListener('drop', (e) => this.handleFileDrop(e));
             this.dropZone.addEventListener('click', () => {
                 const fileInput = document.createElement('input');
@@ -192,7 +198,10 @@ class ReportAnalyzerApp {
         }
 
         if (this.certSearchInput) {
-            this.certSearchInput.addEventListener('input', this.debounce(() => this.renderCertificateManager(), 300));
+            this.certSearchInput.addEventListener(
+                'input',
+                this.debounce(() => this.renderCertificateManager(), 300),
+            );
         }
 
         if (this.exportZipBtn) {
@@ -207,17 +216,20 @@ class ReportAnalyzerApp {
 
         if (window.electronAPI) {
             if (this.minimizeBtn) {
-                this.minimizeBtn.addEventListener('click', () => window.electronAPI.minimizeWindow());
+                this.minimizeBtn.addEventListener('click', () =>
+                    window.electronAPI.minimizeWindow(),
+                );
             }
             if (this.maximizeBtn) {
-                this.maximizeBtn.addEventListener('click', () => window.electronAPI.maximizeWindow());
+                this.maximizeBtn.addEventListener('click', () =>
+                    window.electronAPI.maximizeWindow(),
+                );
             }
             if (this.closeBtn) {
                 this.closeBtn.addEventListener('click', () => window.electronAPI.closeWindow());
             }
         }
     }
-
 
     debounce(func, delay) {
         let timeout;
@@ -226,7 +238,6 @@ class ReportAnalyzerApp {
             timeout = setTimeout(() => func.apply(this, args), delay);
         };
     }
-
 
     updateAnalyzeButtonState() {
         if (!this.dataInputTextarea) return;
@@ -242,7 +253,6 @@ class ReportAnalyzerApp {
         this.analyzeBtn.disabled = !hasContent;
     }
 
-
     clearInput() {
         if (this.dataInputTextarea) {
             this.dataInputTextarea.value = '';
@@ -251,23 +261,120 @@ class ReportAnalyzerApp {
         this.updateAnalyzeButtonState();
     }
 
-
     _fixBrokenUriEncoding(xmlString) {
         const mojibakeMap = {
-            'Ð': 'А', 'Ð‘': 'Б', 'Ð’': 'В', 'Ð“': 'Г', 'Ð”': 'Д', 'Ð•': 'Е', 'Ð†': 'Ж', 'Ð‡': 'З',
-            'Ð˜': 'И', 'Ð™': 'Й', 'Ðš': 'К', 'Ð›': 'Л', 'Ðœ': 'М', 'Ð': 'Н', 'Ðž': 'О', 'ÐŸ': 'П',
-            'Ð ': 'Р', 'Ð¡': 'С', 'Ð¢': 'Т', 'Ð£': 'У', 'Ð¤': 'Ф', 'Ð¥': 'Х', 'Ð¦': 'Ц', 'Ð§': 'Ч',
-            'Ð¨': 'Ш', 'Ð©': 'Щ', 'Ðª': 'Ъ', 'Ð«': 'Ы', 'Ð¬': 'Ь', 'Ð': 'Э', 'Ð®': 'Ю', 'Ð¯': 'Я',
-            'Ð°': 'а', 'Ð±': 'б', 'Ð²': 'в', 'Ð³': 'г', 'Ð´': 'д', 'Ðµ': 'е', 'Ñ‘': 'ж', 'Ð·': 'з',
-            'Ð¸': 'и', 'Ð¹': 'й', 'Ðº': 'к', 'Ð»': 'л', 'Ð¼': 'м', 'Ð½': 'н', 'Ð¾': 'о', 'Ð¿': 'п',
-            'Ñ€': 'р', 'Ñ': 'с', 'Ñ‚': 'т', 'Ñƒ': 'у', 'Ñ„': 'ф', 'Ñ…': 'х', 'Ñ†': 'ц', 'Ñ‡': 'ч',
-            'Ñˆ': 'ш', 'Ñ‰': 'щ', 'ÑŠ': 'ъ', 'Ñ‹': 'ы', 'ÑŒ': 'ь', 'Ñ': 'э', 'ÑŽ': 'ю', 'Ñ': 'я',
-            'Ñ‘': 'ё', 'Ð€': 'Ђ', 'Ð‚': '‚', 'Ðƒ': 'ƒ', 'Ð„': '„', 'Ð…': '…', 'Ð†': '†', 'Ð‡': '‡',
-            'Ðˆ': '€', 'Ð‰': '‰', 'ÐŠ': 'Š', 'Ð‹': '‹', 'ÐŒ': 'Œ', 'ÐŽ': 'Ž', 'Ð': '', 'Ð': 'ђ',
-            'Ð‘': '‘', 'Ð’': '’', 'Ð“': '“', 'Ð”': '”', 'Ð•': '•', 'Ð–': '–', 'Ð—': '—', 'Ð˜': '˜',
-            'Ð™': '™', 'Ðš': 'š', 'Ð›': '›', 'Ðœ': 'œ', 'Ð': 'ž', 'Ðž': 'Ÿ', 'ÐŸ': '¡', 'Ð ': '¢',
-            'Ð¡': '£', 'Ð¤': '¤', 'Ð¥': '¥', 'Ð¦': '¦', 'Ð§': '§', 'Ð¨': '¨', 'Ð©': '©', 'Ðª': 'ª',
-            'Ð«': '«', 'Ð¬': '¬', 'Ð': '', 'Ð®': '®', 'Ð¯': '¯', 'Â«': '«', 'Â»': '»', 'â„–': '№'
+            'Ð': 'А',
+            'Ð‘': 'Б',
+            'Ð’': 'В',
+            'Ð“': 'Г',
+            'Ð”': 'Д',
+            'Ð•': 'Е',
+            'Ð†': 'Ж',
+            'Ð‡': 'З',
+            'Ð˜': 'И',
+            'Ð™': 'Й',
+            Ðš: 'К',
+            'Ð›': 'Л',
+            Ðœ: 'М',
+            'Ð': 'Н',
+            Ðž: 'О',
+            ÐŸ: 'П',
+            'Ð ': 'Р',
+            'Ð¡': 'С',
+            'Ð¢': 'Т',
+            'Ð£': 'У',
+            'Ð¤': 'Ф',
+            'Ð¥': 'Х',
+            'Ð¦': 'Ц',
+            'Ð§': 'Ч',
+            'Ð¨': 'Ш',
+            'Ð©': 'Щ',
+            Ðª: 'Ъ',
+            'Ð«': 'Ы',
+            'Ð¬': 'Ь',
+            Ð: 'Э',
+            'Ð®': 'Ю',
+            'Ð¯': 'Я',
+            'Ð°': 'а',
+            'Ð±': 'б',
+            'Ð²': 'в',
+            'Ð³': 'г',
+            'Ð´': 'д',
+            Ðµ: 'е',
+            'Ñ‘': 'ж',
+            'Ð·': 'з',
+            'Ð¸': 'и',
+            'Ð¹': 'й',
+            Ðº: 'к',
+            'Ð»': 'л',
+            'Ð¼': 'м',
+            'Ð½': 'н',
+            'Ð¾': 'о',
+            'Ð¿': 'п',
+            'Ñ€': 'р',
+            'Ñ': 'с',
+            'Ñ‚': 'т',
+            Ñƒ: 'у',
+            'Ñ„': 'ф',
+            'Ñ…': 'х',
+            'Ñ†': 'ц',
+            'Ñ‡': 'ч',
+            Ñˆ: 'ш',
+            'Ñ‰': 'щ',
+            ÑŠ: 'ъ',
+            'Ñ‹': 'ы',
+            ÑŒ: 'ь',
+            'Ñ': 'э',
+            ÑŽ: 'ю',
+            'Ñ': 'я',
+            'Ñ‘': 'ё',
+            'Ð€': 'Ђ',
+            'Ð‚': '‚',
+            Ðƒ: 'ƒ',
+            'Ð„': '„',
+            'Ð…': '…',
+            'Ð†': '†',
+            'Ð‡': '‡',
+            Ðˆ: '€',
+            'Ð‰': '‰',
+            ÐŠ: 'Š',
+            'Ð‹': '‹',
+            ÐŒ: 'Œ',
+            ÐŽ: 'Ž',
+            'Ð': '',
+            'Ð': 'ђ',
+            'Ð‘': '‘',
+            'Ð’': '’',
+            'Ð“': '“',
+            'Ð”': '”',
+            'Ð•': '•',
+            'Ð–': '–',
+            'Ð—': '—',
+            'Ð˜': '˜',
+            'Ð™': '™',
+            Ðš: 'š',
+            'Ð›': '›',
+            Ðœ: 'œ',
+            'Ð': 'ž',
+            Ðž: 'Ÿ',
+            ÐŸ: '¡',
+            'Ð ': '¢',
+            'Ð¡': '£',
+            'Ð¤': '¤',
+            'Ð¥': '¥',
+            'Ð¦': '¦',
+            'Ð§': '§',
+            'Ð¨': '¨',
+            'Ð©': '©',
+            Ðª: 'ª',
+            'Ð«': '«',
+            'Ð¬': '¬',
+            Ð: '',
+            'Ð®': '®',
+            'Ð¯': '¯',
+            'Â«': '«',
+            'Â»': '»',
+            'â„–': '№',
         };
 
         let fixedXml = xmlString;
@@ -282,23 +389,27 @@ class ReportAnalyzerApp {
             wasFixed = true;
         }
 
-        fixedXml = fixedXml.replace(/(xmlns(?::[^=]*)?\s*=\s*["'])(https?:\/\/[^"']+)(["'])/g, (match, p1, p2, p3) => {
-            if (/[^\x00-\x7F]/.test(p2)) {
-                try {
-                    const url = new URL(p2);
-                    wasFixed = true;
-                    return p1 + url.href + p3;
-                } catch (e) {
-                    console.warn(`Не удалось обработать URL "${p2}" через new URL API, используется encodeURI. Ошибка: ${e.message}`);
-                    wasFixed = true;
-                    return p1 + encodeURI(p2) + p3;
+        fixedXml = fixedXml.replace(
+            /(xmlns(?::[^=]*)?\s*=\s*["'])(https?:\/\/[^"']+)(["'])/g,
+            (match, p1, p2, p3) => {
+                if (/[^\x00-\x7F]/.test(p2)) {
+                    try {
+                        const url = new URL(p2);
+                        wasFixed = true;
+                        return p1 + url.href + p3;
+                    } catch (e) {
+                        console.warn(
+                            `Не удалось обработать URL "${p2}" через new URL API, используется encodeURI. Ошибка: ${e.message}`,
+                        );
+                        wasFixed = true;
+                        return p1 + encodeURI(p2) + p3;
+                    }
                 }
-            }
-            return match;
-        });
+                return match;
+            },
+        );
         return { fixedXml, wasFixed };
     }
-
 
     _slugify(str) {
         return String(str || '')
@@ -308,7 +419,6 @@ class ReportAnalyzerApp {
             .replace(/_{2,}/g, '_')
             .replace(/^_|_$/g, '');
     }
-
 
     initTheme() {
         const applyTheme = (theme) => {
@@ -329,10 +439,11 @@ class ReportAnalyzerApp {
             this.themeToggle.addEventListener('click', toggleTheme);
         }
 
-        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        const savedTheme =
+            localStorage.getItem('theme') ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         applyTheme(savedTheme);
     }
-
 
     handleFileSelect(event) {
         const file = event.target.files[0];
@@ -340,7 +451,6 @@ class ReportAnalyzerApp {
             this.readFileAndAnalyze(file);
         }
     }
-
 
     handleFileDrop(event) {
         event.preventDefault();
@@ -350,7 +460,6 @@ class ReportAnalyzerApp {
             this.readFileAndAnalyze(file);
         }
     }
-
 
     async readFileAndAnalyze(file) {
         if (this.isAnalysisDone) {
@@ -374,7 +483,6 @@ class ReportAnalyzerApp {
             this.dataInputTextarea.value = content.data;
             this.switchInputMode('text');
             this.analyzeData();
-
         } catch (error) {
             this.showNotification(`Ошибка чтения файла: ${error.message}`, 'error');
             console.error('Ошибка при чтении файла через основной процесс:', error);
@@ -384,7 +492,6 @@ class ReportAnalyzerApp {
         }
     }
 
-
     handleAnalyzeButtonClick() {
         if (this.isAnalysisDone) {
             this.clearAnalysis();
@@ -393,11 +500,12 @@ class ReportAnalyzerApp {
         }
     }
 
-
     showNotification(message, type = 'error') {
         const container = this.getEl('notification-container');
         if (!container) {
-            console.error('Критическая ошибка: Контейнер для уведомлений #notification-container не найден в DOM!');
+            console.error(
+                'Критическая ошибка: Контейнер для уведомлений #notification-container не найден в DOM!',
+            );
             return;
         }
 
@@ -408,7 +516,8 @@ class ReportAnalyzerApp {
 
         const closeButton = document.createElement('button');
         closeButton.innerHTML = '×';
-        closeButton.className = 'absolute top-1 right-2 text-white font-bold text-xl hover:text-gray-200';
+        closeButton.className =
+            'absolute top-1 right-2 text-white font-bold text-xl hover:text-gray-200';
         closeButton.onclick = () => {
             notificationElement.classList.add('opacity-0', 'scale-90');
             setTimeout(() => notificationElement.remove(), 300);
@@ -425,7 +534,6 @@ class ReportAnalyzerApp {
             }
         }, 5000);
     }
-
 
     clearAnalysis() {
         const mainElement = this.root.querySelector('.xml-analyzer-shell');
@@ -482,7 +590,6 @@ class ReportAnalyzerApp {
         this.updateAnalyzeButtonState();
     }
 
-
     _createCertificateStatusField(certData) {
         if (!certData || !certData.thumbprint) {
             return this.createField('Отпечаток:', 'Сертификат не найден в данных', 'error');
@@ -515,7 +622,6 @@ class ReportAnalyzerApp {
         return this.createField('Отпечаток:', valueHtml, statusType);
     }
 
-
     async handleAppClicks(event) {
         const downloadButton = event.target.closest('.download-cert-btn');
         if (downloadButton && !downloadButton.disabled) {
@@ -529,7 +635,9 @@ class ReportAnalyzerApp {
                 const fileName = `certificate_${this._slugify(cert.orgName || cert.ownerFio || thumbprint)}.cer`;
                 this.downloadFileFromBase64(cert.base64, fileName, 'application/x-x509-ca-cert');
             } else {
-                this.showNotification('Критическая ошибка: данные сертификата для скачивания не найдены.');
+                this.showNotification(
+                    'Критическая ошибка: данные сертификата для скачивания не найдены.',
+                );
             }
             return;
         }
@@ -556,7 +664,7 @@ class ReportAnalyzerApp {
                     viewer.style.display = 'none';
                     sedoRow.classList.remove('bg-sky-100', 'dark:bg-sky-900/50');
                 } else {
-                    this.root.querySelectorAll('.sedo-message-row.bg-sky-100').forEach(row => {
+                    this.root.querySelectorAll('.sedo-message-row.bg-sky-100').forEach((row) => {
                         row.classList.remove('bg-sky-100', 'dark:bg-sky-900/50');
                     });
 
@@ -571,9 +679,12 @@ class ReportAnalyzerApp {
         }
     }
 
-
     _createAccordion(title, content, isOpen = false) {
-        if (!content || (typeof content === 'string' && !content.trim()) || (content.nodeType && !content.hasChildNodes())) {
+        if (
+            !content ||
+            (typeof content === 'string' && !content.trim()) ||
+            (content.nodeType && !content.hasChildNodes())
+        ) {
             return document.createDocumentFragment();
         }
 
@@ -600,19 +711,18 @@ class ReportAnalyzerApp {
         return clone;
     }
 
-
     sanitizeText(text) {
         const element = document.createElement('div');
         element.innerText = text;
         return element.innerHTML;
     }
 
-
     getText(parent, tagName, namespace = null) {
-        const elements = namespace ? parent.getElementsByTagNameNS(namespace, tagName) : parent.getElementsByTagName(tagName);
+        const elements = namespace
+            ? parent.getElementsByTagNameNS(namespace, tagName)
+            : parent.getElementsByTagName(tagName);
         return elements[0] ? elements[0].textContent.trim() : '';
     }
-
 
     createField(label, value, type = 'default') {
         if (value === null || value === undefined || String(value).trim() === '') {
@@ -639,12 +749,12 @@ class ReportAnalyzerApp {
         }
 
         if (type === 'success') valueEl.classList.add('text-green-600', 'dark:text-green-400');
-        if (type === 'error') valueEl.classList.add('text-red-600', 'dark:text-red-400', 'font-semibold');
+        if (type === 'error')
+            valueEl.classList.add('text-red-600', 'dark:text-red-400', 'font-semibold');
         if (type === 'warning') valueEl.classList.add('text-amber-600', 'dark:text-amber-400');
 
         return clone;
     }
-
 
     async downloadFileFromBase64(base64Data, fileName, mimeType = 'application/octet-stream') {
         try {
@@ -660,13 +770,13 @@ class ReportAnalyzerApp {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
-
         } catch (e) {
-            console.error("Ошибка при скачивании файла:", e);
-            this.showNotification(`Не удалось скачать файл. Данные сертификата могут быть повреждены. Ошибка: ${e.message}`);
+            console.error('Ошибка при скачивании файла:', e);
+            this.showNotification(
+                `Не удалось скачать файл. Данные сертификата могут быть повреждены. Ошибка: ${e.message}`,
+            );
         }
     }
-
 
     addOrUpdateCertificate(certData) {
         if (!certData || !certData.thumbprint) {
@@ -682,7 +792,6 @@ class ReportAnalyzerApp {
         this.certificates.set(thumbprint, updatedCert);
     }
 
-
     parseRegistrationFileData(xmlDoc) {
         const root = xmlDoc.documentElement;
         const владелец = root.querySelector('ВладелецЭЦП');
@@ -693,8 +802,10 @@ class ReportAnalyzerApp {
             orgName: this.getText(root, 'ПолноеНаименование'),
             inn: this.getText(root, 'ИНН'),
             kpp: this.getText(root, 'КПП'),
-            ownerFio: фио ? `${фио.getAttribute('Фамилия')} ${фио.getAttribute('Имя')} ${фио.getAttribute('Отчество')}`.trim() : '',
-            base64: null
+            ownerFio: фио
+                ? `${фио.getAttribute('Фамилия')} ${фио.getAttribute('Имя')} ${фио.getAttribute('Отчество')}`.trim()
+                : '',
+            base64: null,
         };
 
         if (certData.thumbprint) {
@@ -704,10 +815,12 @@ class ReportAnalyzerApp {
         return null;
     }
 
-
     async parseStatementData(xmlDoc) {
         const root = xmlDoc.documentElement;
-        const base64Cert = this.getText(root.querySelector('ВладельцыЭЦП ВладелецЭЦП'), 'СертификатСУЦ');
+        const base64Cert = this.getText(
+            root.querySelector('ВладельцыЭЦП ВладелецЭЦП'),
+            'СертификатСУЦ',
+        );
 
         if (!base64Cert) {
             console.error('В файле Заявления не найдено тело сертификата (тег СертификатСУЦ).');
@@ -731,18 +844,19 @@ class ReportAnalyzerApp {
             issuer,
             ownerFio: subject.CN || subject.SN || 'Не найден',
             orgName: subject.O || 'Не найдена',
-            inn: subject.INN || this.getText(root, 'ИНН')
+            inn: subject.INN || this.getText(root, 'ИНН'),
         };
 
         this.addOrUpdateCertificate(certData);
         return certData.thumbprint;
     }
 
-
     showCertificateDetails(thumbprint) {
         const certData = this.certificates.get(thumbprint.toUpperCase());
         if (!certData) {
-            this.showNotification('Не удалось найти данные для сертификата с отпечатком: ' + thumbprint);
+            this.showNotification(
+                'Не удалось найти данные для сертификата с отпечатком: ' + thumbprint,
+            );
             return;
         }
 
@@ -752,7 +866,9 @@ class ReportAnalyzerApp {
         const formatDate = (dateValue) => {
             if (!dateValue) return 'Не указана';
             const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
-            return !isNaN(date.getTime()) ? date.toLocaleString('ru-RU', { dateStyle: 'long', timeStyle: 'medium' }) : 'Неверная дата';
+            return !isNaN(date.getTime())
+                ? date.toLocaleString('ru-RU', { dateStyle: 'long', timeStyle: 'medium' })
+                : 'Неверная дата';
         };
 
         const cert = certData.certObject || {
@@ -762,12 +878,13 @@ class ReportAnalyzerApp {
             serialNumber: certData.serialNumber || 'N/A',
             validity: certData.validity || { notBefore: null, notAfter: null },
             extensions: certData.extensions || [],
-            version: certData.version || 'N/A'
+            version: certData.version || 'N/A',
         };
 
         if (certData.parseError) {
             const errorDiv = document.createElement('div');
-            errorDiv.className = 'p-3 mb-4 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300';
+            errorDiv.className =
+                'p-3 mb-4 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300';
             errorDiv.innerHTML = `<p class="font-bold">Внимание!</p><p>${this.sanitizeText(certData.parseError)}</p>`;
             container.appendChild(errorDiv);
         }
@@ -779,7 +896,8 @@ class ReportAnalyzerApp {
             details.open = isOpen;
 
             const summary = document.createElement('summary');
-            summary.className = 'font-bold text-lg mb-2 text-slate-800 dark:text-slate-100 cursor-pointer list-none';
+            summary.className =
+                'font-bold text-lg mb-2 text-slate-800 dark:text-slate-100 cursor-pointer list-none';
             summary.innerHTML = `<span class="flex items-center gap-2">${this.sanitizeText(title)} <svg class="w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>`;
             summary.onclick = (e) => {
                 e.preventDefault();
@@ -788,9 +906,10 @@ class ReportAnalyzerApp {
             };
 
             const contentDiv = document.createElement('div');
-            contentDiv.className = 'pl-4 border-l-2 border-slate-300 dark:border-slate-700 space-y-1';
+            contentDiv.className =
+                'pl-4 border-l-2 border-slate-300 dark:border-slate-700 space-y-1';
 
-            fields.forEach(fieldFragment => {
+            fields.forEach((fieldFragment) => {
                 if (fieldFragment.hasChildNodes()) {
                     contentDiv.appendChild(fieldFragment);
                 }
@@ -807,23 +926,34 @@ class ReportAnalyzerApp {
         // Секция "Общая информация"
         const generalFields = [
             this.createField('Отпечаток (SHA-1)', cert.thumbprint),
-            this.createField('Серийный номер', cert.serialNumber.replace(/(.{2})/g, '$1:').slice(0, -1)),
+            this.createField(
+                'Серийный номер',
+                cert.serialNumber.replace(/(.{2})/g, '$1:').slice(0, -1),
+            ),
             this.createField('Версия', cert.version),
             this.createField('Действителен с', formatDate(cert.validity.notBefore)),
-            this.createField('Действителен по', formatDate(cert.validity.notAfter))
+            this.createField('Действителен по', formatDate(cert.validity.notAfter)),
         ];
         const generalSection = createSection('Общая информация', generalFields, true);
         if (generalSection) container.appendChild(generalSection);
 
         // Секция "Субъект"
-        const subjectFieldsData = certData.certObject ? cert.subject.attributes : Object.entries(cert.subject).map(([key, value]) => ({ shortName: key, value }));
-        const subjectFields = subjectFieldsData.map(attr => this.createField(attr.shortName || attr.type, attr.value));
+        const subjectFieldsData = certData.certObject
+            ? cert.subject.attributes
+            : Object.entries(cert.subject).map(([key, value]) => ({ shortName: key, value }));
+        const subjectFields = subjectFieldsData.map((attr) =>
+            this.createField(attr.shortName || attr.type, attr.value),
+        );
         const subjectSection = createSection('Субъект (Кому выдан)', subjectFields, true);
         if (subjectSection) container.appendChild(subjectSection);
 
         // Секция "Издатель"
-        const issuerFieldsData = certData.certObject ? cert.issuer.attributes : Object.entries(cert.issuer).map(([key, value]) => ({ shortName: key, value }));
-        const issuerFields = issuerFieldsData.map(attr => this.createField(attr.shortName || attr.type, attr.value));
+        const issuerFieldsData = certData.certObject
+            ? cert.issuer.attributes
+            : Object.entries(cert.issuer).map(([key, value]) => ({ shortName: key, value }));
+        const issuerFields = issuerFieldsData.map((attr) =>
+            this.createField(attr.shortName || attr.type, attr.value),
+        );
         const issuerSection = createSection('Издатель (Кем выдан)', issuerFields, true);
         if (issuerSection) container.appendChild(issuerSection);
 
@@ -834,13 +964,11 @@ class ReportAnalyzerApp {
         this.modalOverlay.classList.add('flex');
     }
 
-
     hideCertificateDetails() {
         this.modalOverlay.classList.add('hidden');
         this.modalOverlay.classList.remove('flex');
         this.modalContentTarget.innerHTML = '';
     }
-
 
     buildCertificateChain(targetCert) {
         let chain = [targetCert];
@@ -853,15 +981,22 @@ class ReportAnalyzerApp {
                 break;
             }
 
-            const authorityKeyIdExt = currentCert.extensions.find(e => e.name === 'authorityKeyIdentifier');
+            const authorityKeyIdExt = currentCert.extensions.find(
+                (e) => e.name === 'authorityKeyIdentifier',
+            );
             const authorityKeyId = authorityKeyIdExt ? authorityKeyIdExt.keyIdentifier : null;
 
             let issuerCert = null;
             if (authorityKeyId) {
                 for (const [, certData] of this.certificates.entries()) {
                     if (certData.certObject) {
-                        const subjectKeyIdExt = certData.certObject.extensions.find(e => e.name === 'subjectKeyIdentifier');
-                        if (subjectKeyIdExt && subjectKeyIdExt.subjectKeyIdentifier === authorityKeyId) {
+                        const subjectKeyIdExt = certData.certObject.extensions.find(
+                            (e) => e.name === 'subjectKeyIdentifier',
+                        );
+                        if (
+                            subjectKeyIdExt &&
+                            subjectKeyIdExt.subjectKeyIdentifier === authorityKeyId
+                        ) {
                             issuerCert = certData.certObject;
                             break;
                         }
@@ -871,7 +1006,10 @@ class ReportAnalyzerApp {
 
             if (!issuerCert) {
                 for (const [, certData] of this.certificates.entries()) {
-                    if (certData.certObject && certData.certObject.subject.hash === currentCert.issuer.hash) {
+                    if (
+                        certData.certObject &&
+                        certData.certObject.subject.hash === currentCert.issuer.hash
+                    ) {
                         issuerCert = certData.certObject;
                         break;
                     }
@@ -888,7 +1026,6 @@ class ReportAnalyzerApp {
         }
         return chain;
     }
-
 
     async handleExportAllCerts() {
         this.exportZipBtn.disabled = true;
@@ -913,35 +1050,42 @@ class ReportAnalyzerApp {
 
                     certsToExport.push({
                         fileName: fileName,
-                        base64: certData.base64
+                        base64: certData.base64,
                     });
                 }
             });
 
             if (certsToExport.length === 0) {
-                this.showNotification('Нет сертификатов для экспорта. Проанализируйте файлы, содержащие сертификаты.', 'error');
+                this.showNotification(
+                    'Нет сертификатов для экспорта. Проанализируйте файлы, содержащие сертификаты.',
+                    'error',
+                );
                 return;
             }
 
             const result = await window.electronAPI.exportCertsToZip(certsToExport);
             if (result.success) {
-                const msg = result.path ? `Сертификаты (${certsToExport.length} шт.) успешно экспортированы в:\n${result.path}` : `Сертификаты (${certsToExport.length} шт.) успешно экспортированы.`;
+                const msg = result.path
+                    ? `Сертификаты (${certsToExport.length} шт.) успешно экспортированы в:\n${result.path}`
+                    : `Сертификаты (${certsToExport.length} шт.) успешно экспортированы.`;
                 this.showNotification(msg, 'success');
             } else if (!result.message.includes('canceled')) {
                 throw new Error(result.message);
             }
         } catch (error) {
             console.error('Ошибка экспорта:', error);
-            this.showNotification(`Не удалось экспортировать сертификаты: ${error.message}`, 'error');
+            this.showNotification(
+                `Не удалось экспортировать сертификаты: ${error.message}`,
+                'error',
+            );
         } finally {
             this.exportZipBtn.disabled = false;
             this.exportZipBtn.textContent = 'Экспортировать все в ZIP';
         }
     }
 
-
     switchInputMode(mode) {
-        this.modeToggleButtons.forEach(button => {
+        this.modeToggleButtons.forEach((button) => {
             button.classList.remove('active');
             if (button.dataset.mode === mode) {
                 button.classList.add('active');
@@ -967,7 +1111,6 @@ class ReportAnalyzerApp {
             }
         }
     }
-
 
     async analyzeData() {
         let rawData = this.dataInputTextarea.value.trim();
@@ -1000,8 +1143,7 @@ class ReportAnalyzerApp {
                     this.finalizeAnalysis(analysisResultNode);
                     return;
                 }
-            } catch (jsonError) {
-            }
+            } catch (jsonError) {}
 
             let xmlStartIndex = rawData.indexOf('<?xml');
             if (xmlStartIndex === -1) xmlStartIndex = rawData.indexOf('<');
@@ -1012,11 +1154,13 @@ class ReportAnalyzerApp {
 
             const { fixedXml, wasFixed } = this._fixBrokenUriEncoding(rawData);
             const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(fixedXml, "application/xml");
+            const xmlDoc = parser.parseFromString(fixedXml, 'application/xml');
 
-            if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
-                const errorNode = xmlDoc.getElementsByTagName("parsererror")[0];
-                throw new Error(`Ошибка разбора XML: ${errorNode ? errorNode.textContent : "Неверный формат."}`);
+            if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                const errorNode = xmlDoc.getElementsByTagName('parsererror')[0];
+                throw new Error(
+                    `Ошибка разбора XML: ${errorNode ? errorNode.textContent : 'Неверный формат.'}`,
+                );
             }
 
             const signatureCertData = await this._tryParseSignatureCertificate(xmlDoc);
@@ -1034,7 +1178,8 @@ class ReportAnalyzerApp {
                         analysisResultNode = this._renderRegistrationFileReport(regFileData);
                         break;
                     case 'Заявление':
-                        const { data: statementData, cert: certObject } = await this._parseStatement(xmlDoc);
+                        const { data: statementData, cert: certObject } =
+                            await this._parseStatement(xmlDoc);
                         analysisResultNode = this._renderStatementReport(statementData, certObject);
                         break;
                     case 'ЭДПФР':
@@ -1046,30 +1191,44 @@ class ReportAnalyzerApp {
                             analysisResultNode = this._renderSzvTdReport(szvTdData);
                         } else if (xmlDoc.querySelector('ЗПЭД')) {
                             const zpedData = this._parseZped(xmlDoc);
-                            analysisResultNode = this._renderZpedReport(zpedData, signatureCertData);
+                            analysisResultNode = this._renderZpedReport(
+                                zpedData,
+                                signatureCertData,
+                            );
                         } else {
-                            const knownTags = Array.from(xmlDoc.documentElement.children).map(node => node.tagName).join(', ');
-                            warnings.push(`Этот файл формата ЭДПФР содержит тип отчета, который пока не поддерживается для детального анализа (найдены теги: ${knownTags}). Отображена только базовая информация и сертификат подписи.`);
+                            const knownTags = Array.from(xmlDoc.documentElement.children)
+                                .map((node) => node.tagName)
+                                .join(', ');
+                            warnings.push(
+                                `Этот файл формата ЭДПФР содержит тип отчета, который пока не поддерживается для детального анализа (найдены теги: ${knownTags}). Отображена только базовая информация и сертификат подписи.`,
+                            );
                         }
                         break;
                     default:
-                        warnings.push(`Обнаружен неизвестный или неподдерживаемый тип отчета с корневым элементом <${rootTag}>. Отображена только базовая информация и сертификат подписи.`);
+                        warnings.push(
+                            `Обнаружен неизвестный или неподдерживаемый тип отчета с корневым элементом <${rootTag}>. Отображена только базовая информация и сертификат подписи.`,
+                        );
                         break;
                 }
             } catch (deepParseException) {
                 console.warn('Ошибка детального анализа:', deepParseException);
-                warnings.push(`При углубленном анализе отчета произошла ошибка: ${deepParseException.message}`);
+                warnings.push(
+                    `При углубленном анализе отчета произошла ошибка: ${deepParseException.message}`,
+                );
             }
 
             if (!analysisResultNode) {
-                analysisResultNode = this._renderGenericReport(basicInfo, signatureCertData, warnings);
+                analysisResultNode = this._renderGenericReport(
+                    basicInfo,
+                    signatureCertData,
+                    warnings,
+                );
             } else if (warnings.length > 0) {
                 const warningsNode = this._createWarningsNode(warnings);
                 analysisResultNode.prepend(warningsNode);
             }
-
         } catch (e) {
-            console.error("Критическая ошибка анализа:", e);
+            console.error('Критическая ошибка анализа:', e);
             const errorDiv = document.createElement('div');
             errorDiv.className = 'content-card text-red-700 dark:text-red-300 border-red-400';
             errorDiv.innerHTML = `<h3 class="text-h3 text-red-800 dark:text-red-200">Критическая ошибка анализа</h3><p>${this.sanitizeText(e.message)}</p><p>Пожалуйста, проверьте, что данные являются корректным XML или JSON файлом.</p>`;
@@ -1079,16 +1238,16 @@ class ReportAnalyzerApp {
         }
     }
 
-
     _parseZped(xmlDoc) {
         const data = {
             insurer: {},
             operator: {},
             representative: {},
-            serviceInfo: {}
+            serviceInfo: {},
         };
 
-        const getText = (parent, selector) => parent?.querySelector(selector)?.textContent.trim() || '';
+        const getText = (parent, selector) =>
+            parent?.querySelector(selector)?.textContent.trim() || '';
 
         const getFio = (parent) => {
             if (!parent) return '';
@@ -1145,7 +1304,6 @@ class ReportAnalyzerApp {
         return data;
     }
 
-
     _renderZpedReport(data, signatureCertData) {
         const wrapper = document.createElement('div');
         wrapper.className = 'analysis-container space-y-4';
@@ -1163,7 +1321,9 @@ class ReportAnalyzerApp {
         // --- СТРАХОВАТЕЛЬ ---
         const insurerContent = document.createDocumentFragment();
         insurerContent.appendChild(this.createField('Наименование:', data.insurer.name));
-        insurerContent.appendChild(this.createField('ИНН / КПП:', `${data.insurer.inn} / ${data.insurer.kpp}`));
+        insurerContent.appendChild(
+            this.createField('ИНН / КПП:', `${data.insurer.inn} / ${data.insurer.kpp}`),
+        );
         insurerContent.appendChild(this.createField('Рег. номер в СФР:', data.insurer.regNum));
         insurerContent.appendChild(this.createField('Телефон:', data.insurer.phone));
         insurerContent.appendChild(this.createField('Email:', data.insurer.email));
@@ -1178,7 +1338,9 @@ class ReportAnalyzerApp {
         // --- ОПЕРАТОР СВЯЗИ ---
         const operatorContent = document.createDocumentFragment();
         operatorContent.appendChild(this.createField('Наименование:', data.operator.shortName));
-        operatorContent.appendChild(this.createField('ИНН / КПП:', `${data.operator.inn} / ${data.operator.kpp}`));
+        operatorContent.appendChild(
+            this.createField('ИНН / КПП:', `${data.operator.inn} / ${data.operator.kpp}`),
+        );
         operatorContent.appendChild(this.createField('Рег. номер:', data.operator.regNum));
         wrapper.appendChild(this._createAccordion('Оператор связи', operatorContent, false));
 
@@ -1186,23 +1348,33 @@ class ReportAnalyzerApp {
         const signatureContent = document.createDocumentFragment();
         if (signatureCertData) {
             if (signatureCertData.parseFailed) {
-                signatureContent.appendChild(this.createField('Ошибка сертификата:', signatureCertData.error, 'error'));
+                signatureContent.appendChild(
+                    this.createField('Ошибка сертификата:', signatureCertData.error, 'error'),
+                );
             } else {
                 signatureContent.appendChild(this._createCertificateStatusField(signatureCertData));
 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'text-left mt-2';
-                buttonContainer.appendChild(this._createDownloadButtonForThumbprint(signatureCertData.thumbprint, 'Скачать сертификат подписи'));
+                buttonContainer.appendChild(
+                    this._createDownloadButtonForThumbprint(
+                        signatureCertData.thumbprint,
+                        'Скачать сертификат подписи',
+                    ),
+                );
                 signatureContent.appendChild(buttonContainer);
             }
         } else {
-            signatureContent.appendChild(this.createField('Сертификат подписи:', 'Не найден в файле', 'warning'));
+            signatureContent.appendChild(
+                this.createField('Сертификат подписи:', 'Не найден в файле', 'warning'),
+            );
         }
-        wrapper.appendChild(this._createAccordion('Сертификат электронной подписи', signatureContent, true));
+        wrapper.appendChild(
+            this._createAccordion('Сертификат электронной подписи', signatureContent, true),
+        );
 
         return wrapper;
     }
-
 
     _tryParseBasicInfo(xmlDoc) {
         const root = xmlDoc.documentElement;
@@ -1213,7 +1385,7 @@ class ReportAnalyzerApp {
             kpp: ['КПП'],
             regNumPFR: ['РегНомер', 'РегНомерПФР', 'РегНомерСтрахователя'],
             orgName: ['Наименование', 'НаименованиеОрганизации', 'КраткоеНаименование'],
-            fillDate: ['ДатаЗаполнения', 'ДатаВремяФормирования']
+            fillDate: ['ДатаЗаполнения', 'ДатаВремяФормирования'],
         };
 
         for (const key in selectors) {
@@ -1248,14 +1420,28 @@ class ReportAnalyzerApp {
         const content = document.createDocumentFragment();
 
         let hasBasicInfo = false;
-        if (basicInfo.orgName) { content.appendChild(this.createField('Наименование:', basicInfo.orgName)); hasBasicInfo = true; }
-        if (basicInfo.inn) { content.appendChild(this.createField('ИНН:', basicInfo.inn)); hasBasicInfo = true; }
-        if (basicInfo.kpp) { content.appendChild(this.createField('КПП:', basicInfo.kpp)); hasBasicInfo = true; }
-        if (basicInfo.regNumPFR) { content.appendChild(this.createField('Рег. номер в СФР/ПФР:', basicInfo.regNumPFR)); hasBasicInfo = true; }
+        if (basicInfo.orgName) {
+            content.appendChild(this.createField('Наименование:', basicInfo.orgName));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.inn) {
+            content.appendChild(this.createField('ИНН:', basicInfo.inn));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.kpp) {
+            content.appendChild(this.createField('КПП:', basicInfo.kpp));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.regNumPFR) {
+            content.appendChild(this.createField('Рег. номер в СФР/ПФР:', basicInfo.regNumPFR));
+            hasBasicInfo = true;
+        }
         if (basicInfo.fillDate) {
             const date = new Date(basicInfo.fillDate);
             if (!isNaN(date)) {
-                content.appendChild(this.createField('Дата документа:', date.toLocaleDateString('ru-RU')));
+                content.appendChild(
+                    this.createField('Дата документа:', date.toLocaleDateString('ru-RU')),
+                );
                 hasBasicInfo = true;
             }
         }
@@ -1263,7 +1449,8 @@ class ReportAnalyzerApp {
         if (!hasBasicInfo) {
             const p = document.createElement('p');
             p.className = 'text-sm text-slate-500 p-4 text-center';
-            p.textContent = 'Не удалось извлечь базовую информацию (ИНН, Наименование) из документа.';
+            p.textContent =
+                'Не удалось извлечь базовую информацию (ИНН, Наименование) из документа.';
             content.appendChild(p);
         }
 
@@ -1272,20 +1459,31 @@ class ReportAnalyzerApp {
         const certContent = document.createDocumentFragment();
         if (signatureCert) {
             if (signatureCert.parseFailed) {
-                certContent.appendChild(this.createField('Ошибка сертификата:', signatureCert.error, 'error'));
+                certContent.appendChild(
+                    this.createField('Ошибка сертификата:', signatureCert.error, 'error'),
+                );
             } else {
                 certContent.appendChild(this._createCertificateStatusField(signatureCert));
 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'text-left mt-2';
-                buttonContainer.appendChild(this._createDownloadButtonForThumbprint(signatureCert.thumbprint, 'Скачать сертификат подписи'));
+                buttonContainer.appendChild(
+                    this._createDownloadButtonForThumbprint(
+                        signatureCert.thumbprint,
+                        'Скачать сертификат подписи',
+                    ),
+                );
                 certContent.appendChild(buttonContainer);
             }
         } else {
-            certContent.appendChild(this.createField('Сертификат подписи:', 'Не найден в файле', 'warning'));
+            certContent.appendChild(
+                this.createField('Сертификат подписи:', 'Не найден в файле', 'warning'),
+            );
         }
 
-        wrapper.appendChild(this._createAccordion('Сертификат электронной подписи', certContent, true));
+        wrapper.appendChild(
+            this._createAccordion('Сертификат электронной подписи', certContent, true),
+        );
 
         return wrapper;
     }
@@ -1299,7 +1497,7 @@ class ReportAnalyzerApp {
             kpp: ['КПП'],
             regNumPFR: ['РегНомер', 'РегНомерПФР', 'РегНомерСтрахователя'],
             orgName: ['Наименование', 'НаименованиеОрганизации', 'КраткоеНаименование'],
-            fillDate: ['ДатаЗаполнения', 'ДатаВремяФормирования']
+            fillDate: ['ДатаЗаполнения', 'ДатаВремяФормирования'],
         };
 
         for (const key in selectors) {
@@ -1334,14 +1532,28 @@ class ReportAnalyzerApp {
         const content = document.createDocumentFragment();
 
         let hasBasicInfo = false;
-        if (basicInfo.orgName) { content.appendChild(this.createField('Наименование:', basicInfo.orgName)); hasBasicInfo = true; }
-        if (basicInfo.inn) { content.appendChild(this.createField('ИНН:', basicInfo.inn)); hasBasicInfo = true; }
-        if (basicInfo.kpp) { content.appendChild(this.createField('КПП:', basicInfo.kpp)); hasBasicInfo = true; }
-        if (basicInfo.regNumPFR) { content.appendChild(this.createField('Рег. номер в СФР/ПФР:', basicInfo.regNumPFR)); hasBasicInfo = true; }
+        if (basicInfo.orgName) {
+            content.appendChild(this.createField('Наименование:', basicInfo.orgName));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.inn) {
+            content.appendChild(this.createField('ИНН:', basicInfo.inn));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.kpp) {
+            content.appendChild(this.createField('КПП:', basicInfo.kpp));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.regNumPFR) {
+            content.appendChild(this.createField('Рег. номер в СФР/ПФР:', basicInfo.regNumPFR));
+            hasBasicInfo = true;
+        }
         if (basicInfo.fillDate) {
             const date = new Date(basicInfo.fillDate);
             if (!isNaN(date)) {
-                content.appendChild(this.createField('Дата документа:', date.toLocaleDateString('ru-RU')));
+                content.appendChild(
+                    this.createField('Дата документа:', date.toLocaleDateString('ru-RU')),
+                );
                 hasBasicInfo = true;
             }
         }
@@ -1349,7 +1561,8 @@ class ReportAnalyzerApp {
         if (!hasBasicInfo) {
             const p = document.createElement('p');
             p.className = 'text-sm text-slate-500 p-4 text-center';
-            p.textContent = 'Не удалось извлечь базовую информацию (ИНН, Наименование) из документа.';
+            p.textContent =
+                'Не удалось извлечь базовую информацию (ИНН, Наименование) из документа.';
             content.appendChild(p);
         }
 
@@ -1358,20 +1571,31 @@ class ReportAnalyzerApp {
         const certContent = document.createDocumentFragment();
         if (signatureCert) {
             if (signatureCert.parseFailed) {
-                certContent.appendChild(this.createField('Ошибка сертификата:', signatureCert.error, 'error'));
+                certContent.appendChild(
+                    this.createField('Ошибка сертификата:', signatureCert.error, 'error'),
+                );
             } else {
                 certContent.appendChild(this._createCertificateStatusField(signatureCert));
 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'text-left mt-2';
-                buttonContainer.appendChild(this._createDownloadButtonForThumbprint(signatureCert.thumbprint, 'Скачать сертификат подписи'));
+                buttonContainer.appendChild(
+                    this._createDownloadButtonForThumbprint(
+                        signatureCert.thumbprint,
+                        'Скачать сертификат подписи',
+                    ),
+                );
                 certContent.appendChild(buttonContainer);
             }
         } else {
-            certContent.appendChild(this.createField('Сертификат подписи:', 'Не найден в файле', 'warning'));
+            certContent.appendChild(
+                this.createField('Сертификат подписи:', 'Не найден в файле', 'warning'),
+            );
         }
 
-        wrapper.appendChild(this._createAccordion('Сертификат электронной подписи', certContent, true));
+        wrapper.appendChild(
+            this._createAccordion('Сертификат электронной подписи', certContent, true),
+        );
 
         return wrapper;
     }
@@ -1382,7 +1606,7 @@ class ReportAnalyzerApp {
         if (analysisResultNode) {
             this.outputArea.appendChild(analysisResultNode);
         } else {
-            throw new Error("Не удалось сформировать узел для отображения результата.");
+            throw new Error('Не удалось сформировать узел для отображения результата.');
         }
 
         if (this.modeToggleContainer) {
@@ -1414,7 +1638,8 @@ class ReportAnalyzerApp {
         if (!warnings || warnings.length === 0) return document.createDocumentFragment();
 
         const container = document.createElement('div');
-        container.className = 'p-4 mb-4 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300';
+        container.className =
+            'p-4 mb-4 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300';
 
         const title = document.createElement('h4');
         title.className = 'font-bold mb-2';
@@ -1423,7 +1648,7 @@ class ReportAnalyzerApp {
 
         const list = document.createElement('ul');
         list.className = 'list-disc list-inside space-y-1 text-sm';
-        warnings.forEach(msg => {
+        warnings.forEach((msg) => {
             const item = document.createElement('li');
             item.textContent = this.sanitizeText(msg);
             list.appendChild(item);
@@ -1454,7 +1679,10 @@ class ReportAnalyzerApp {
                     }
                 }
             } catch (e) {
-                console.warn("Поиск сертификата через getElementsByTagNameNS не сработал:", e.message);
+                console.warn(
+                    'Поиск сертификата через getElementsByTagNameNS не сработал:',
+                    e.message,
+                );
             }
         }
 
@@ -1467,7 +1695,7 @@ class ReportAnalyzerApp {
                         thumbprint: parsed.thumbprint,
                         base64: base64Cert,
                         source: 'XML-подпись документа',
-                        ...parsed
+                        ...parsed,
                     };
                     this.addOrUpdateCertificate(certData);
                     return certData;
@@ -1490,7 +1718,7 @@ class ReportAnalyzerApp {
             kpp: ['КПП'],
             regNumPFR: ['РегНомер', 'РегНомерПФР', 'РегНомерСтрахователя'],
             orgName: ['Наименование', 'НаименованиеОрганизации', 'КраткоеНаименование'],
-            fillDate: ['ДатаЗаполнения', 'ДатаВремяФормирования']
+            fillDate: ['ДатаЗаполнения', 'ДатаВремяФормирования'],
         };
 
         for (const key in selectors) {
@@ -1520,14 +1748,28 @@ class ReportAnalyzerApp {
         const content = document.createDocumentFragment();
 
         let hasBasicInfo = false;
-        if (basicInfo.orgName) { content.appendChild(this.createField('Наименование:', basicInfo.orgName)); hasBasicInfo = true; }
-        if (basicInfo.inn) { content.appendChild(this.createField('ИНН:', basicInfo.inn)); hasBasicInfo = true; }
-        if (basicInfo.kpp) { content.appendChild(this.createField('КПП:', basicInfo.kpp)); hasBasicInfo = true; }
-        if (basicInfo.regNumPFR) { content.appendChild(this.createField('Рег. номер в СФР/ПФР:', basicInfo.regNumPFR)); hasBasicInfo = true; }
+        if (basicInfo.orgName) {
+            content.appendChild(this.createField('Наименование:', basicInfo.orgName));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.inn) {
+            content.appendChild(this.createField('ИНН:', basicInfo.inn));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.kpp) {
+            content.appendChild(this.createField('КПП:', basicInfo.kpp));
+            hasBasicInfo = true;
+        }
+        if (basicInfo.regNumPFR) {
+            content.appendChild(this.createField('Рег. номер в СФР/ПФР:', basicInfo.regNumPFR));
+            hasBasicInfo = true;
+        }
         if (basicInfo.fillDate) {
             const date = new Date(basicInfo.fillDate);
             if (!isNaN(date)) {
-                content.appendChild(this.createField('Дата документа:', date.toLocaleDateString('ru-RU')));
+                content.appendChild(
+                    this.createField('Дата документа:', date.toLocaleDateString('ru-RU')),
+                );
                 hasBasicInfo = true;
             }
         }
@@ -1535,7 +1777,8 @@ class ReportAnalyzerApp {
         if (!hasBasicInfo) {
             const p = document.createElement('p');
             p.className = 'text-sm text-slate-500 p-4 text-center';
-            p.textContent = 'Не удалось извлечь базовую информацию (ИНН, Наименование) из документа.';
+            p.textContent =
+                'Не удалось извлечь базовую информацию (ИНН, Наименование) из документа.';
             content.appendChild(p);
         }
 
@@ -1544,24 +1787,34 @@ class ReportAnalyzerApp {
         const certContent = document.createDocumentFragment();
         if (signatureCert) {
             if (signatureCert.parseFailed) {
-                certContent.appendChild(this.createField('Ошибка сертификата:', signatureCert.error, 'error'));
+                certContent.appendChild(
+                    this.createField('Ошибка сертификата:', signatureCert.error, 'error'),
+                );
             } else {
                 certContent.appendChild(this._createCertificateStatusField(signatureCert));
 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'text-left mt-2';
-                buttonContainer.appendChild(this._createDownloadButtonForThumbprint(signatureCert.thumbprint, 'Скачать сертификат подписи'));
+                buttonContainer.appendChild(
+                    this._createDownloadButtonForThumbprint(
+                        signatureCert.thumbprint,
+                        'Скачать сертификат подписи',
+                    ),
+                );
                 certContent.appendChild(buttonContainer);
             }
         } else {
-            certContent.appendChild(this.createField('Сертификат подписи:', 'Не найден в файле', 'warning'));
+            certContent.appendChild(
+                this.createField('Сертификат подписи:', 'Не найден в файле', 'warning'),
+            );
         }
 
-        wrapper.appendChild(this._createAccordion('Сертификат электронной подписи', certContent, true));
+        wrapper.appendChild(
+            this._createAccordion('Сертификат электронной подписи', certContent, true),
+        );
 
         return wrapper;
     }
-
 
     async _parseEfs1(xmlDoc) {
         const efs1Node = xmlDoc.querySelector('ЕФС-1');
@@ -1574,7 +1827,7 @@ class ReportAnalyzerApp {
             oss: null,
             manager: {},
             fillDate: efs1Node.querySelector('ДатаЗаполнения')?.textContent.trim() || '',
-            signatureCert: null
+            signatureCert: null,
         };
 
         const getText = (node, selector) => node?.querySelector(selector)?.textContent.trim() || '';
@@ -1627,7 +1880,7 @@ class ReportAnalyzerApp {
                         thumbprint: parsed.thumbprint,
                         base64: base64Cert,
                         source: 'ЕФС-1 (подпись)',
-                        ...parsed
+                        ...parsed,
                     };
                     this.addOrUpdateCertificate(certData);
                     data.signatureCert = certData;
@@ -1639,7 +1892,6 @@ class ReportAnalyzerApp {
 
         return data;
     }
-
 
     _renderEfs1Report(data) {
         const wrapper = document.createElement('div');
@@ -1666,18 +1918,37 @@ class ReportAnalyzerApp {
         if (data.oss) {
             const ossContent = document.createDocumentFragment();
             ossContent.appendChild(this.createField('Отчетный период:', data.oss.period));
-            ossContent.appendChild(this.createField('Среднесписочная численность:', data.oss.employeeCount));
-            ossContent.appendChild(this.createField('База для исчисления взносов:', data.oss.calcBase));
-            ossContent.appendChild(this.createField('Исчислено взносов:', data.oss.calcContributions));
+            ossContent.appendChild(
+                this.createField('Среднесписочная численность:', data.oss.employeeCount),
+            );
+            ossContent.appendChild(
+                this.createField('База для исчисления взносов:', data.oss.calcBase),
+            );
+            ossContent.appendChild(
+                this.createField('Исчислено взносов:', data.oss.calcContributions),
+            );
             ossContent.appendChild(this.createField('Тариф:', data.oss.tariff));
-            wrapper.appendChild(this._createAccordion('Сведения о взносах на травматизм (Раздел 2)', ossContent, true));
+            wrapper.appendChild(
+                this._createAccordion(
+                    'Сведения о взносах на травматизм (Раздел 2)',
+                    ossContent,
+                    true,
+                ),
+            );
         } else {
             const warningFragment = document.createDocumentFragment();
             const p = document.createElement('p');
             p.className = 'text-sm text-slate-500 p-4';
-            p.textContent = 'Раздел 2 (сведения о взносах на травматизм) в данном отчете отсутствует.';
+            p.textContent =
+                'Раздел 2 (сведения о взносах на травматизм) в данном отчете отсутствует.';
             warningFragment.appendChild(p);
-            wrapper.appendChild(this._createAccordion('Сведения о взносах на травматизм (Раздел 2)', warningFragment, false));
+            wrapper.appendChild(
+                this._createAccordion(
+                    'Сведения о взносах на травматизм (Раздел 2)',
+                    warningFragment,
+                    false,
+                ),
+            );
         }
 
         // --- ПОДПИСАНТ И СЕРТИФИКАТ ---
@@ -1687,30 +1958,37 @@ class ReportAnalyzerApp {
 
         if (data.signatureCert) {
             if (data.signatureCert.parseFailed) {
-                managerContent.appendChild(this.createField('Ошибка сертификата:', data.signatureCert.error, 'error'));
+                managerContent.appendChild(
+                    this.createField('Ошибка сертификата:', data.signatureCert.error, 'error'),
+                );
             } else {
                 managerContent.appendChild(this._createCertificateStatusField(data.signatureCert));
 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'text-left mt-2';
-                buttonContainer.appendChild(this._createDownloadButtonForThumbprint(data.signatureCert.thumbprint, 'Скачать сертификат подписи'));
+                buttonContainer.appendChild(
+                    this._createDownloadButtonForThumbprint(
+                        data.signatureCert.thumbprint,
+                        'Скачать сертификат подписи',
+                    ),
+                );
                 managerContent.appendChild(buttonContainer);
             }
         } else {
-            managerContent.appendChild(this.createField('Сертификат подписи:', 'Не найден в XML-файле', 'warning'));
+            managerContent.appendChild(
+                this.createField('Сертификат подписи:', 'Не найден в XML-файле', 'warning'),
+            );
         }
         wrapper.appendChild(this._createAccordion('Подписант отчета', managerContent, true));
 
         return wrapper;
     }
 
-
     _getTextNs(parent, tagName, namespace) {
         if (!parent) return '';
         const elements = parent.getElementsByTagNameNS(namespace, tagName);
         return elements[0] ? elements[0].textContent.trim() : '';
     }
-
 
     async _parseSzvTd(xmlDoc) {
         const szvTdNode = xmlDoc.querySelector('СЗВ-ТД');
@@ -1725,7 +2003,7 @@ class ReportAnalyzerApp {
             events: [],
             manager: {},
             fillDate: this.getText(szvTdNode, 'ДатаЗаполнения'),
-            signatureCert: null
+            signatureCert: null,
         };
 
         // Работодатель
@@ -1735,7 +2013,7 @@ class ReportAnalyzerApp {
                 regNum: this._getTextNs(employerNode, 'РегНомер', nsUt2),
                 name: this.getText(employerNode, 'НаименованиеОрганизации'),
                 inn: this._getTextNs(employerNode, 'ИНН', nsUt2),
-                kpp: this._getTextNs(employerNode, 'КПП', nsUt2)
+                kpp: this._getTextNs(employerNode, 'КПП', nsUt2),
             };
         }
 
@@ -1744,11 +2022,13 @@ class ReportAnalyzerApp {
         if (employeeNode) {
             const fioNode = employeeNode.querySelector('ФИО');
             data.employee = {
-                fio: fioNode ? {
-                    lastName: this._getTextNs(fioNode, 'Фамилия', nsUt2),
-                    firstName: this._getTextNs(fioNode, 'Имя', nsUt2),
-                    middleName: this._getTextNs(fioNode, 'Отчество', nsUt2),
-                } : {},
+                fio: fioNode
+                    ? {
+                          lastName: this._getTextNs(fioNode, 'Фамилия', nsUt2),
+                          firstName: this._getTextNs(fioNode, 'Имя', nsUt2),
+                          middleName: this._getTextNs(fioNode, 'Отчество', nsUt2),
+                      }
+                    : {},
                 birthDate: this.getText(employeeNode, 'ДатаРождения'),
                 snils: this._getTextNs(employeeNode, 'СНИЛС', nsUt2),
             };
@@ -1756,23 +2036,27 @@ class ReportAnalyzerApp {
 
         // Мероприятия
         const eventNodes = szvTdNode.querySelectorAll('ТрудоваяДеятельность Мероприятие');
-        const eventTypeMap = { '1': 'ПРИЕМ', '2': 'ПЕРЕВОД', '5': 'УВОЛЬНЕНИЕ' };
+        const eventTypeMap = { 1: 'ПРИЕМ', 2: 'ПЕРЕВОД', 5: 'УВОЛЬНЕНИЕ' };
 
-        eventNodes.forEach(eventNode => {
+        eventNodes.forEach((eventNode) => {
             const baseNode = eventNode.querySelector('Основание');
             data.events.push({
                 uuid: this.getText(eventNode, 'UUID: '),
                 date: this.getText(eventNode, 'Дата: '),
-                type: eventTypeMap[this.getText(eventNode, 'Вид: ')] || `Вид ${this.getText(eventNode, 'Вид: ')}`,
+                type:
+                    eventTypeMap[this.getText(eventNode, 'Вид: ')] ||
+                    `Вид ${this.getText(eventNode, 'Вид: ')}`,
                 position: this.getText(eventNode, 'Должность'),
                 isPartTime: this.getText(eventNode, 'ЯвляетсяСовместителем: ') === '1',
                 department: this.getText(eventNode, 'СтруктурноеПодразделение: '),
                 okzCode: this.getText(eventNode, 'КодВФпоОКЗ: '),
-                baseDocument: baseNode ? {
-                    name: this.getText(baseNode, 'Наименование: '),
-                    date: this.getText(baseNode, 'Дата: '),
-                    number: this.getText(baseNode, 'Номер: ')
-                } : null
+                baseDocument: baseNode
+                    ? {
+                          name: this.getText(baseNode, 'Наименование: '),
+                          date: this.getText(baseNode, 'Дата: '),
+                          number: this.getText(baseNode, 'Номер: '),
+                      }
+                    : null,
             });
         });
 
@@ -1781,12 +2065,14 @@ class ReportAnalyzerApp {
         if (managerNode) {
             const fioNode = managerNode.querySelector('ФИО: ');
             data.manager = {
-                fio: fioNode ? {
-                    lastName: this._getTextNs(fioNode, 'Фамилия: ', nsUt2),
-                    firstName: this._getTextNs(fioNode, 'Имя: ', nsUt2),
-                    middleName: this._getTextNs(fioNode, 'Отчество: ', nsUt2),
-                } : {},
-                position: this._getTextNs(managerNode, 'Должность: ', nsUt2)
+                fio: fioNode
+                    ? {
+                          lastName: this._getTextNs(fioNode, 'Фамилия: ', nsUt2),
+                          firstName: this._getTextNs(fioNode, 'Имя: ', nsUt2),
+                          middleName: this._getTextNs(fioNode, 'Отчество: ', nsUt2),
+                      }
+                    : {},
+                position: this._getTextNs(managerNode, 'Должность: ', nsUt2),
             };
         }
 
@@ -1800,7 +2086,7 @@ class ReportAnalyzerApp {
                     thumbprint: parsed.thumbprint,
                     base64: base64Cert,
                     source: 'СЗВ-ТД (подпись)',
-                    ...parsed
+                    ...parsed,
                 };
                 this.addOrUpdateCertificate(certData);
                 data.signatureCert = certData;
@@ -1825,15 +2111,27 @@ class ReportAnalyzerApp {
         // --- РАБОТОДАТЕЛЬ ---
         const employerContent = document.createDocumentFragment();
         employerContent.appendChild(this.createField('Наименование: ', data.employer.name));
-        employerContent.appendChild(this.createField('ИНН / КПП: ', `${data.employer.inn} / ${data.employer.kpp}`));
-        employerContent.appendChild(this.createField('Рег. номер в ПФР/СФР: ', data.employer.regNum));
+        employerContent.appendChild(
+            this.createField('ИНН / КПП: ', `${data.employer.inn} / ${data.employer.kpp}`),
+        );
+        employerContent.appendChild(
+            this.createField('Рег. номер в ПФР/СФР: ', data.employer.regNum),
+        );
         wrapper.appendChild(this._createAccordion('Работодатель: ', employerContent, true));
 
         // --- СОТРУДНИК ---
         const employeeContent = document.createDocumentFragment();
-        const employeeFio = `${data.employee.fio.lastName || ''} ${data.employee.fio.firstName || ''} ${data.employee.fio.middleName || ''}`.trim();
+        const employeeFio =
+            `${data.employee.fio.lastName || ''} ${data.employee.fio.firstName || ''} ${data.employee.fio.middleName || ''}`.trim();
         employeeContent.appendChild(this.createField('ФИО: ', employeeFio));
-        employeeContent.appendChild(this.createField('Дата рождения: ', data.employee.birthDate ? new Date(data.employee.birthDate).toLocaleDateString('ru-RU') : ''));
+        employeeContent.appendChild(
+            this.createField(
+                'Дата рождения: ',
+                data.employee.birthDate
+                    ? new Date(data.employee.birthDate).toLocaleDateString('ru-RU')
+                    : '',
+            ),
+        );
         employeeContent.appendChild(this.createField('СНИЛС: ', data.employee.snils));
         wrapper.appendChild(this._createAccordion('Сотрудник: ', employeeContent, false));
 
@@ -1857,12 +2155,14 @@ class ReportAnalyzerApp {
             `;
             const tbody = table.querySelector('tbody');
 
-            data.events.forEach(event => {
+            data.events.forEach((event) => {
                 const tr = document.createElement('tr');
                 tr.className = 'border-b border-slate-200 dark:border-slate-700';
 
                 const baseDoc = event.baseDocument;
-                const baseText = baseDoc ? `${baseDoc.name} №${baseDoc.number} от ${new Date(baseDoc.date).toLocaleDateString('ru-RU')}` : '—';
+                const baseText = baseDoc
+                    ? `${baseDoc.name} №${baseDoc.number} от ${new Date(baseDoc.date).toLocaleDateString('ru-RU')}`
+                    : '—';
 
                 tr.innerHTML = `
                     <td class="p-2 align-top">${new Date(event.date).toLocaleDateString('ru-RU')}</td>
@@ -1877,34 +2177,49 @@ class ReportAnalyzerApp {
             });
 
             eventsContainer.appendChild(table);
-            wrapper.appendChild(this._createAccordion(`Трудовая деятельность (${data.events.length} мероприятий)`, eventsContainer, false));
+            wrapper.appendChild(
+                this._createAccordion(
+                    `Трудовая деятельность (${data.events.length} мероприятий)`,
+                    eventsContainer,
+                    false,
+                ),
+            );
         }
 
         // --- ПОДПИСАНТ ---
         const managerContent = document.createDocumentFragment();
-        const managerFio = `${data.manager.fio.lastName || ''} ${data.manager.fio.firstName || ''} ${data.manager.fio.middleName || ''}`.trim();
+        const managerFio =
+            `${data.manager.fio.lastName || ''} ${data.manager.fio.firstName || ''} ${data.manager.fio.middleName || ''}`.trim();
         managerContent.appendChild(this.createField('ФИО: ', managerFio));
         managerContent.appendChild(this.createField('Должность: ', data.manager.position));
 
         if (data.signatureCert) {
             if (data.signatureCert.error) {
-                managerContent.appendChild(this.createField('Ошибка сертификата', data.signatureCert.error, 'error'));
+                managerContent.appendChild(
+                    this.createField('Ошибка сертификата', data.signatureCert.error, 'error'),
+                );
             } else {
                 managerContent.appendChild(this._createCertificateStatusField(data.signatureCert));
 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'text-left mt-2';
-                buttonContainer.appendChild(this._createDownloadButtonForThumbprint(data.signatureCert.thumbprint, 'Скачать сертификат подписи'));
+                buttonContainer.appendChild(
+                    this._createDownloadButtonForThumbprint(
+                        data.signatureCert.thumbprint,
+                        'Скачать сертификат подписи',
+                    ),
+                );
                 managerContent.appendChild(buttonContainer);
             }
         } else {
-            managerContent.appendChild(this.createField('Сертификат подписи', 'Не найден в XML-подписи', 'warning'));
+            managerContent.appendChild(
+                this.createField('Сертификат подписи', 'Не найден в XML-подписи', 'warning'),
+            );
         }
         wrapper.appendChild(this._createAccordion('Подписант отчета', managerContent, true));
 
         return wrapper;
     }
-
 
     _renderDiagnosticReport(data, systemInfo) {
         const wrapper = document.createElement('div');
@@ -1918,18 +2233,35 @@ class ReportAnalyzerApp {
         // --- Общая информация об отчете ---
         const metaContent = document.createDocumentFragment();
         metaContent.appendChild(this.createField('Источник:', data.meta.programVersion));
-        metaContent.appendChild(this.createField('Дата отчета:', new Date(data.meta.dateTime).toLocaleString('ru-RU')));
+        metaContent.appendChild(
+            this.createField('Дата отчета:', new Date(data.meta.dateTime).toLocaleString('ru-RU')),
+        );
         metaContent.appendChild(this.createField('Версия формата:', data.meta.formatVersion));
         wrapper.appendChild(this._createAccordion('Общая информация', metaContent, true));
 
         // --- Абонент ---
         const subscriberContent = document.createDocumentFragment();
         subscriberContent.appendChild(this.createField('Название:', data.subscriber.name));
-        subscriberContent.appendChild(this.createField('ИНН/КПП:', `${data.subscriber.inn}/${data.subscriber.kpp}`));
+        subscriberContent.appendChild(
+            this.createField('ИНН/КПП:', `${data.subscriber.inn}/${data.subscriber.kpp}`),
+        );
         if (data.subscriber.account.licenseType) {
-            subscriberContent.appendChild(this.createField('Лицензия:', data.subscriber.account.licenseType, data.subscriber.account.licenseType === 'Тестовая' ? 'warning' : 'default'));
-            subscriberContent.appendChild(this.createField('Срок действия:', `${new Date(data.subscriber.account.licenseStart).toLocaleDateString()} - ${new Date(data.subscriber.account.licenseEnd).toLocaleDateString()}`));
-            subscriberContent.appendChild(this.createField('Криптопровайдер:', data.subscriber.account.cryptoProvider));
+            subscriberContent.appendChild(
+                this.createField(
+                    'Лицензия:',
+                    data.subscriber.account.licenseType,
+                    data.subscriber.account.licenseType === 'Тестовая' ? 'warning' : 'default',
+                ),
+            );
+            subscriberContent.appendChild(
+                this.createField(
+                    'Срок действия:',
+                    `${new Date(data.subscriber.account.licenseStart).toLocaleDateString()} - ${new Date(data.subscriber.account.licenseEnd).toLocaleDateString()}`,
+                ),
+            );
+            subscriberContent.appendChild(
+                this.createField('Криптопровайдер:', data.subscriber.account.cryptoProvider),
+            );
         }
         wrapper.appendChild(this._createAccordion('Абонент', subscriberContent, true));
 
@@ -1945,11 +2277,23 @@ class ReportAnalyzerApp {
         envContent.appendChild(this.createField('Режим работы:', info['РежимИБ']));
         envContent.appendChild(this.createField('Тип клиента:', info['ТипКлиентскогоПодключения']));
         envContent.appendChild(this.createField('Версия платформы:', info['ВерсияПриложения']));
-        envContent.appendChild(this.createField('Версия конфигурации:', `${info['Метаданные.Синоним'] || 'N/A'} (${info['Метаданные.Версия'] || 'N/A'})`));
+        envContent.appendChild(
+            this.createField(
+                'Версия конфигурации:',
+                `${info['Метаданные.Синоним'] || 'N/A'} (${info['Метаданные.Версия'] || 'N/A'})`,
+            ),
+        );
         envContent.appendChild(this.createField('Версия ОС:', osVersion));
         envContent.appendChild(this.createField('Процессор:', processor));
         envContent.appendChild(this.createField('ОЗУ:', ram));
-        envContent.appendChild(this.createField('Внешний модуль:', info['ВнешнийМодульИспользуется'] === 'true' ? `Да (версия: ${info['ВнешнийМодульВерсия'] || 'не указана'})` : 'Нет'));
+        envContent.appendChild(
+            this.createField(
+                'Внешний модуль:',
+                info['ВнешнийМодульИспользуется'] === 'true'
+                    ? `Да (версия: ${info['ВнешнийМодульВерсия'] || 'не указана'})`
+                    : 'Нет',
+            ),
+        );
         wrapper.appendChild(this._createAccordion('Окружение 1С', envContent, true));
 
         const checksContent = document.createElement('div');
@@ -1958,40 +2302,72 @@ class ReportAnalyzerApp {
         if (data.checks.account) {
             const { isActive, detailsMatch, powerOfAttorney } = data.checks.account;
             const accountCheckCard = document.createElement('div');
-            accountCheckCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-1';
+            accountCheckCard.className =
+                'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-1';
             const h4 = document.createElement('h4');
             h4.className = 'font-semibold';
             h4.textContent = 'Учетная запись';
             accountCheckCard.appendChild(h4);
-            accountCheckCard.appendChild(this.createField('Активна', isActive ? 'Да' : 'Нет', isActive ? 'success' : 'error'));
-            accountCheckCard.appendChild(this.createField('Сведения совпадают', detailsMatch ? 'Да' : 'Нет', detailsMatch ? 'success' : 'error'));
+            accountCheckCard.appendChild(
+                this.createField(
+                    'Активна',
+                    isActive ? 'Да' : 'Нет',
+                    isActive ? 'success' : 'error',
+                ),
+            );
+            accountCheckCard.appendChild(
+                this.createField(
+                    'Сведения совпадают',
+                    detailsMatch ? 'Да' : 'Нет',
+                    detailsMatch ? 'success' : 'error',
+                ),
+            );
             if (powerOfAttorney) {
-                const poaState = powerOfAttorney.state === '2' ? 'error' : (powerOfAttorney.state === '1' ? 'warning' : 'default');
-                accountCheckCard.appendChild(this.createField('Доверенность', `${powerOfAttorney.description} (${powerOfAttorney.errors[0]?.description || 'OK'})`, poaState));
+                const poaState =
+                    powerOfAttorney.state === '2'
+                        ? 'error'
+                        : powerOfAttorney.state === '1'
+                          ? 'warning'
+                          : 'default';
+                accountCheckCard.appendChild(
+                    this.createField(
+                        'Доверенность',
+                        `${powerOfAttorney.description} (${powerOfAttorney.errors[0]?.description || 'OK'})`,
+                        poaState,
+                    ),
+                );
             }
             checksContent.appendChild(accountCheckCard);
         }
         if (data.checks.resources.length > 0) {
             const resourcesCard = document.createElement('div');
-            resourcesCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-1 mt-2';
+            resourcesCard.className =
+                'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-1 mt-2';
             const h4 = document.createElement('h4');
             h4.className = 'font-semibold';
             h4.textContent = 'Доступность ресурсов';
             resourcesCard.appendChild(h4);
-            data.checks.resources.forEach(res => {
-                resourcesCard.appendChild(this.createField(res.host, res.isAvailable ? 'Доступен' : 'Недоступен', res.isAvailable ? 'success' : 'error'));
+            data.checks.resources.forEach((res) => {
+                resourcesCard.appendChild(
+                    this.createField(
+                        res.host,
+                        res.isAvailable ? 'Доступен' : 'Недоступен',
+                        res.isAvailable ? 'success' : 'error',
+                    ),
+                );
             });
             checksContent.appendChild(resourcesCard);
         }
         if (data.checks.certificates.length > 0) {
             const certsCard = document.createElement('div');
-            certsCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-2 mt-2';
+            certsCard.className =
+                'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-2 mt-2';
             const h4 = document.createElement('h4');
             h4.className = 'font-semibold';
             h4.textContent = 'Сертификаты';
             certsCard.appendChild(h4);
 
-            data.checks.certificates.forEach(cert => {
+            data.checks.certificates.forEach((cert) => {
                 const isExpired = new Date(cert.validUntil) < new Date();
                 let status = `Годен до: ${new Date(cert.validUntil).toLocaleDateString()}`;
                 if (isExpired) status += ' (ИСТЁК)';
@@ -1999,36 +2375,71 @@ class ReportAnalyzerApp {
                 const certItem = document.createElement('div');
                 certItem.className = 'p-2 rounded-md bg-slate-100 dark:bg-slate-800';
                 certItem.appendChild(this.createField('Субъект', cert.subjectName));
-                certItem.appendChild(this.createField('Отпечаток', `<div class="font-mono text-xs">${cert.thumbprint}</div>`));
-                certItem.appendChild(this.createField('Статус', status, isExpired ? 'error' : 'success'));
+                certItem.appendChild(
+                    this.createField(
+                        'Отпечаток',
+                        `<div class="font-mono text-xs">${cert.thumbprint}</div>`,
+                    ),
+                );
+                certItem.appendChild(
+                    this.createField('Статус', status, isExpired ? 'error' : 'success'),
+                );
                 certsCard.appendChild(certItem);
             });
             checksContent.appendChild(certsCard);
         }
         if (data.checks.cryptoOps.length > 0) {
             const opsCard = document.createElement('div');
-            opsCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-1 mt-2';
+            opsCard.className =
+                'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-1 mt-2';
             const h4 = document.createElement('h4');
             h4.className = 'font-semibold';
             h4.textContent = 'Криптооперации';
             opsCard.appendChild(h4);
-            data.checks.cryptoOps.forEach(op => {
-                opsCard.appendChild(this.createField(op.description, op.isSuccess ? 'Успешно' : 'Ошибка', op.isSuccess ? 'success' : 'error'));
+            data.checks.cryptoOps.forEach((op) => {
+                opsCard.appendChild(
+                    this.createField(
+                        op.description,
+                        op.isSuccess ? 'Успешно' : 'Ошибка',
+                        op.isSuccess ? 'success' : 'error',
+                    ),
+                );
             });
             checksContent.appendChild(opsCard);
         }
 
-        wrapper.appendChild(this._createAccordion('Результаты автоматических проверок', checksContent, true));
+        wrapper.appendChild(
+            this._createAccordion('Результаты автоматических проверок', checksContent, true),
+        );
 
         const additionalContent = document.createDocumentFragment();
-        const renderedKeys = new Set(['Сервер.ВерсияОС', 'ВерсияОС', 'Сервер.Процессор', 'Процессор', 'Сервер.ОперативнаяПамять', 'ОперативнаяПамять', 'РежимИБ', 'ТипКлиентскогоПодключения', 'ВерсияПриложения', 'Метаданные.Синоним', 'Метаданные.Версия', 'ВнешнийМодульИспользуется', 'ВнешнийМодульВерсия']);
+        const renderedKeys = new Set([
+            'Сервер.ВерсияОС',
+            'ВерсияОС',
+            'Сервер.Процессор',
+            'Процессор',
+            'Сервер.ОперативнаяПамять',
+            'ОперативнаяПамять',
+            'РежимИБ',
+            'ТипКлиентскогоПодключения',
+            'ВерсияПриложения',
+            'Метаданные.Синоним',
+            'Метаданные.Версия',
+            'ВнешнийМодульИспользуется',
+            'ВнешнийМодульВерсия',
+        ]);
 
         for (const [key, value] of Object.entries(data.additionalInfo)) {
             if (renderedKeys.has(key)) continue;
 
             const title = this.additionalInfoKeyMap[key] || key;
 
-            if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) continue;
+            if (
+                value === null ||
+                value === undefined ||
+                (typeof value === 'string' && value.trim() === '')
+            )
+                continue;
 
             if (Array.isArray(value) && value.length > 0) {
                 let subAccordionContent;
@@ -2049,8 +2460,13 @@ class ReportAnalyzerApp {
                     default:
                         continue;
                 }
-                if (subAccordionContent && (subAccordionContent.hasChildNodes() || subAccordionContent.innerHTML)) {
-                    additionalContent.appendChild(this._createAccordion(title, subAccordionContent, false));
+                if (
+                    subAccordionContent &&
+                    (subAccordionContent.hasChildNodes() || subAccordionContent.innerHTML)
+                ) {
+                    additionalContent.appendChild(
+                        this._createAccordion(title, subAccordionContent, false),
+                    );
                 }
             } else if (!Array.isArray(value)) {
                 additionalContent.appendChild(this.createField(title, value));
@@ -2063,7 +2479,6 @@ class ReportAnalyzerApp {
 
         return wrapper;
     }
-
 
     prepareUIForAnalysis() {
         this.placeholder.style.display = 'none';
@@ -2080,7 +2495,6 @@ class ReportAnalyzerApp {
         this.analyzeBtn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
     }
 
-
     renderRegistrationFile(cert, xmlDoc) {
         const root = xmlDoc.documentElement;
         const владелец = root.querySelector('ВладелецЭЦП');
@@ -2088,24 +2502,37 @@ class ReportAnalyzerApp {
 
         let html = `<div class="content-card space-y-4"><h2 class="text-2xl font-bold mb-4 text-slate-900 dark:text-white">Регистрационный файл абонента</h2>`;
 
-        html += '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-4 mb-2">Информация об организации</h3>';
+        html +=
+            '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-4 mb-2">Информация об организации</h3>';
         html += this.createField('Полное наименование', this.getText(root, 'ПолноеНаименование'));
-        html += this.createField('ИНН/КПП', `${this.getText(root, 'ИНН')} / ${this.getText(root, 'КПП')}`);
+        html += this.createField(
+            'ИНН/КПП',
+            `${this.getText(root, 'ИНН')} / ${this.getText(root, 'КПП')}`,
+        );
 
         if (владелец && фио) {
-            html += '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-6 mb-2">Владелец ЭЦП</h3>';
-            html += this.createField('ФИО', `${фио.getAttribute('Фамилия')} ${фио.getAttribute('Имя')} ${фио.getAttribute('Отчество')}`);
+            html +=
+                '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-6 mb-2">Владелец ЭЦП</h3>';
+            html += this.createField(
+                'ФИО',
+                `${фио.getAttribute('Фамилия')} ${фио.getAttribute('Имя')} ${фио.getAttribute('Отчество')}`,
+            );
             html += this.createField('Должность', this.getText(владелец, 'Должность'));
             html += this.createField('E-mail', this.getText(владелец, 'Email'));
         }
 
         html += this.renderControllingAuthorities(xmlDoc);
 
-        html += '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-6 mb-2">Статус сертификата</h3>';
+        html +=
+            '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-6 mb-2">Статус сертификата</h3>';
         html += this.createField('Отпечаток сертификата', cert.thumbprint, 'success');
 
         if (cert.base64) {
-            html += this.createField('Тело сертификата', 'Найдено (готово к скачиванию)', 'success');
+            html += this.createField(
+                'Тело сертификата',
+                'Найдено (готово к скачиванию)',
+                'success',
+            );
             html += `
             <div class="mt-6 text-center">
                 <button
@@ -2116,12 +2543,15 @@ class ReportAnalyzerApp {
                 </button>
             </div>`;
         } else {
-            html += this.createField('Тело сертификата', 'Не найдено. Для скачивания проанализируйте файл Заявления.', 'warning');
+            html += this.createField(
+                'Тело сертификата',
+                'Не найдено. Для скачивания проанализируйте файл Заявления.',
+                'warning',
+            );
         }
         html += '</div>';
         return html;
     }
-
 
     renderControllingAuthorities(xmlDoc) {
         const directions = xmlDoc.querySelectorAll('НапрПрин');
@@ -2129,13 +2559,22 @@ class ReportAnalyzerApp {
 
         const authorityMap = this.controllingAuthorityMap;
 
-        let directionsHtml = '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-6 mb-2">Подключения к контролирующим органам</h3><div class="space-y-3">';
+        let directionsHtml =
+            '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-6 mb-2">Подключения к контролирующим органам</h3><div class="space-y-3">';
 
-        directions.forEach(dir => {
+        directions.forEach((dir) => {
             const code = dir.getAttribute('Код');
             const name = authorityMap[code] || `Неизвестный орган(${code})`;
-            const subCode = dir.querySelector('КодНО')?.textContent || dir.querySelector('КодТОГС')?.textContent || dir.querySelector('КодПФР')?.textContent || 'Н/Д';
-            const subName = dir.querySelector('НаименованиеНО')?.textContent || dir.querySelector('НаименованиеТОГС')?.textContent || dir.querySelector('НаименованиеПФР')?.textContent || 'Детали не указаны';
+            const subCode =
+                dir.querySelector('КодНО')?.textContent ||
+                dir.querySelector('КодТОГС')?.textContent ||
+                dir.querySelector('КодПФР')?.textContent ||
+                'Н/Д';
+            const subName =
+                dir.querySelector('НаименованиеНО')?.textContent ||
+                dir.querySelector('НаименованиеТОГС')?.textContent ||
+                dir.querySelector('НаименованиеПФР')?.textContent ||
+                'Детали не указаны';
 
             directionsHtml += `
             <div class="p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 bg-slate-50 dark:bg-slate-800/50">
@@ -2149,16 +2588,17 @@ class ReportAnalyzerApp {
         return directionsHtml;
     }
 
-
     renderStatement(cert) {
         if (!cert) {
             return `<div class="content-card text-red-700 dark:text-red-400"><h2 class="text-xl font-bold mb-2 text-slate-900 dark:text-white">Ошибка</h2><p>Не удалось найти данные для отображения отчета по Заявлению.</p></div>`;
         }
 
         let html = `<div class="content-card"><h2 class="text-2xl font-bold mb-4 text-slate-900 dark:text-white">Анализ файла выгрузки заявления</h2>`;
-        html += '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-4 mb-2">Общая информация из файла</h3>';
+        html +=
+            '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-4 mb-2">Общая информация из файла</h3>';
         html += this.createField('ИНН организации', cert.inn);
-        html += '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-6 mb-2">Данные из сертификата</h3>';
+        html +=
+            '<h3 class="text-lg font-semibold text-sky-700 dark:text-sky-400 mt-6 mb-2">Данные из сертификата</h3>';
 
         if (cert.thumbprint && !cert.thumbprint.startsWith('unknown_')) {
             html += this.createField('Отпечаток (вычислен)', cert.thumbprint, 'success');
@@ -2170,7 +2610,11 @@ class ReportAnalyzerApp {
         html += this.createField('Организация (из поля O)', cert.orgName);
 
         if (cert.base64) {
-            html += this.createField('Тело сертификата', 'Найдено и готово к скачиванию', 'success');
+            html += this.createField(
+                'Тело сертификата',
+                'Найдено и готово к скачиванию',
+                'success',
+            );
             html += `
         <div class="mt-6 text-center">
             ${this._createDownloadButtonForThumbprint(cert.thumbprint, 'Скачать сертификат', 'w-full md:w-auto px-6 py-2')}
@@ -2185,9 +2629,9 @@ class ReportAnalyzerApp {
         return html;
     }
 
-
-    renderDiagnosticReport(xmlDoc, namespace) { return `<div class="content-card text-slate-900 dark:text-white">Отчет 1С пока не парсится на сертификаты.</div>`; }
-
+    renderDiagnosticReport(xmlDoc, namespace) {
+        return `<div class="content-card text-slate-900 dark:text-white">Отчет 1С пока не парсится на сертификаты.</div>`;
+    }
 
     renderSedoLog(data) {
         const wrapper = document.createElement('div');
@@ -2205,8 +2649,12 @@ class ReportAnalyzerApp {
             if (!dateString) return '—';
             const date = new Date(dateString);
             return date.toLocaleString('ru-RU', {
-                year: 'numeric', month: '2-digit', day: '2-digit',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
             });
         };
 
@@ -2223,7 +2671,9 @@ class ReportAnalyzerApp {
         infoGrid.appendChild(this.createField('Дата обработки', formatDate(data.processed_at)));
         infoGrid.appendChild(this.createField('Дата доставки', formatDate(data.delivered_at)));
 
-        wrapper.appendChild(this._createAccordion('Общая информация о документообороте', infoGrid, true));
+        wrapper.appendChild(
+            this._createAccordion('Общая информация о документообороте', infoGrid, true),
+        );
 
         // --- Карточка 2: Сообщения документооборота ---
         const messagesCardContent = document.createElement('div');
@@ -2250,8 +2700,10 @@ class ReportAnalyzerApp {
         const rowTemplate = this.getEl('sedo-row-template');
 
         if (tableBody && rowTemplate) {
-            const sortedMessages = [...data.messages].sort((a, b) => new Date(a.date) - new Date(b.date));
-            sortedMessages.forEach(msg => {
+            const sortedMessages = [...data.messages].sort(
+                (a, b) => new Date(a.date) - new Date(b.date),
+            );
+            sortedMessages.forEach((msg) => {
                 const clone = rowTemplate.content.cloneNode(true);
                 const row = clone.querySelector('.sedo-message-row');
 
@@ -2259,8 +2711,10 @@ class ReportAnalyzerApp {
 
                 const senderEl = clone.querySelector('.sedo-sender');
                 senderEl.textContent = this.sanitizeText(msg.sender_id || '—');
-                if (msg.sender_id === 'Фонд') senderEl.classList.add('text-blue-600', 'dark:text-blue-400');
-                else if (msg.sender_id === 'Страхователь') senderEl.classList.add('text-green-600', 'dark:text-green-400');
+                if (msg.sender_id === 'Фонд')
+                    senderEl.classList.add('text-blue-600', 'dark:text-blue-400');
+                else if (msg.sender_id === 'Страхователь')
+                    senderEl.classList.add('text-green-600', 'dark:text-green-400');
                 else senderEl.classList.add('text-purple-600', 'dark:text-purple-400');
 
                 const statusEl = clone.querySelector('.sedo-status');
@@ -2274,28 +2728,44 @@ class ReportAnalyzerApp {
                 }
 
                 clone.querySelector('.sedo-type').textContent = this.sanitizeText(msg.type || '—');
-                clone.querySelector('.sedo-title').textContent = this.sanitizeText(msg.title || 'Без заголовка');
+                clone.querySelector('.sedo-title').textContent = this.sanitizeText(
+                    msg.title || 'Без заголовка',
+                );
                 clone.querySelector('.sedo-date').textContent = formatDate(msg.date);
-                clone.querySelector('.sedo-delivered-at').textContent = formatDate(msg.delivered_at);
+                clone.querySelector('.sedo-delivered-at').textContent = formatDate(
+                    msg.delivered_at,
+                );
 
                 tableBody.appendChild(clone);
             });
         }
 
-        wrapper.appendChild(this._createAccordion(`Сообщения документооборота (${data.messages.length} шт.)`, messagesCardContent, true));
+        wrapper.appendChild(
+            this._createAccordion(
+                `Сообщения документооборота (${data.messages.length} шт.)`,
+                messagesCardContent,
+                true,
+            ),
+        );
 
         return wrapper;
     }
 
-
     renderCertificateManager() {
-        if (!this.certManagerWrapper || !this.certSearchInput || !this.certList || !this.certListPlaceholder) {
-            console.warn("Один или несколько элементов менеджера сертификатов не найдены в DOM. Функциональность будет ограничена.");
+        if (
+            !this.certManagerWrapper ||
+            !this.certSearchInput ||
+            !this.certList ||
+            !this.certListPlaceholder
+        ) {
+            console.warn(
+                'Один или несколько элементов менеджера сертификатов не найдены в DOM. Функциональность будет ограничена.',
+            );
             return;
         }
 
         const hasCerts = this.certificates.size > 0;
-        const hasCertsWithBase64 = Array.from(this.certificates.values()).some(c => !!c.base64);
+        const hasCertsWithBase64 = Array.from(this.certificates.values()).some((c) => !!c.base64);
 
         if (this.exportZipBtn) {
             this.exportZipBtn.disabled = !hasCertsWithBase64;
@@ -2305,25 +2775,24 @@ class ReportAnalyzerApp {
 
         const searchTerm = this.certSearchInput.value.toLowerCase().trim();
 
-        const filteredCerts = Array.from(this.certificates.values()).filter(cert => {
+        const filteredCerts = Array.from(this.certificates.values()).filter((cert) => {
             if (!searchTerm) return true;
             return [
                 cert.thumbprint,
                 cert.orgName,
                 cert.inn,
                 cert.ownerFio,
-                cert.recipientType
-            ]
-                .some(field => field && field.toLowerCase().includes(searchTerm));
+                cert.recipientType,
+            ].some((field) => field && field.toLowerCase().includes(searchTerm));
         });
 
         this.certList.innerHTML = '';
 
         if (filteredCerts.length === 0) {
             this.certListPlaceholder.style.display = 'block';
-            this.certListPlaceholder.textContent = searchTerm ?
-                'Сертификаты, соответствующие поиску, не найдены.' :
-                'Сертификаты не найдены.';
+            this.certListPlaceholder.textContent = searchTerm
+                ? 'Сертификаты, соответствующие поиску, не найдены.'
+                : 'Сертификаты не найдены.';
             return;
         }
 
@@ -2337,14 +2806,16 @@ class ReportAnalyzerApp {
 
         const fragment = document.createDocumentFragment();
 
-        filteredCerts.forEach(cert => {
+        filteredCerts.forEach((cert) => {
             const clone = template.content.cloneNode(true);
             const item = clone.querySelector('.cert-list-item');
 
             item.dataset.thumbprint = this.sanitizeText(cert.thumbprint);
 
             const orgEl = clone.querySelector('.cert-org');
-            const orgText = cert.recipientType ? `${cert.orgName} [${cert.recipientType}]` : (cert.orgName || 'Организация не указана');
+            const orgText = cert.recipientType
+                ? `${cert.orgName} [${cert.recipientType}]`
+                : cert.orgName || 'Организация не указана';
             orgEl.textContent = this.sanitizeText(orgText);
             orgEl.title = orgEl.textContent;
             orgEl.classList.add('font-semibold', 'truncate');
@@ -2357,10 +2828,19 @@ class ReportAnalyzerApp {
             const thumbprintEl = clone.querySelector('.cert-thumbprint');
             thumbprintEl.textContent = this.sanitizeText(cert.thumbprint);
             thumbprintEl.title = `Отпечаток: ${thumbprintEl.textContent}`;
-            thumbprintEl.classList.add('text-xs', 'font-mono', 'text-slate-400', 'dark:text-slate-500', 'truncate');
+            thumbprintEl.classList.add(
+                'text-xs',
+                'font-mono',
+                'text-slate-400',
+                'dark:text-slate-500',
+                'truncate',
+            );
 
             const buttonContainer = clone.querySelector('.download-button-container');
-            const downloadButton = this._createDownloadButtonForThumbprint(cert.thumbprint, 'Скачать');
+            const downloadButton = this._createDownloadButtonForThumbprint(
+                cert.thumbprint,
+                'Скачать',
+            );
             buttonContainer.appendChild(downloadButton);
 
             fragment.appendChild(clone);
@@ -2368,7 +2848,6 @@ class ReportAnalyzerApp {
 
         this.certList.appendChild(fragment);
     }
-
 
     _parseDiagnosticReportData(xmlDoc) {
         const data = {
@@ -2379,18 +2858,20 @@ class ReportAnalyzerApp {
                 resources: [],
                 crypto: null,
                 certificates: [],
-                cryptoOps: []
+                cryptoOps: [],
             },
-            additionalInfo: {}
+            additionalInfo: {},
         };
 
         const root = xmlDoc.documentElement;
 
         // --- Метаданные ---
         data.meta = {
-            programVersion: root.getAttribute('d1p1:ВерсияПрограммы') || root.getAttribute('ВерсияПрограммы'),
+            programVersion:
+                root.getAttribute('d1p1:ВерсияПрограммы') || root.getAttribute('ВерсияПрограммы'),
             dateTime: root.getAttribute('d1p1:ДатаВремя') || root.getAttribute('ДатаВремя'),
-            formatVersion: root.getAttribute('d1p1:ВерсияФормата') || root.getAttribute('ВерсияФормата')
+            formatVersion:
+                root.getAttribute('d1p1:ВерсияФормата') || root.getAttribute('ВерсияФормата'),
         };
 
         // --- Абонент ---
@@ -2403,15 +2884,17 @@ class ReportAnalyzerApp {
                 kpp: this.getText(abonent, 'КПП'),
                 pfrRegNum: this.getText(abonent, 'РегНомерПФР'),
                 fssRegNum: this.getText(abonent, 'РегНомерФСС'),
-                account: acc ? {
-                    id: this.getText(acc, 'ИдентификаторАбонента'),
-                    licenseType: this.getText(acc, 'ТипЛицензии'),
-                    licenseStart: this.getText(acc, 'НачалоДействияЛицензии'),
-                    licenseEnd: this.getText(acc, 'ОкончаниеДействияЛицензии'),
-                    cloudKey: this.getText(acc, 'ЭПВоблаке') === 'true',
-                    keyStorageModel: this.getText(acc, 'МодельХраненияЗакрытогоКлюча'),
-                    cryptoProvider: this.getText(acc, 'Криптопровайдер')
-                } : {}
+                account: acc
+                    ? {
+                          id: this.getText(acc, 'ИдентификаторАбонента'),
+                          licenseType: this.getText(acc, 'ТипЛицензии'),
+                          licenseStart: this.getText(acc, 'НачалоДействияЛицензии'),
+                          licenseEnd: this.getText(acc, 'ОкончаниеДействияЛицензии'),
+                          cloudKey: this.getText(acc, 'ЭПВоблаке') === 'true',
+                          keyStorageModel: this.getText(acc, 'МодельХраненияЗакрытогоКлюча'),
+                          cryptoProvider: this.getText(acc, 'Криптопровайдер'),
+                      }
+                    : {},
             };
         }
 
@@ -2424,56 +2907,82 @@ class ReportAnalyzerApp {
                 data.checks.account = {
                     isActive: this.getText(accCheck, 'Активна') === 'true',
                     validityDays: this.getText(accCheck, 'СрокГодности'),
-                    detailsMatch: this.getText(accCheck.querySelector('СведенияСовпадают'), 'Состояние') === 'true',
-                    isRepresentativeCert: this.getText(accCheck, 'СертификатВыданНаПредставителя') === 'true',
-                    powerOfAttorney: pda ? {
-                        kpp: this.getText(pda, 'КПП'),
-                        ifnsCode: this.getText(pda, 'КодОрганаИФНС'),
-                        description: this.getText(pda, 'ОписаниеКратко'),
-                        state: this.getText(pda, 'Состояние'),
-                        errors: Array.from(pda.querySelectorAll('Ошибки Ошибка')).map(e => ({
-                            code: this.getText(e, 'Код'),
-                            description: this.getText(e, 'Описание')
-                        }))
-                    } : null
+                    detailsMatch:
+                        this.getText(accCheck.querySelector('СведенияСовпадают'), 'Состояние') ===
+                        'true',
+                    isRepresentativeCert:
+                        this.getText(accCheck, 'СертификатВыданНаПредставителя') === 'true',
+                    powerOfAttorney: pda
+                        ? {
+                              kpp: this.getText(pda, 'КПП'),
+                              ifnsCode: this.getText(pda, 'КодОрганаИФНС'),
+                              description: this.getText(pda, 'ОписаниеКратко'),
+                              state: this.getText(pda, 'Состояние'),
+                              errors: Array.from(pda.querySelectorAll('Ошибки Ошибка')).map(
+                                  (e) => ({
+                                      code: this.getText(e, 'Код'),
+                                      description: this.getText(e, 'Описание'),
+                                  }),
+                              ),
+                          }
+                        : null,
                 };
             }
-            data.checks.resources = Array.from(checks.querySelectorAll('ПроверкаДоступностиРесурсов Ресурс')).map(r => ({
+            data.checks.resources = Array.from(
+                checks.querySelectorAll('ПроверкаДоступностиРесурсов Ресурс'),
+            ).map((r) => ({
                 host: this.getText(r, 'Хост'),
                 port: this.getText(r, 'Порт'),
-                isAvailable: this.getText(r, 'Доступен') === 'true'
+                isAvailable: this.getText(r, 'Доступен') === 'true',
             }));
             const cryptoCheck = checks.querySelector('ПроверкаКриптографии');
             if (cryptoCheck) {
                 data.checks.crypto = {
-                    cryptoComponent: this.getText(cryptoCheck.querySelector('КомпонентКриптографии'), 'Состояние'),
-                    compatibleCSP: this.getText(cryptoCheck.querySelector('СовместимыйCSP'), 'Состояние'),
-                    fileExtension: this.getText(cryptoCheck.querySelector('РасширениеРаботыСФайлами'), 'Состояние')
+                    cryptoComponent: this.getText(
+                        cryptoCheck.querySelector('КомпонентКриптографии'),
+                        'Состояние',
+                    ),
+                    compatibleCSP: this.getText(
+                        cryptoCheck.querySelector('СовместимыйCSP'),
+                        'Состояние',
+                    ),
+                    fileExtension: this.getText(
+                        cryptoCheck.querySelector('РасширениеРаботыСФайлами'),
+                        'Состояние',
+                    ),
                 };
             }
-            data.checks.certificates = Array.from(checks.querySelectorAll('ПроверкаСертификатов Сертификат')).map(c => {
+            data.checks.certificates = Array.from(
+                checks.querySelectorAll('ПроверкаСертификатов Сертификат'),
+            ).map((c) => {
                 const certData = {
                     thumbprint: this.getText(c, 'Отпечаток').toUpperCase(),
                     store: this.getText(c, 'Хранилище'),
                     subjectName: this.getText(c, 'НаименованиеПолучателя'),
                     issued: this.getText(c, 'Выдан'),
                     validUntil: this.getText(c, 'ГоденДо'),
-                    isFound: this.getText(c, 'Найден') === 'true'
+                    isFound: this.getText(c, 'Найден') === 'true',
                 };
-                this.addOrUpdateCertificate({ ...certData, orgName: certData.subjectName, base64: null });
+                this.addOrUpdateCertificate({
+                    ...certData,
+                    orgName: certData.subjectName,
+                    base64: null,
+                });
                 return certData;
             });
-            data.checks.cryptoOps = Array.from(checks.querySelectorAll('ПроверкаКриптоопераций Криптооперация')).map(o => ({
+            data.checks.cryptoOps = Array.from(
+                checks.querySelectorAll('ПроверкаКриптоопераций Криптооперация'),
+            ).map((o) => ({
                 code: this.getText(o, 'Код'),
                 description: this.getText(o, 'Описание'),
-                isSuccess: this.getText(o, 'Успешно') === 'true'
+                isSuccess: this.getText(o, 'Успешно') === 'true',
             }));
         }
 
         // --- Дополнительная информация ---
         const infoRoot = root.querySelector('ДополнительнаяИнформация');
         if (infoRoot) {
-            infoRoot.querySelectorAll('Инфо').forEach(infoNode => {
+            infoRoot.querySelectorAll('Инфо').forEach((infoNode) => {
                 const key = this.getText(infoNode, 'Вид');
                 if (!key) return;
 
@@ -2483,26 +2992,30 @@ class ReportAnalyzerApp {
 
                 if (valuesNode) {
                     if (key === 'ЖурналРегистрации') {
-                        value = Array.from(valuesNode.querySelectorAll('ЗаписьЖурнала')).map(log => ({
-                            level: this.getText(log, 'Уровень'),
-                            date: this.getText(log, 'Дата'),
-                            event: this.getText(log, 'Событие'),
-                            comment: this.getText(log, 'Комментарий')
-                        }));
+                        value = Array.from(valuesNode.querySelectorAll('ЗаписьЖурнала')).map(
+                            (log) => ({
+                                level: this.getText(log, 'Уровень'),
+                                date: this.getText(log, 'Дата'),
+                                event: this.getText(log, 'Событие'),
+                                comment: this.getText(log, 'Комментарий'),
+                            }),
+                        );
                     } else if (key === 'Нерасшифрованные') {
-                        value = Array.from(valuesNode.querySelectorAll('Сообщение')).map(msg => ({
+                        value = Array.from(valuesNode.querySelectorAll('Сообщение')).map((msg) => ({
                             id: this.getText(msg, 'ИдентификаторСообщения'),
                             docflowId: this.getText(msg, 'ИдентификаторДокументооборота'),
                             transportDate: this.getText(msg, 'ДатаТранспорта'),
                             subject: this.getText(msg, 'Тема'),
-                            from: this.getText(msg, 'Отправитель')
+                            from: this.getText(msg, 'Отправитель'),
                         }));
                     } else if (key === 'ПодключенныеНаправления') {
-                        value = Array.from(valuesNode.querySelectorAll('Направление')).map(dir => ({
-                            recipientType: this.getText(dir, 'ТипПолучателя'),
-                            recipientCode: this.getText(dir, 'КодПолучателя'),
-                            kpp: this.getText(dir, 'КПП'),
-                        }));
+                        value = Array.from(valuesNode.querySelectorAll('Направление')).map(
+                            (dir) => ({
+                                recipientType: this.getText(dir, 'ТипПолучателя'),
+                                recipientCode: this.getText(dir, 'КодПолучателя'),
+                                kpp: this.getText(dir, 'КПП'),
+                            }),
+                        );
                     }
                 } else if (valueNode) {
                     const rawValue = valueNode.textContent.trim();
@@ -2522,7 +3035,6 @@ class ReportAnalyzerApp {
         return data;
     }
 
-
     async _parseStatement(xmlDoc) {
         const root = xmlDoc.documentElement;
 
@@ -2532,7 +3044,7 @@ class ReportAnalyzerApp {
             owner: {},
             recipients: [],
             legalAddress: {},
-            actualAddress: {}
+            actualAddress: {},
         };
 
         data.general = {
@@ -2547,13 +3059,13 @@ class ReportAnalyzerApp {
             isJuridical: this.getText(root, 'ПризнакЮридическогоЛица'),
             isSeparateDivision: this.getText(root, 'ПризнакОбособленногоПодразделения'),
             phone: this.getText(root, 'ТелефонОсновной'),
-            email: this.getText(root, 'ЭлектроннаяПочта')
+            email: this.getText(root, 'ЭлектроннаяПочта'),
         };
 
         data.programInfo = {
             name: this.getText(root, 'ИмяПрограммы'),
             version: this.getText(root, 'НомерВерсииПрограммы'),
-            platform: this.getText(root, 'ВерсияПлатформы')
+            platform: this.getText(root, 'ВерсияПлатформы'),
         };
 
         data.legalAddress = this._parseAddress(root.querySelector('АдресЮридический'));
@@ -2567,11 +3079,11 @@ class ReportAnalyzerApp {
                 cryptoProviderType: cp ? this.getText(cp, 'ТипКриптопровайдера') : 'Н/Д',
                 wantsSmsNotify: this.getText(ownerNode, 'ПолучатьСМСУведомления'),
                 email: this.getText(ownerNode, 'ЭлектроннаяПочта'),
-                mobilePhone: this.getText(ownerNode, 'ТелефонМобильный')
+                mobilePhone: this.getText(ownerNode, 'ТелефонМобильный'),
             };
         }
 
-        root.querySelectorAll('Получатели Получатель').forEach(recNode => {
+        root.querySelectorAll('Получатели Получатель').forEach((recNode) => {
             data.recipients.push({
                 type: this.getText(recNode, 'ТипПолучателя'),
                 code: this.getText(recNode, 'КодПолучателя'),
@@ -2588,7 +3100,7 @@ class ReportAnalyzerApp {
                     base64: base64Cert,
                     source: 'Заявление (ошибка парсинга)',
                     parseError: parsed.error,
-                    isParsed: false
+                    isParsed: false,
                 };
             } else {
                 cert = {
@@ -2605,14 +3117,13 @@ class ReportAnalyzerApp {
                     subject: parsed.subject,
                     issuer: parsed.issuer,
                     extensions: parsed.extensions,
-                    version: parsed.version
+                    version: parsed.version,
                 };
             }
             this.addOrUpdateCertificate(cert);
         }
         return { data, cert };
     }
-
 
     _renderSection(title, contentElement, isOpen = false) {
         const template = this.getEl('accordion-section-template');
@@ -2635,7 +3146,8 @@ class ReportAnalyzerApp {
 
         const iconContainer = clone.querySelector('.accordion-toggle-container');
         if (iconContainer) {
-            const updateIconState = () => iconContainer.classList.toggle('rotate-180', details.open);
+            const updateIconState = () =>
+                iconContainer.classList.toggle('rotate-180', details.open);
             details.addEventListener('toggle', updateIconState);
             if (isOpen) {
                 setTimeout(updateIconState, 0);
@@ -2645,7 +3157,6 @@ class ReportAnalyzerApp {
         return clone;
     }
 
-
     _formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -2654,7 +3165,6 @@ class ReportAnalyzerApp {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
-
 
     _formatPlatform(platform, arch, release) {
         let osName = 'Неизвестная ОС';
@@ -2668,7 +3178,6 @@ class ReportAnalyzerApp {
         }
         return `${osName} (${arch})`;
     }
-
 
     _renderLogEntries(entries) {
         if (!Array.isArray(entries) || entries.length === 0) {
@@ -2687,11 +3196,13 @@ class ReportAnalyzerApp {
             return container;
         }
 
-        entries.forEach(log => {
+        entries.forEach((log) => {
             const clone = template.content.cloneNode(true);
 
             clone.querySelector('.log-event').textContent = this.sanitizeText(log.event);
-            clone.querySelector('.log-date').textContent = new Date(log.date).toLocaleString('ru-RU');
+            clone.querySelector('.log-date').textContent = new Date(log.date).toLocaleString(
+                'ru-RU',
+            );
 
             const levelEl = clone.querySelector('.log-level');
             levelEl.textContent = this.sanitizeText(log.level);
@@ -2702,7 +3213,8 @@ class ReportAnalyzerApp {
             if (log.comment.startsWith('{') && log.comment.endsWith('}')) {
                 try {
                     const pre = document.createElement('pre');
-                    pre.className = 'mt-1 p-2 bg-slate-100 dark:bg-slate-900 rounded-md text-xs whitespace-pre-wrap break-all';
+                    pre.className =
+                        'mt-1 p-2 bg-slate-100 dark:bg-slate-900 rounded-md text-xs whitespace-pre-wrap break-all';
                     pre.textContent = JSON.stringify(JSON.parse(log.comment), null, 2);
                     commentWrapper.appendChild(pre);
                 } catch (e) {
@@ -2724,35 +3236,46 @@ class ReportAnalyzerApp {
         return container;
     }
 
-
     _renderDirections(directions) {
         if (!Array.isArray(directions) || directions.length === 0) {
             return '<p class="text-sm text-slate-500">Подключенные направления отсутствуют.</p>';
         }
         const authorityMap = this.controllingAuthorityMap || {
-            'ФНС': 'Федеральная налоговая служба',
-            'СФР': 'Социальный фонд России'
+            ФНС: 'Федеральная налоговая служба',
+            СФР: 'Социальный фонд России',
         };
-        return `<ul class="list-disc list-inside space-y-1">` + directions.map(dir =>
-            `<li><span class="font-semibold">${authorityMap[dir.recipientType] || dir.recipientType}</span> (Код: ${this.sanitizeText(dir.recipientCode)}, КПП: ${this.sanitizeText(dir.kpp)})</li>`
-        ).join('') + `</ul>`;
+        return (
+            `<ul class="list-disc list-inside space-y-1">` +
+            directions
+                .map(
+                    (dir) =>
+                        `<li><span class="font-semibold">${authorityMap[dir.recipientType] || dir.recipientType}</span> (Код: ${this.sanitizeText(dir.recipientCode)}, КПП: ${this.sanitizeText(dir.kpp)})</li>`,
+                )
+                .join('') +
+            `</ul>`
+        );
     }
-
 
     _renderUndecrypted(messages) {
         if (!Array.isArray(messages) || messages.length === 0) {
             return '<p class="text-sm text-slate-500">Нерасшифрованные сообщения отсутствуют.</p>';
         }
-        return `<div class="space-y-2">` + messages.map(msg =>
-            `<div class="p-2 rounded-md border dark:border-slate-700">
+        return (
+            `<div class="space-y-2">` +
+            messages
+                .map(
+                    (msg) =>
+                        `<div class="p-2 rounded-md border dark:border-slate-700">
             <p><strong>ID:</strong> <span class="font-mono text-xs">${this.sanitizeText(msg.id)}</span></p>
             <p><strong>От:</strong> ${this.sanitizeText(msg.from)}</p>
             <p><strong>Тема:</strong> ${this.sanitizeText(msg.subject)}</p>
             <p><strong>Дата:</strong> ${new Date(msg.transportDate).toLocaleString('ru-RU')}</p>
-        </div>`
-        ).join('') + `</div>`;
+        </div>`,
+                )
+                .join('') +
+            `</div>`
+        );
     }
-
 
     _renderStatementReport(data, certData) {
         const wrapper = document.createElement('div');
@@ -2766,87 +3289,149 @@ class ReportAnalyzerApp {
 
         // --- ОБЩАЯ ИНФОРМАЦИЯ ---
         const generalContent = document.createDocumentFragment();
-        const statementTypeMap = { '1': 'Первичное подключение', '2': 'Продление/изменение' };
-        generalContent.appendChild(this.createField('Тип заявления: ', statementTypeMap[data.general.statementType] || `Неизвестный (${data.general.statementType})`));
-        generalContent.appendChild(this.createField('Дата формирования: ', new Date(data.general.dateTime).toLocaleString('ru-RU')));
+        const statementTypeMap = { 1: 'Первичное подключение', 2: 'Продление/изменение' };
+        generalContent.appendChild(
+            this.createField(
+                'Тип заявления: ',
+                statementTypeMap[data.general.statementType] ||
+                    `Неизвестный (${data.general.statementType})`,
+            ),
+        );
+        generalContent.appendChild(
+            this.createField(
+                'Дата формирования: ',
+                new Date(data.general.dateTime).toLocaleString('ru-RU'),
+            ),
+        );
         generalContent.appendChild(this.createField('Версия формата: ', data.general.formVersion));
-        wrapper.appendChild(this._createAccordion('Информация о заявлении: ', generalContent, true));
+        wrapper.appendChild(
+            this._createAccordion('Информация о заявлении: ', generalContent, true),
+        );
 
         // --- ИНФОРМАЦИЯ ОБ ОРГАНИЗАЦИИ ---
         const orgContent = document.createDocumentFragment();
         orgContent.appendChild(this.createField('Наименование: ', data.general.orgName));
         orgContent.appendChild(this.createField('ИНН: ', data.general.inn));
         orgContent.appendChild(this.createField('ОГРН/ОГРНИП: ', data.general.ogrn));
-        orgContent.appendChild(this.createField('Тип: ', data.general.isJuridical === 'true' ? 'Юридическое лицо' : 'Индивидуальный предприниматель'));
+        orgContent.appendChild(
+            this.createField(
+                'Тип: ',
+                data.general.isJuridical === 'true'
+                    ? 'Юридическое лицо'
+                    : 'Индивидуальный предприниматель',
+            ),
+        );
         orgContent.appendChild(this.createField('Телефон: ', data.general.phone));
         orgContent.appendChild(this.createField('Email организации: ', data.general.email));
-        wrapper.appendChild(this._createAccordion('Информация об организации/ИП: ', orgContent, true));
+        wrapper.appendChild(
+            this._createAccordion('Информация об организации/ИП: ', orgContent, true),
+        );
 
         // --- АДРЕСА ---
         const addressContent = document.createDocumentFragment();
-        addressContent.appendChild(this.createField('Юридический адрес: ', data.legalAddress.formatted));
-        addressContent.appendChild(this.createField('Фактический адрес: ', data.actualAddress.formatted));
+        addressContent.appendChild(
+            this.createField('Юридический адрес: ', data.legalAddress.formatted),
+        );
+        addressContent.appendChild(
+            this.createField('Фактический адрес: ', data.actualAddress.formatted),
+        );
         wrapper.appendChild(this._createAccordion('Адресная информация: ', addressContent));
 
         // --- ВЛАДЕЛЕЦ ЭЦП И СЕРТИФИКАТ ---
         const ownerContentContainer = document.createDocumentFragment();
         if (data.owner) {
-            ownerContentContainer.appendChild(this.createField('Email для уведомлений: ', data.owner.email));
-            ownerContentContainer.appendChild(this.createField('Мобильный телефон: ', data.owner.mobilePhone));
-            ownerContentContainer.appendChild(this.createField('Получать СМС: ', data.owner.wantsSmsNotify === 'true' ? 'Да' : 'Нет'));
-            ownerContentContainer.appendChild(this.createField('Криптопровайдер: ', data.owner.cryptoProviderName));
+            ownerContentContainer.appendChild(
+                this.createField('Email для уведомлений: ', data.owner.email),
+            );
+            ownerContentContainer.appendChild(
+                this.createField('Мобильный телефон: ', data.owner.mobilePhone),
+            );
+            ownerContentContainer.appendChild(
+                this.createField(
+                    'Получать СМС: ',
+                    data.owner.wantsSmsNotify === 'true' ? 'Да' : 'Нет',
+                ),
+            );
+            ownerContentContainer.appendChild(
+                this.createField('Криптопровайдер: ', data.owner.cryptoProviderName),
+            );
         }
         if (certData) {
             if (certData.parseError) {
-                ownerContentContainer.appendChild(this.createField('Статус сертификата: ', certData.parseError, 'error'));
+                ownerContentContainer.appendChild(
+                    this.createField('Статус сертификата: ', certData.parseError, 'error'),
+                );
             } else {
-                ownerContentContainer.appendChild(this.createField('Владелец (из CN): ', certData.ownerFio));
+                ownerContentContainer.appendChild(
+                    this.createField('Владелец (из CN): ', certData.ownerFio),
+                );
 
                 ownerContentContainer.appendChild(this._createCertificateStatusField(certData));
 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'text-left mt-2';
-                buttonContainer.appendChild(this._createDownloadButtonForThumbprint(certData.thumbprint, 'Скачать сертификат'));
+                buttonContainer.appendChild(
+                    this._createDownloadButtonForThumbprint(
+                        certData.thumbprint,
+                        'Скачать сертификат',
+                    ),
+                );
                 ownerContentContainer.appendChild(buttonContainer);
             }
         } else {
-            ownerContentContainer.appendChild(this.createField('Сертификат', 'Не найден в файле', 'error'));
+            ownerContentContainer.appendChild(
+                this.createField('Сертификат', 'Не найден в файле', 'error'),
+            );
         }
-        wrapper.appendChild(this._createAccordion('Владелец ЭЦП и сертификат', ownerContentContainer, true));
+        wrapper.appendChild(
+            this._createAccordion('Владелец ЭЦП и сертификат', ownerContentContainer, true),
+        );
 
         // --- ПОЛУЧАТЕЛИ ---
         if (data.recipients.length > 0) {
             const recipientsContainer = document.createDocumentFragment();
             const recipientsList = document.createElement('div');
             recipientsList.className = 'space-y-2';
-            data.recipients.forEach(rec => {
-                const name = this.controllingAuthorityMap[rec.type] || `Неизвестный орган (${rec.type})`;
+            data.recipients.forEach((rec) => {
+                const name =
+                    this.controllingAuthorityMap[rec.type] || `Неизвестный орган (${rec.type})`;
                 const code = rec.code ? ` (Код: ${rec.code})` : '';
                 const p = document.createElement('p');
                 p.textContent = `${name}${code}`;
                 recipientsList.appendChild(p);
             });
             recipientsContainer.appendChild(recipientsList);
-            wrapper.appendChild(this._createAccordion(`Направления сдачи отчетности (${data.recipients.length})`, recipientsContainer));
+            wrapper.appendChild(
+                this._createAccordion(
+                    `Направления сдачи отчетности (${data.recipients.length})`,
+                    recipientsContainer,
+                ),
+            );
         }
 
         // --- ИНФОРМАЦИЯ О ПРОГРАММЕ ---
         const programContent = document.createDocumentFragment();
-        programContent.appendChild(this.createField('Источник: ', data.general.programVersionString));
+        programContent.appendChild(
+            this.createField('Источник: ', data.general.programVersionString),
+        );
         programContent.appendChild(this.createField('Имя конфигурации: ', data.programInfo.name));
-        programContent.appendChild(this.createField('Версия конфигурации: ', data.programInfo.version));
-        programContent.appendChild(this.createField('Версия платформы: ', data.programInfo.platform));
-        wrapper.appendChild(this._createAccordion('Информация о программе-отправителе: ', programContent));
+        programContent.appendChild(
+            this.createField('Версия конфигурации: ', data.programInfo.version),
+        );
+        programContent.appendChild(
+            this.createField('Версия платформы: ', data.programInfo.platform),
+        );
+        wrapper.appendChild(
+            this._createAccordion('Информация о программе-отправителе: ', programContent),
+        );
 
         return wrapper;
     }
-
 
     async _processRegistrationFile(xmlDoc) {
         const data = await this._parseRegistrationFile(xmlDoc);
         return this._renderRegistrationFileReport(data);
     }
-
 
     _renderRegistrationFileReport(data) {
         const wrapper = document.createElement('div');
@@ -2861,33 +3446,67 @@ class ReportAnalyzerApp {
         // --- МЕТАДАННЫЕ ФАЙЛА ---
         const metaContent = document.createDocumentFragment();
         metaContent.appendChild(this.createField('Версия формата: ', data.meta.formatVersion));
-        metaContent.appendChild(this.createField('Дата формирования: ', new Date(data.meta.creationTimestamp).toLocaleString('ru-RU')));
+        metaContent.appendChild(
+            this.createField(
+                'Дата формирования: ',
+                new Date(data.meta.creationTimestamp).toLocaleString('ru-RU'),
+            ),
+        );
         metaContent.appendChild(this.createField('Версия программы: ', data.meta.programVersion));
         wrapper.appendChild(this._createAccordion('Метаданные файла', metaContent, false));
 
         // --- ИНФОРМАЦИЯ ОБ ОРГАНИЗАЦИИ ---
         const generalContent = document.createDocumentFragment();
         generalContent.appendChild(this.createField('Полное наименование: ', data.general.orgName));
-        generalContent.appendChild(this.createField('Краткое наименование: ', data.general.shortOrgName));
-        generalContent.appendChild(this.createField('ИНН / КПП: ', `${data.general.inn} / ${data.general.kpp}`));
+        generalContent.appendChild(
+            this.createField('Краткое наименование: ', data.general.shortOrgName),
+        );
+        generalContent.appendChild(
+            this.createField('ИНН / КПП: ', `${data.general.inn} / ${data.general.kpp}`),
+        );
         generalContent.appendChild(this.createField('ОГРН', data.general.ogrn));
         generalContent.appendChild(this.createField('Email (внутренний): ', data.general.email));
-        generalContent.appendChild(this.createField('Email (публичный): ', data.general.publicEmail));
+        generalContent.appendChild(
+            this.createField('Email (публичный): ', data.general.publicEmail),
+        );
         generalContent.appendChild(this.createField('Основной телефон: ', data.general.phoneMain));
         generalContent.appendChild(this.createField('Доп. телефон: ', data.general.phoneExtra));
-        generalContent.appendChild(this.createField('Мобильный телефон: ', data.general.phoneMobile));
-        generalContent.appendChild(this.createField('Рег. номер ПФР/СФР: ', data.general.pfrRegNum));
+        generalContent.appendChild(
+            this.createField('Мобильный телефон: ', data.general.phoneMobile),
+        );
+        generalContent.appendChild(
+            this.createField('Рег. номер ПФР/СФР: ', data.general.pfrRegNum),
+        );
         generalContent.appendChild(this.createField('Рег. номер ФСС: ', data.general.fssRegNum));
-        wrapper.appendChild(this._createAccordion('Информация об организации', generalContent, true));
+        wrapper.appendChild(
+            this._createAccordion('Информация об организации', generalContent, true),
+        );
 
         // --- ЛИЦЕНЗИЯ ---
         if (data.license && data.license.name) {
             const licenseContent = document.createDocumentFragment();
             licenseContent.appendChild(this.createField('Наименование: ', data.license.name));
-            licenseContent.appendChild(this.createField('Признак ИТС: ', data.license.its === 'true' ? 'Да' : 'Нет'));
-            licenseContent.appendChild(this.createField('Дата начала: ', new Date(data.license.startDate).toLocaleDateString('ru-RU')));
-            licenseContent.appendChild(this.createField('Дата окончания: ', new Date(data.license.endDate).toLocaleDateString('ru-RU')));
-            licenseContent.appendChild(this.createField('Дата блокировки: ', new Date(data.license.blockDate).toLocaleDateString('ru-RU')));
+            licenseContent.appendChild(
+                this.createField('Признак ИТС: ', data.license.its === 'true' ? 'Да' : 'Нет'),
+            );
+            licenseContent.appendChild(
+                this.createField(
+                    'Дата начала: ',
+                    new Date(data.license.startDate).toLocaleDateString('ru-RU'),
+                ),
+            );
+            licenseContent.appendChild(
+                this.createField(
+                    'Дата окончания: ',
+                    new Date(data.license.endDate).toLocaleDateString('ru-RU'),
+                ),
+            );
+            licenseContent.appendChild(
+                this.createField(
+                    'Дата блокировки: ',
+                    new Date(data.license.blockDate).toLocaleDateString('ru-RU'),
+                ),
+            );
             wrapper.appendChild(this._createAccordion('Лицензия', licenseContent, false));
         }
 
@@ -2896,28 +3515,46 @@ class ReportAnalyzerApp {
             const ownersContainer = document.createDocumentFragment();
             const ownersList = document.createElement('div');
             ownersList.className = 'space-y-3';
-            data.owners.forEach(owner => {
+            data.owners.forEach((owner) => {
                 const ownerCard = document.createElement('div');
-                ownerCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 bg-slate-50 dark:bg-slate-800/50 space-y-1';
+                ownerCard.className =
+                    'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 bg-slate-50 dark:bg-slate-800/50 space-y-1';
                 ownerCard.appendChild(this.createField('ФИО: ', owner.fio));
                 ownerCard.appendChild(this.createField('Должность: ', owner.position));
                 ownerCard.appendChild(this.createField('ИНН физ. лица: ', owner.inn));
                 ownerCard.appendChild(this.createField('СНИЛС: ', owner.snils));
-                ownerCard.appendChild(this.createField('Криптопровайдер: ', owner.cryptoProvider.name));
+                ownerCard.appendChild(
+                    this.createField('Криптопровайдер: ', owner.cryptoProvider.name),
+                );
 
                 const certData = this.certificates.get(owner.thumbprint?.toUpperCase());
 
-                ownerCard.appendChild(this._createCertificateStatusField(certData || { thumbprint: owner.thumbprint }));
+                ownerCard.appendChild(
+                    this._createCertificateStatusField(
+                        certData || { thumbprint: owner.thumbprint },
+                    ),
+                );
 
                 const downloadButtonContainer = document.createElement('div');
                 downloadButtonContainer.className = 'text-left pt-2';
-                downloadButtonContainer.appendChild(this._createDownloadButtonForThumbprint(owner.thumbprint, 'Скачать сертификат владельца'));
+                downloadButtonContainer.appendChild(
+                    this._createDownloadButtonForThumbprint(
+                        owner.thumbprint,
+                        'Скачать сертификат владельца',
+                    ),
+                );
                 ownerCard.appendChild(downloadButtonContainer);
 
                 ownersList.appendChild(ownerCard);
             });
             ownersContainer.appendChild(ownersList);
-            wrapper.appendChild(this._createAccordion(`Владельцы ЭЦП (${data.owners.length} шт.)`, ownersContainer, true));
+            wrapper.appendChild(
+                this._createAccordion(
+                    `Владельцы ЭЦП (${data.owners.length} шт.)`,
+                    ownersContainer,
+                    true,
+                ),
+            );
         }
 
         // --- ПОДКЛЮЧЕНИЯ К КОНТРОЛИРУЮЩИМ ОРГАНАМ ---
@@ -2925,13 +3562,18 @@ class ReportAnalyzerApp {
             const recipientsContainer = document.createDocumentFragment();
             const recipientsList = document.createElement('div');
             recipientsList.className = 'space-y-3';
-            data.recipients.forEach(rec => {
+            data.recipients.forEach((rec) => {
                 const recipientCard = document.createElement('div');
-                recipientCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 bg-slate-50 dark:bg-slate-800/50';
+                recipientCard.className =
+                    'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 bg-slate-50 dark:bg-slate-800/50';
 
                 const title = document.createElement('p');
                 title.className = 'font-semibold text-slate-800 dark:text-slate-200';
-                title.textContent = this.sanitizeText(this.controllingAuthorityMap[rec.type] || rec.name || `Неизвестный орган: ${rec.type}`);
+                title.textContent = this.sanitizeText(
+                    this.controllingAuthorityMap[rec.type] ||
+                        rec.name ||
+                        `Неизвестный орган: ${rec.type}`,
+                );
                 recipientCard.appendChild(title);
 
                 if (rec.code) {
@@ -2957,13 +3599,14 @@ class ReportAnalyzerApp {
 
                 if (rec.thumbprints && rec.thumbprints.length > 0) {
                     const thumbprintsTitle = document.createElement('p');
-                    thumbprintsTitle.className = 'text-sm font-semibold mt-2 text-slate-700 dark:text-slate-300';
+                    thumbprintsTitle.className =
+                        'text-sm font-semibold mt-2 text-slate-700 dark:text-slate-300';
                     thumbprintsTitle.textContent = 'Сертификаты шифрования органа:';
                     recipientCard.appendChild(thumbprintsTitle);
 
                     const thumbprintsList = document.createElement('div');
                     thumbprintsList.className = 'space-y-1 pl-';
-                    rec.thumbprints.forEach(thumbprint => {
+                    rec.thumbprints.forEach((thumbprint) => {
                         const thumbprintItem = document.createElement('div');
                         thumbprintItem.className = 'flex items-center justify-between gap-2';
 
@@ -2971,10 +3614,15 @@ class ReportAnalyzerApp {
                         thumbprintText.href = '#';
                         thumbprintText.className = 'font-mono text-xs hover:underline';
                         thumbprintText.textContent = thumbprint;
-                        thumbprintText.onclick = (e) => { e.preventDefault(); this.showCertificateDetails(thumbprint); };
+                        thumbprintText.onclick = (e) => {
+                            e.preventDefault();
+                            this.showCertificateDetails(thumbprint);
+                        };
                         thumbprintItem.appendChild(thumbprintText);
 
-                        thumbprintItem.appendChild(this._createDownloadButtonForThumbprint(thumbprint, 'Скачать'));
+                        thumbprintItem.appendChild(
+                            this._createDownloadButtonForThumbprint(thumbprint, 'Скачать'),
+                        );
                         thumbprintsList.appendChild(thumbprintItem);
                     });
                     recipientCard.appendChild(thumbprintsList);
@@ -2982,7 +3630,13 @@ class ReportAnalyzerApp {
                 recipientsList.appendChild(recipientCard);
             });
             recipientsContainer.appendChild(recipientsList);
-            wrapper.appendChild(this._createAccordion(`Подключения к КО (${data.recipients.length} шт.)`, recipientsContainer, false));
+            wrapper.appendChild(
+                this._createAccordion(
+                    `Подключения к КО (${data.recipients.length} шт.)`,
+                    recipientsContainer,
+                    false,
+                ),
+            );
         }
 
         // --- НАСТРОЙКИ СЕРВЕРОВ ---
@@ -2993,27 +3647,55 @@ class ReportAnalyzerApp {
         // POP3
         if (data.servers.pop3.address) {
             const pop3Card = document.createElement('div');
-            pop3Card.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50';
-            pop3Card.appendChild(this.createField('Сервер входящей почты (POP3)', `${data.servers.pop3.address}:${data.servers.pop3.port}`));
-            pop3Card.appendChild(this.createField('Требуется авторизация', data.servers.pop3.auth === 'true' ? 'Да' : 'Нет'));
+            pop3Card.className =
+                'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50';
+            pop3Card.appendChild(
+                this.createField(
+                    'Сервер входящей почты (POP3)',
+                    `${data.servers.pop3.address}:${data.servers.pop3.port}`,
+                ),
+            );
+            pop3Card.appendChild(
+                this.createField(
+                    'Требуется авторизация',
+                    data.servers.pop3.auth === 'true' ? 'Да' : 'Нет',
+                ),
+            );
             serversList.appendChild(pop3Card);
         }
 
         // SMTP
         if (data.servers.smtp.address) {
             const smtpCard = document.createElement('div');
-            smtpCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50';
-            smtpCard.appendChild(this.createField('Сервер исходящей почты (SMTP)', `${data.servers.smtp.address}:${data.servers.smtp.port}`));
-            smtpCard.appendChild(this.createField('Требуется авторизация', data.servers.smtp.auth === 'true' ? 'Да' : 'Нет'));
+            smtpCard.className =
+                'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50';
+            smtpCard.appendChild(
+                this.createField(
+                    'Сервер исходящей почты (SMTP)',
+                    `${data.servers.smtp.address}:${data.servers.smtp.port}`,
+                ),
+            );
+            smtpCard.appendChild(
+                this.createField(
+                    'Требуется авторизация',
+                    data.servers.smtp.auth === 'true' ? 'Да' : 'Нет',
+                ),
+            );
             serversList.appendChild(smtpCard);
         }
 
         // EDO
         if (data.servers.edo.name) {
             const edoCard = document.createElement('div');
-            edoCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-1';
+            edoCard.className =
+                'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-1';
             edoCard.appendChild(this.createField('Сервер ЭДО', data.servers.edo.name));
-            edoCard.appendChild(this.createField('Отпечаток серт. ЭДО', `<div class="font-mono text-xs break-all">${data.servers.edo.thumbprint}</div>`));
+            edoCard.appendChild(
+                this.createField(
+                    'Отпечаток серт. ЭДО',
+                    `<div class="font-mono text-xs break-all">${data.servers.edo.thumbprint}</div>`,
+                ),
+            );
 
             if (data.servers.edo.emails) {
                 edoCard.appendChild(this.createField('Email ФНС', data.servers.edo.emails.fns));
@@ -3026,10 +3708,23 @@ class ReportAnalyzerApp {
         // Online Check
         if (data.servers.onlineCheck.name) {
             const onlineCard = document.createElement('div');
-            onlineCard.className = 'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50';
-            onlineCard.appendChild(this.createField('Сервер онлайн-проверки', data.servers.onlineCheck.name));
-            onlineCard.appendChild(this.createField('Отпечаток серт.', `<div class="font-mono text-xs break-all">${data.servers.onlineCheck.thumbprint}</div>`));
-            onlineCard.appendChild(this.createField('WSDL', `<div class="text-xs break-all">${data.servers.onlineCheck.resource.definition}</div>`));
+            onlineCard.className =
+                'p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50';
+            onlineCard.appendChild(
+                this.createField('Сервер онлайн-проверки', data.servers.onlineCheck.name),
+            );
+            onlineCard.appendChild(
+                this.createField(
+                    'Отпечаток серт.',
+                    `<div class="font-mono text-xs break-all">${data.servers.onlineCheck.thumbprint}</div>`,
+                ),
+            );
+            onlineCard.appendChild(
+                this.createField(
+                    'WSDL',
+                    `<div class="text-xs break-all">${data.servers.onlineCheck.resource.definition}</div>`,
+                ),
+            );
             serversList.appendChild(onlineCard);
         }
 
@@ -3039,8 +3734,18 @@ class ReportAnalyzerApp {
         // --- ПОДПИСЬ ---
         if (data.signature.thumbprint) {
             const signatureContent = document.createDocumentFragment();
-            signatureContent.appendChild(this.createField('Отпечаток сертификата подписи', `<div class="font-mono text-xs break-all">${data.signature.thumbprint}</div>`));
-            signatureContent.appendChild(this.createField('Значение подписи (Base64)', `<div class="text-xs break-all text-slate-500">${data.signature.value.substring(0, 100)}...</div>`));
+            signatureContent.appendChild(
+                this.createField(
+                    'Отпечаток сертификата подписи',
+                    `<div class="font-mono text-xs break-all">${data.signature.thumbprint}</div>`,
+                ),
+            );
+            signatureContent.appendChild(
+                this.createField(
+                    'Значение подписи (Base64)',
+                    `<div class="text-xs break-all text-slate-500">${data.signature.value.substring(0, 100)}...</div>`,
+                ),
+            );
             wrapper.appendChild(this._createAccordion('Подпись файла', signatureContent));
         }
 
@@ -3048,13 +3753,15 @@ class ReportAnalyzerApp {
             const confidentialContent = document.createDocumentFragment();
             const infoText = document.createElement('p');
             infoText.className = 'text-sm text-slate-500 dark:text-slate-400';
-            infoText.textContent = 'В файле обнаружен блок с зашифрованной информацией, его содержимое не может быть отображено.';
+            infoText.textContent =
+                'В файле обнаружен блок с зашифрованной информацией, его содержимое не может быть отображено.';
             confidentialContent.appendChild(infoText);
-            wrapper.appendChild(this._createAccordion('Конфиденциальная информация', confidentialContent));
+            wrapper.appendChild(
+                this._createAccordion('Конфиденциальная информация', confidentialContent),
+            );
         }
         return wrapper;
     }
-
 
     _parseAddress(addressNode) {
         if (!addressNode) {
@@ -3066,12 +3773,12 @@ class ReportAnalyzerApp {
             city: this.getText(addressNode, 'Город'),
             street: this.getText(addressNode, 'Улица'),
             fiasId: this.getText(addressNode, 'ИдФиас'),
-            additional: []
+            additional: [],
         };
 
         const parts = [raw.region, raw.city, raw.street].filter(Boolean);
 
-        addressNode.querySelectorAll('ДопАдрЭл').forEach(el => {
+        addressNode.querySelectorAll('ДопАдрЭл').forEach((el) => {
             const type = el.getAttribute('ТипАдрЭл');
             const value = el.getAttribute('Значение');
 
@@ -3097,10 +3804,9 @@ class ReportAnalyzerApp {
 
         return {
             raw,
-            formatted: parts.join(', ') || 'Адрес не удалось разобрать'
+            formatted: parts.join(', ') || 'Адрес не удалось разобрать',
         };
     }
-
 
     async _parseRegistrationFile(xmlDoc) {
         const root = xmlDoc.documentElement;
@@ -3115,7 +3821,7 @@ class ReportAnalyzerApp {
             recipients: [],
             allCertificates: [],
             signature: {},
-            confidential: {}
+            confidential: {},
         };
 
         // --- МЕТАДАННЫЕ ФАЙЛА ---
@@ -3163,16 +3869,18 @@ class ReportAnalyzerApp {
                 its: lic.getAttribute('ИТС'),
                 startDate: lic.getAttribute('ДатаНачала'),
                 endDate: lic.getAttribute('ДатаОкончания'),
-                blockDate: lic.getAttribute('ДатаБлокировки')
+                blockDate: lic.getAttribute('ДатаБлокировки'),
             };
         }
 
         // --- ВЛАДЕЛЬЦЫ ЭЦП ---
-        root.querySelectorAll('ВладельцыЭЦП ВладелецЭЦП').forEach(node => {
+        root.querySelectorAll('ВладельцыЭЦП ВладелецЭЦП').forEach((node) => {
             const fioNode = node.querySelector('ФИО');
             const cryptoNode = node.querySelector('Криптопровайдер');
             const owner = {
-                fio: fioNode ? `${fioNode.getAttribute('Фамилия')} ${fioNode.getAttribute('Имя')} ${fioNode.getAttribute('Отчество')}`.trim() : 'Н/Д',
+                fio: fioNode
+                    ? `${fioNode.getAttribute('Фамилия')} ${fioNode.getAttribute('Имя')} ${fioNode.getAttribute('Отчество')}`.trim()
+                    : 'Н/Д',
                 position: this.getText(node, 'Должность'),
                 snils: this.getText(node, 'СНИЛС'),
                 inn: this.getText(node, 'ИНН'),
@@ -3181,10 +3889,12 @@ class ReportAnalyzerApp {
                 thumbprint: this.getText(node, 'Отпечаток')?.toUpperCase(),
                 wantsSms: this.getText(node, 'ПолучатьСМСУведомления'),
                 cryptoProLicenseInCert: this.getText(node, 'ЛицензияКриптоПроВключенаВСертификат'),
-                cryptoProvider: cryptoNode ? {
-                    type: this.getText(cryptoNode, 'ТипКриптопровайдера'),
-                    name: this.getText(cryptoNode, 'ИмяКриптопровайдера')
-                } : {}
+                cryptoProvider: cryptoNode
+                    ? {
+                          type: this.getText(cryptoNode, 'ТипКриптопровайдера'),
+                          name: this.getText(cryptoNode, 'ИмяКриптопровайдера'),
+                      }
+                    : {},
             };
             data.owners.push(owner);
 
@@ -3193,17 +3903,27 @@ class ReportAnalyzerApp {
                     thumbprint: owner.thumbprint,
                     source: 'Рег. файл (Владелец ЭЦП)',
                     ownerFio: owner.fio,
-                    orgName: data.general.shortOrgName || data.general.orgName
+                    orgName: data.general.shortOrgName || data.general.orgName,
                 });
             }
         });
 
         // --- СЕРВЕРЫ ---
         const pop3 = root.querySelector('СерверPOP3');
-        if (pop3) data.servers.pop3 = { port: this.getText(pop3, 'Порт'), address: this.getText(pop3, 'Адрес'), auth: this.getText(pop3, 'ТребуетсяАвторизация') };
+        if (pop3)
+            data.servers.pop3 = {
+                port: this.getText(pop3, 'Порт'),
+                address: this.getText(pop3, 'Адрес'),
+                auth: this.getText(pop3, 'ТребуетсяАвторизация'),
+            };
 
         const smtp = root.querySelector('СерверSMTP');
-        if (smtp) data.servers.smtp = { port: this.getText(smtp, 'Порт'), address: this.getText(smtp, 'Адрес'), auth: this.getText(smtp, 'ТребуетсяАвторизация') };
+        if (smtp)
+            data.servers.smtp = {
+                port: this.getText(smtp, 'Порт'),
+                address: this.getText(smtp, 'Адрес'),
+                auth: this.getText(smtp, 'ТребуетсяАвторизация'),
+            };
 
         const edo = root.querySelector('СерверЭДО');
         if (edo) {
@@ -3214,13 +3934,13 @@ class ReportAnalyzerApp {
                     fns: this.getText(edo, 'АдресЭлектроннойПочтыФНС'),
                     pfr: this.getText(edo, 'АдресЭлектроннойПочтыПФР'),
                     fgs: this.getText(edo, 'АдресЭлектроннойПочтыФСГС'),
-                }
+                },
             };
             if (data.servers.edo.thumbprint) {
                 this.addOrUpdateCertificate({
                     thumbprint: data.servers.edo.thumbprint,
                     source: 'Рег. файл (Сервер ЭДО)',
-                    orgName: data.servers.edo.name || 'Сервер ЭДО'
+                    orgName: data.servers.edo.name || 'Сервер ЭДО',
                 });
             }
         }
@@ -3232,41 +3952,47 @@ class ReportAnalyzerApp {
                 name: this.getText(online, 'Наименование'),
                 type: this.getText(online, 'ТипРеализации'),
                 thumbprint: this.getText(online, 'Отпечаток')?.toUpperCase(),
-                resource: res ? {
-                    definition: res.getAttribute('Определение'),
-                    namespace: res.getAttribute('URIПространстваИменСервиса'),
-                    serviceName: res.getAttribute('ИмяСервиса'),
-                    endpointName: res.getAttribute('ИмяТочкиПодключения')
-                } : {}
+                resource: res
+                    ? {
+                          definition: res.getAttribute('Определение'),
+                          namespace: res.getAttribute('URIПространстваИменСервиса'),
+                          serviceName: res.getAttribute('ИмяСервиса'),
+                          endpointName: res.getAttribute('ИмяТочкиПодключения'),
+                      }
+                    : {},
             };
             if (data.servers.onlineCheck.thumbprint) {
                 this.addOrUpdateCertificate({
                     thumbprint: data.servers.onlineCheck.thumbprint,
                     source: 'Рег. файл (Сервер онлайн-проверки)',
-                    orgName: data.servers.onlineCheck.name || 'Сервер онлайн-проверки'
+                    orgName: data.servers.onlineCheck.name || 'Сервер онлайн-проверки',
                 });
             }
         }
 
         // --- ПОЛУЧАТЕЛИ ---
-        root.querySelectorAll('Получатели Получатель, ДополнительныеПолучатели ДополнительныйПолучатель').forEach(r => {
+        root.querySelectorAll(
+            'Получатели Получатель, ДополнительныеПолучатели ДополнительныйПолучатель',
+        ).forEach((r) => {
             const rec = {
                 type: this.getText(r, 'ТипПолучателя'),
                 code: this.getText(r, 'КодПолучателя'),
                 name: this.getText(r, 'НаименованиеПолучателя'),
-                kppList: Array.from(r.querySelectorAll('ПереченьКПП КПП')).map(k => k.textContent.trim()).filter(Boolean),
+                kppList: Array.from(r.querySelectorAll('ПереченьКПП КПП'))
+                    .map((k) => k.textContent.trim())
+                    .filter(Boolean),
                 thumbprints: Array.from(r.querySelectorAll('ОтпечаткиСертификатов Отпечаток'))
-                    .map(t => t.textContent.trim().toUpperCase())
-                    .filter(Boolean)
+                    .map((t) => t.textContent.trim().toUpperCase())
+                    .filter(Boolean),
             };
             data.recipients.push(rec);
 
-            rec.thumbprints.forEach(thumbprint => {
+            rec.thumbprints.forEach((thumbprint) => {
                 this.addOrUpdateCertificate({
                     thumbprint: thumbprint,
                     source: 'Рег. файл (Сертификат шифрования КО)',
                     orgName: rec.name || `Орган: ${rec.type}`,
-                    recipientType: rec.type
+                    recipientType: rec.type,
                 });
             });
         });
@@ -3274,18 +4000,22 @@ class ReportAnalyzerApp {
         // --- ПОДПИСЬ И КОНФИДЕНЦИАЛЬНАЯ ИНФОРМАЦИЯ ---
         const signNode = root.querySelector('Подписи Подпись');
         if (signNode) {
-            data.signature = { thumbprint: signNode.getAttribute('Отпечаток')?.toUpperCase(), value: signNode.textContent.trim() };
+            data.signature = {
+                thumbprint: signNode.getAttribute('Отпечаток')?.toUpperCase(),
+                value: signNode.textContent.trim(),
+            };
             if (data.signature.thumbprint) {
                 this.addOrUpdateCertificate({
                     thumbprint: data.signature.thumbprint,
                     source: 'Рег. файл (Подпись файла)',
-                    orgName: `Подпись файла (${data.general.shortOrgName || data.general.orgName})`
+                    orgName: `Подпись файла (${data.general.shortOrgName || data.general.orgName})`,
                 });
             }
         }
 
         const confidentialNode = root.querySelector('КонфиденциальнаяИнформация');
-        if (confidentialNode) data.confidential = { encryptedData: confidentialNode.textContent.trim() };
+        if (confidentialNode)
+            data.confidential = { encryptedData: confidentialNode.textContent.trim() };
 
         // --- СЕРТИФИКАТЫ ---
         const certsContainer = root.querySelector('Сертификаты');
@@ -3298,12 +4028,15 @@ class ReportAnalyzerApp {
             const parsed = await window.electronAPI.parseCertificate(base64);
 
             const certData = {
-                thumbprint: certNode.getAttribute('Отпечаток')?.toUpperCase() || parsed.thumbprint || `unknown_${Date.now()}`,
+                thumbprint:
+                    certNode.getAttribute('Отпечаток')?.toUpperCase() ||
+                    parsed.thumbprint ||
+                    `unknown_${Date.now()}`,
                 base64,
                 store: certNode.getAttribute('Хранилище'),
                 isParsed: parsed.isParsed,
                 source: 'Рег. файл (блок <Сертификаты>)',
-                ...parsed
+                ...parsed,
             };
 
             this.addOrUpdateCertificate(certData);
@@ -3314,7 +4047,6 @@ class ReportAnalyzerApp {
 
         return data;
     }
-
 
     _createDownloadButtonForThumbprint(thumbprint, text = 'Скачать', extraClasses = '') {
         if (!thumbprint) {
@@ -3330,10 +4062,13 @@ class ReportAnalyzerApp {
 
         const button = document.createElement('button');
 
-        const baseClasses = 'bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+        const baseClasses =
+            'bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
-        const activeClasses = 'bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-        const disabledClasses = 'bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+        const activeClasses =
+            'bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+        const disabledClasses =
+            'bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
         button.className = `download-cert-btn ${baseClasses} ${isDisabled ? disabledClasses : activeClasses} ${extraClasses}`;
 
@@ -3349,7 +4084,6 @@ class ReportAnalyzerApp {
         return button;
     }
 }
-
 
 export function createXmlAnalyzerApp(root) {
     return new ReportAnalyzerApp(root);

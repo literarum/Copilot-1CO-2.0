@@ -26,6 +26,7 @@ export function initBackgroundStatusHUD() {
         hasShownCompletion: false,
         rafId: null,
         lastVisualPercent: 0,
+        animatingToComplete: false,
         autoHideTimeoutId: null,
         dismissing: false,
         pendingDismissAfterActivity: null,
@@ -315,6 +316,7 @@ export function initBackgroundStatusHUD() {
     }
 
     function aggregatePercent() {
+        if (STATE.animatingToComplete) return 100;
         let totalWeight = 0;
         let acc = 0;
         for (const t of STATE.tasks.values()) {
@@ -327,6 +329,20 @@ export function initBackgroundStatusHUD() {
         return (acc / totalWeight) * 100;
     }
 
+    function scheduleAutoHideTimeout() {
+        if (STATE.autoHideTimeoutId) clearTimeout(STATE.autoHideTimeoutId);
+        STATE.autoHideTimeoutId = setTimeout(() => {
+            if (STATE.tasks.size > 0) {
+                console.debug(
+                    '[BackgroundStatusHUD] Принудительное скрытие по таймауту. Незавершённые задачи:',
+                    [...STATE.tasks.keys()],
+                );
+            }
+            STATE.tasks.clear();
+            hide();
+        }, _MAX_HUD_DISPLAY_TIME);
+    }
+
     function tick() {
         const target = aggregatePercent();
         const next =
@@ -335,17 +351,30 @@ export function initBackgroundStatusHUD() {
         STATE.lastVisualPercent = Math.min(100, Math.max(0, next));
         if (STATE.barEl) {
             STATE.barEl.style.width = `${STATE.lastVisualPercent.toFixed(1)}%`;
-            if (STATE.tasks.size === 0) {
+            if (STATE.animatingToComplete && STATE.lastVisualPercent >= 99.9) {
                 STATE.lastVisualPercent = 100;
                 STATE.barEl.style.width = '100%';
                 STATE.barEl.classList.add('completed');
-            } else {
+                STATE.animatingToComplete = false;
+                STATE.rafId = null;
+                setTimeout(() => {
+                    showCompletionCard();
+                    scheduleDismissAfterActivity();
+                }, 200);
+                return;
+            }
+            if (STATE.tasks.size === 0 && !STATE.animatingToComplete) {
+                STATE.animatingToComplete = true;
+            }
+            if (!STATE.animatingToComplete) {
                 STATE.barEl.classList.remove('completed');
             }
         }
         if (STATE.percentEl)
             STATE.percentEl.textContent = `${Math.round(STATE.lastVisualPercent)}%`;
-        if (STATE.tasks.size > 0) STATE.rafId = requestAnimationFrame(tick);
+        const shouldContinue =
+            STATE.tasks.size > 0 || (STATE.animatingToComplete && STATE.lastVisualPercent < 99.9);
+        if (shouldContinue) STATE.rafId = requestAnimationFrame(tick);
     }
 
     function show() {
@@ -353,11 +382,7 @@ export function initBackgroundStatusHUD() {
         computeTopOffset();
         STATE.container.style.display = '';
         if (!STATE.rafId) STATE.rafId = requestAnimationFrame(tick);
-
-        if (STATE.autoHideTimeoutId) {
-            clearTimeout(STATE.autoHideTimeoutId);
-            STATE.autoHideTimeoutId = null;
-        }
+        scheduleAutoHideTimeout();
     }
 
     function removeActivityListeners() {
@@ -388,6 +413,7 @@ export function initBackgroundStatusHUD() {
         if (STATE.rafId) cancelAnimationFrame(STATE.rafId);
         STATE.rafId = null;
         STATE.lastVisualPercent = 0;
+        STATE.animatingToComplete = false;
         STATE.dismissing = false;
         if (STATE.autoHideTimeoutId) {
             clearTimeout(STATE.autoHideTimeoutId);
@@ -431,11 +457,8 @@ export function initBackgroundStatusHUD() {
         if (!STATE.titleEl) return;
         if (active.length === 0) {
             STATE.titleEl.textContent = 'Готово';
-            if (STATE.barEl) {
-                STATE.lastVisualPercent = 100;
-                STATE.barEl.style.width = '100%';
-                STATE.barEl.classList.add('completed');
-            }
+            STATE.animatingToComplete = true;
+            if (!STATE.rafId) STATE.rafId = requestAnimationFrame(tick);
             return;
         }
         const main = active[0];
@@ -565,15 +588,8 @@ export function initBackgroundStatusHUD() {
 
     function maybeFinishAll() {
         if (STATE.tasks.size === 0) {
-            if (STATE.barEl) {
-                STATE.lastVisualPercent = 100;
-                STATE.barEl.style.width = '100%';
-                STATE.barEl.classList.add('completed');
-            }
-            setTimeout(() => {
-                showCompletionCard();
-                scheduleDismissAfterActivity();
-            }, 300);
+            STATE.animatingToComplete = true;
+            if (!STATE.rafId) STATE.rafId = requestAnimationFrame(tick);
         }
     }
 
@@ -600,6 +616,7 @@ export function initBackgroundStatusHUD() {
             }
             computeTopOffset();
             updateTitle();
+            scheduleAutoHideTimeout();
         },
         finishTask(id, success = true) {
             console.log(

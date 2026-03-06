@@ -54,7 +54,8 @@ function getMainAlgoGroupsFromForm() {
     const list = document.getElementById('editMainAlgoGroupsList');
     if (!list || !list.children.length) return [];
     return Array.from(list.children).map((row) => {
-        const id = row.dataset.groupId || `gr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const id =
+            row.dataset.groupId || `gr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
         const input = row.querySelector('.main-algo-group-title');
         const title = (input && input.value && input.value.trim()) || id;
         return { id, title };
@@ -70,7 +71,9 @@ function getMainAlgoGroupsInDisplayOrder() {
     const editSteps = document.getElementById('editSteps');
     const blocks = editSteps?.querySelectorAll('.edit-main-algo-group-block') || [];
     if (blocks.length === 0) return groupsFromForm;
-    const blockOrderIds = Array.from(blocks).map((b) => b.dataset.groupId).filter(Boolean);
+    const blockOrderIds = Array.from(blocks)
+        .map((b) => b.dataset.groupId)
+        .filter(Boolean);
     const byId = new Map(groupsFromForm.map((g) => [g.id, g]));
     const ordered = blockOrderIds.map((id) => byId.get(id)).filter(Boolean);
     const remaining = groupsFromForm.filter((g) => !blockOrderIds.includes(g.id));

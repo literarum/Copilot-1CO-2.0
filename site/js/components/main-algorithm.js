@@ -71,19 +71,30 @@ export async function loadMainAlgoViewPreference() {
     try {
         const headersOnly = await getFromIndexedDB('preferences', MAIN_ALGO_HEADERS_ONLY_KEY);
         const density = await getFromIndexedDB('preferences', MAIN_ALGO_DENSITY_KEY);
-        const headersExpanded = await getFromIndexedDB('preferences', MAIN_ALGO_HEADERS_EXPANDED_KEY);
+        const headersExpanded = await getFromIndexedDB(
+            'preferences',
+            MAIN_ALGO_HEADERS_EXPANDED_KEY,
+        );
         const groupsOpen = await getFromIndexedDB('preferences', MAIN_ALGO_GROUPS_OPEN_KEY);
         return {
             headersOnly:
-                headersOnly && typeof headersOnly.data === 'boolean' ? headersOnly.data : defaults.headersOnly,
+                headersOnly && typeof headersOnly.data === 'boolean'
+                    ? headersOnly.data
+                    : defaults.headersOnly,
             density:
-                density && typeof density.data === 'string' && (density.data === 'compact' || density.data === 'normal')
+                density &&
+                typeof density.data === 'string' &&
+                (density.data === 'compact' || density.data === 'normal')
                     ? density.data
                     : defaults.density,
             headersExpandedIndices:
-                headersExpanded && Array.isArray(headersExpanded.data) ? headersExpanded.data : defaults.headersExpandedIndices,
+                headersExpanded && Array.isArray(headersExpanded.data)
+                    ? headersExpanded.data
+                    : defaults.headersExpandedIndices,
             openGroupIds:
-                groupsOpen && Array.isArray(groupsOpen.data) ? groupsOpen.data : defaults.openGroupIds,
+                groupsOpen && Array.isArray(groupsOpen.data)
+                    ? groupsOpen.data
+                    : defaults.openGroupIds,
         };
     } catch (error) {
         console.warn('[loadMainAlgoViewPreference] Ошибка загрузки:', error);
@@ -280,7 +291,8 @@ export async function renderMainAlgorithm() {
                         : escapeHtml(step.description);
             } else if (typeof step.description === 'object' && step.description.type === 'list') {
                 let listHTML = '';
-                if (step.description.intro) listHTML += `<p class="mb-2">${escapeHtml(step.description.intro)}</p>`;
+                if (step.description.intro)
+                    listHTML += `<p class="mb-2">${escapeHtml(step.description.intro)}</p>`;
                 if (Array.isArray(step.description.items)) {
                     listHTML += '<ul class="list-disc list-inside space-y-1">';
                     step.description.items.forEach((item) => {
@@ -299,7 +311,8 @@ export async function renderMainAlgorithm() {
                 exampleDiv.innerHTML = `<strong>Пример:</strong><br>${escapeHtml(step.example)}`;
             } else if (typeof step.example === 'object' && step.example.type === 'list') {
                 let ex = '';
-                if (step.example.intro) ex += `<p class="mb-2">${escapeHtml(step.example.intro)}</p>`;
+                if (step.example.intro)
+                    ex += `<p class="mb-2">${escapeHtml(step.example.intro)}</p>`;
                 if (Array.isArray(step.example.items)) {
                     ex += '<ul class="list-disc list-inside space-y-1">';
                     step.example.items.forEach((item) => {
@@ -324,7 +337,9 @@ export async function renderMainAlgorithm() {
         stepDiv.appendChild(collapsibleBody);
         titleH3.addEventListener('click', async () => {
             stepDiv.classList.toggle('is-expanded');
-            const list = Array.from(mainAlgorithmContainer.querySelectorAll('.algorithm-step.headers-only-step'));
+            const list = Array.from(
+                mainAlgorithmContainer.querySelectorAll('.algorithm-step.headers-only-step'),
+            );
             const indices = list
                 .map((el, i) => (el.classList.contains('is-expanded') ? i : -1))
                 .filter((i) => i >= 0);
@@ -366,7 +381,11 @@ export async function renderMainAlgorithm() {
         }
         stepDiv.addEventListener('click', (e) => {
             if (e.target.closest('h3')) return;
-            if (e.target.closest('a') || e.target.closest('button') || e.target.closest('[role="button"]'))
+            if (
+                e.target.closest('a') ||
+                e.target.closest('button') ||
+                e.target.closest('[role="button"]')
+            )
                 return;
             const currentStepData = algorithms.main.steps[index];
             if (
@@ -406,7 +425,8 @@ export async function renderMainAlgorithm() {
                         : escapeHtml(step.description);
             } else if (typeof step.description === 'object' && step.description.type === 'list') {
                 let listHTML = '';
-                if (step.description.intro) listHTML += `<p class="mb-2">${escapeHtml(step.description.intro)}</p>`;
+                if (step.description.intro)
+                    listHTML += `<p class="mb-2">${escapeHtml(step.description.intro)}</p>`;
                 if (Array.isArray(step.description.items)) {
                     listHTML += '<ul class="list-disc list-inside space-y-1">';
                     step.description.items.forEach((item) => {
@@ -425,7 +445,8 @@ export async function renderMainAlgorithm() {
                 exampleDiv.innerHTML = `<strong>Пример:</strong><br>${escapeHtml(step.example)}`;
             } else if (typeof step.example === 'object' && step.example.type === 'list') {
                 let exampleHTML = '';
-                if (step.example.intro) exampleHTML += `<p class="mb-2">${escapeHtml(step.example.intro)}</p>`;
+                if (step.example.intro)
+                    exampleHTML += `<p class="mb-2">${escapeHtml(step.example.intro)}</p>`;
                 if (Array.isArray(step.example.items)) {
                     exampleHTML += '<ul class="list-disc list-inside space-y-1">';
                     step.example.items.forEach((item) => {
@@ -473,10 +494,7 @@ export async function renderMainAlgorithm() {
     } else {
         const stepsNoGroup = mainSteps
             .map((s, i) => ({ step: s, index: i }))
-            .filter(
-                ({ step }) =>
-                    !step.groupId || !groups.some((g) => g.id === step.groupId),
-            );
+            .filter(({ step }) => !step.groupId || !groups.some((g) => g.id === step.groupId));
         stepsNoGroup.forEach(({ step, index }) => {
             fragment.appendChild(buildStepElement(step, index));
         });
@@ -487,7 +505,8 @@ export async function renderMainAlgorithm() {
             if (stepIndices.length === 0) return;
             const groupDiv = document.createElement('div');
             groupDiv.className =
-                'main-algo-group view-item rounded-lg' + (openGroupIdsSet.has(group.id) ? '' : ' is-closed');
+                'main-algo-group view-item rounded-lg' +
+                (openGroupIdsSet.has(group.id) ? '' : ' is-closed');
             groupDiv.dataset.groupId = group.id;
             const header = document.createElement('div');
             header.className = 'main-algo-group-header';
