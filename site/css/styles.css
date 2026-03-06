@@ -117,8 +117,13 @@ header,
 #appContent header.header-sticky {
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 80rem; /* совпадает с max-w-7xl и container #appContent */
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: border-box;
     z-index: 30;
     background: var(--override-background-light, #ffffff);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
