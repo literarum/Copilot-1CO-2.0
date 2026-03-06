@@ -199,6 +199,8 @@ create_short_link_clcis() {
     fi
     [[ "$i" -lt "$max_retries" ]] && sleep 2
   done
+  # Диагностика при сбое
+  err "clc.is: последний HTTP status=$status, ответ: $(printf '%s' "$resp" | head -c 200)"
   return 1
 }
 
@@ -310,15 +312,16 @@ if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; the
     SHORT_SLUG="copilot-1co-2.0-pr-${PR_NUM}"
     DISPLAY_URL="$PREVIEW_URL"
     SHORT_URL="$(create_short_link_clcis "$PREVIEW_URL" "$SHORT_SLUG")" || true
-    if [[ -n "$SHORT_URL" ]]; then
+    if [[ -n "$SHORT_URL" ]] && verify_short_link_redirect "$SHORT_URL"; then
       DISPLAY_URL="$SHORT_URL"
-      if verify_short_link_redirect "$SHORT_URL"; then
-        info "Короткая ссылка проверена: редирект работает."
-      else
-        info "Предупреждение: короткая ссылка не отдаёт редирект (возможно, ещё не применилась)."
-      fi
+      info "Короткая ссылка проверена: редирект работает."
     else
-      info "Предупреждение: не удалось создать короткую ссылку, используется длинная."
+      if [[ -n "$SHORT_URL" ]]; then
+        info "Предупреждение: короткая ссылка не отдаёт редирект (404?), используется длинная."
+      else
+        info "Предупреждение: не удалось создать короткую ссылку, используется длинная."
+      fi
+      DISPLAY_URL="$PREVIEW_URL"
     fi
     info "Приложение (preview): copilot-1co-2.0 → $DISPLAY_URL"
     if gh pr comment "$PR_NUM" --body "## Ссылка на приложение (preview)

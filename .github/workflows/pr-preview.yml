@@ -61,6 +61,13 @@ jobs:
           elif [[ "$STATUS" == "409" ]]; then
             SHORT="https://clc.is/${SLUG}"
           fi
+          # Используем короткую ссылку только если она отдаёт редирект (не 404)
+          if [[ -n "$SHORT" ]]; then
+            REDIRECT_STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -I "$SHORT" 2>/dev/null) || true
+            if [[ "$REDIRECT_STATUS" != "301" && "$REDIRECT_STATUS" != "302" && "$REDIRECT_STATUS" != "307" && "$REDIRECT_STATUS" != "308" ]]; then
+              SHORT=""
+            fi
+          fi
           echo "url=${SHORT:-$PREVIEW_URL}" >> $GITHUB_OUTPUT
 
       - name: Comment PR with preview link
