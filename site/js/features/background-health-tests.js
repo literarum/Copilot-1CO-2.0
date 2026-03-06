@@ -357,6 +357,91 @@ export function initBackgroundHealthTestsSystem() {
                 } catch (err) {
                     report('error', 'localStorage', err.message);
                 }
+
+                // Тест 1.1: Secure context (HTTPS)
+                if (!window.isSecureContext) {
+                    report(
+                        'warn',
+                        'Безопасный контекст',
+                        'Страница загружена не по HTTPS. Некоторые API (clipboard, storage) недоступны.',
+                    );
+                } else {
+                    report('info', 'Безопасный контекст', 'Страница загружена по HTTPS.');
+                }
+
+                // Тест 1.2: сетевое подключение
+                if (!navigator.onLine) {
+                    report(
+                        'info',
+                        'Сеть',
+                        'Офлайн. API проверки сертификатов недоступны.',
+                    );
+                } else {
+                    report('info', 'Сеть', 'Подключение к сети есть.');
+                }
+
+                // Тест 1.3: sessionStorage (dbJustUpgraded и др.)
+                try {
+                    const sk = 'health-session';
+                    sessionStorage.setItem(sk, 'ok');
+                    const sv = sessionStorage.getItem(sk);
+                    sessionStorage.removeItem(sk);
+                    if (sv !== 'ok') {
+                        report('warn', 'sessionStorage', 'Не удалось проверить запись/чтение.');
+                    } else {
+                        report('info', 'sessionStorage', 'Запись и чтение доступны.');
+                    }
+                } catch (err) {
+                    report('warn', 'sessionStorage', err.message);
+                }
+
+                // Тест 1.4: квота хранилища (Storage API)
+                if (navigator.storage?.estimate) {
+                    try {
+                        const { usage, quota } = await runWithTimeout(
+                            navigator.storage.estimate(),
+                            3000,
+                        );
+                        const percent = quota ? (usage / quota) * 100 : 0;
+                        if (percent > 90) {
+                            report(
+                                'warn',
+                                'Хранилище',
+                                `Занято ~${Math.round(percent)}%. Возможны сбои сохранения.`,
+                            );
+                        } else {
+                            report(
+                                'info',
+                                'Хранилище',
+                                `Занято ~${Math.round(percent)}% (${Math.round(usage / 1024 / 1024)} МБ / ${Math.round(quota / 1024 / 1024)} МБ).`,
+                            );
+                        }
+                    } catch (err) {
+                        report('info', 'Хранилище', `Оценка квоты недоступна: ${err.message}.`);
+                    }
+                }
+
+                // Тест 1.5: persistence (риск очистки при нехватке места)
+                if (navigator.storage?.persisted) {
+                    try {
+                        const persisted = await runWithTimeout(
+                            navigator.storage.persisted(),
+                            2000,
+                        );
+                        if (!persisted) {
+                            report(
+                                'info',
+                                'Хранилище',
+                                'Данные могут быть очищены при нехватке места (persistence не гарантирована).',
+                            );
+                        } else {
+                            report('info', 'Хранилище', 'Persistent storage включён.');
+                        }
+                    } catch {
+                        report('info', 'Хранилище', 'Проверка persistence недоступна.');
+                    }
+                }
+
                 updateHud(20);
 
                 // Тест 2: запись/чтение IndexedDB
@@ -416,10 +501,11 @@ export function initBackgroundHealthTestsSystem() {
 
                 // Тест 4: доступность и структура базы алгоритмов
                 try {
-                    const mainAlgo = await runWithTimeout(
-                        deps.getFromIndexedDB?.('algorithms', 'main'),
+                    const algoContainer = await runWithTimeout(
+                        deps.getFromIndexedDB?.('algorithms', 'all'),
                         5000,
                     );
+                    const mainAlgo = algoContainer?.data?.main;
                     if (!mainAlgo) {
                         report('warn', 'Алгоритмы', 'Основной алгоритм не найден в базе данных.');
                     } else {
@@ -476,6 +562,53 @@ export function initBackgroundHealthTestsSystem() {
                     report('info', 'Избранное', `Записей в избранном: ${favCount}.`);
                 } catch (err) {
                     report('warn', 'Избранное', err.message);
+                }
+                // Тест 5.2: clientData current (основная запись клиента)
+                try {
+                    const current = await runWithTimeout(
+                        deps.getFromIndexedDB?.('clientData', 'current'),
+                        5000,
+                    );
+                    if (!current) {
+                        report('warn', 'clientData', 'Запись current отсутствует.');
+                    } else {
+                        report('info', 'clientData', 'Запись current доступна.');
+                    }
+                } catch (err) {
+                    report('warn', 'clientData', err.message);
+                }
+                // Тест 5.3: Notification (таймер, напоминания)
+                if ('Notification' in window) {
+                    const perm = Notification.permission;
+                    if (perm === 'denied') {
+                        report(
+                            'warn',
+                            'Уведомления',
+                            'Разрешение denied. Напоминания таймера не будут работать.',
+                        );
+                    } else if (perm === 'granted') {
+                        report('info', 'Уведомления', 'Разрешение granted.');
+                    } else {
+                        report('info', 'Уведомления', 'Разрешение не запрашивалось (default).');
+                    }
+                }
+                // Тест 5.4: bookmarks, reglaments, extLinks (count)
+                for (const storeName of ['bookmarks', 'reglaments', 'extLinks']) {
+                    try {
+                        const count = await runWithTimeout(
+                            deps.performDBOperation?.(storeName, 'readonly', (s) => s.count()),
+                            5000,
+                        );
+                        const label =
+                            storeName === 'bookmarks'
+                                ? 'Закладки'
+                                : storeName === 'reglaments'
+                                  ? 'Регламенты'
+                                  : 'Внешние ссылки';
+                        report('info', label, `Записей: ${count}.`);
+                    } catch (err) {
+                        report('warn', storeName, err.message);
+                    }
                 }
                 // Тест 5.5: компонента проверки отзыва (CRL Helper)
                 if (!REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER) {
@@ -596,14 +729,52 @@ export function initBackgroundHealthTestsSystem() {
                     report('info', 'Версия схемы', `Текущая: ${CURRENT_SCHEMA_VERSION}.`);
                 }
 
+                // Тест 6.1.1: File System Access (экспорт clientData)
+                if (typeof window.showSaveFilePicker === 'function') {
+                    report('info', 'File System Access', 'showSaveFilePicker доступен (экспорт).');
+                } else {
+                    report(
+                        'info',
+                        'File System Access',
+                        'showSaveFilePicker недоступен. Используется fallback сохранения.',
+                    );
+                }
+                // Тест 6.1.2: ResizeObserver (табы, overflow)
+                if (typeof window.ResizeObserver === 'function') {
+                    report('info', 'ResizeObserver', 'Доступен.');
+                } else {
+                    report('warn', 'ResizeObserver', 'Недоступен. Табы и overflow могут работать некорректно.');
+                }
+
                 // Тест 6.2: clipboard
                 try {
                     if (
                         navigator.clipboard &&
                         typeof navigator.clipboard.writeText === 'function'
                     ) {
-                        await navigator.clipboard.writeText('');
-                        report('info', 'Буфер обмена', 'Clipboard API доступен.');
+                        try {
+                            await navigator.clipboard.writeText('');
+                            report('info', 'Буфер обмена', 'Clipboard API доступен.');
+                        } catch (writeErr) {
+                            const msg = String(writeErr?.message || writeErr).toLowerCase();
+                            if (
+                                msg.includes('permission') ||
+                                msg.includes('denied') ||
+                                msg.includes('user gesture')
+                            ) {
+                                report(
+                                    'info',
+                                    'Буфер обмена',
+                                    'Clipboard API доступен. Запись требует действия пользователя (ожидаемо в фоне).',
+                                );
+                            } else {
+                                report(
+                                    'warn',
+                                    'Буфер обмена',
+                                    `Clipboard недоступен: ${writeErr?.message || writeErr}.`,
+                                );
+                            }
+                        }
                     } else {
                         report(
                             'warn',
@@ -672,6 +843,56 @@ export function initBackgroundHealthTestsSystem() {
                 report('error', 'localStorage', err.message);
             }
 
+            // Тест 1.1: Secure context, сеть, sessionStorage, квота, persistence
+            if (!window.isSecureContext) {
+                report(
+                    'warn',
+                    'Безопасный контекст',
+                    'Страница загружена не по HTTPS. Некоторые API (clipboard, storage) недоступны.',
+                );
+            } else {
+                report('info', 'Безопасный контекст', 'Страница загружена по HTTPS.');
+            }
+            if (!navigator.onLine) {
+                report('info', 'Сеть', 'Офлайн. API проверки сертификатов недоступны.');
+            } else {
+                report('info', 'Сеть', 'Подключение к сети есть.');
+            }
+            try {
+                const sk = 'health-session-manual';
+                sessionStorage.setItem(sk, 'ok');
+                const sv = sessionStorage.getItem(sk);
+                sessionStorage.removeItem(sk);
+                report(sv === 'ok' ? 'info' : 'warn', 'sessionStorage', sv === 'ok' ? 'Доступен.' : 'Не удалось проверить.');
+            } catch (err) {
+                report('warn', 'sessionStorage', err.message);
+            }
+            if (navigator.storage?.estimate) {
+                try {
+                    const { usage, quota } = await runWithTimeout(navigator.storage.estimate(), 3000);
+                    const percent = quota ? (usage / quota) * 100 : 0;
+                    if (percent > 90) {
+                        report('warn', 'Хранилище', `Занято ~${Math.round(percent)}%. Возможны сбои сохранения.`);
+                    } else {
+                        report('info', 'Хранилище', `Занято ~${Math.round(percent)}%.`);
+                    }
+                } catch {
+                    report('info', 'Хранилище', 'Оценка квоты недоступна.');
+                }
+            }
+            if (navigator.storage?.persisted) {
+                try {
+                    const persisted = await runWithTimeout(navigator.storage.persisted(), 2000);
+                    report(
+                        'info',
+                        'Хранилище',
+                        persisted ? 'Persistent storage включён.' : 'Данные могут быть очищены при нехватке места.',
+                    );
+                } catch {
+                    report('info', 'Хранилище', 'Проверка persistence недоступна.');
+                }
+            }
+
             // Тест 2: IndexedDB запись/чтение
             const testId = `health-manual-${Date.now()}`;
             try {
@@ -721,12 +942,13 @@ export function initBackgroundHealthTestsSystem() {
                 report('error', 'Поисковый индекс', err.message);
             }
 
-            // Тест 4: алгоритмы
+            // Тест 4: алгоритмы (хранятся под ключом 'all' в data.main)
             try {
-                const mainAlgo = await runWithTimeout(
-                    deps.getFromIndexedDB?.('algorithms', 'main'),
+                const algoContainer = await runWithTimeout(
+                    deps.getFromIndexedDB?.('algorithms', 'all'),
                     5000,
                 );
+                const mainAlgo = algoContainer?.data?.main;
                 if (!mainAlgo) {
                     report('warn', 'Алгоритмы', 'Основной алгоритм не найден.');
                 } else {
@@ -763,6 +985,50 @@ export function initBackgroundHealthTestsSystem() {
                 report('info', 'Избранное', `Записей: ${favCount}.`);
             } catch (err) {
                 report('warn', 'Избранное', err.message);
+            }
+
+            // Тест 5.2: clientData current
+            try {
+                const current = await runWithTimeout(
+                    deps.getFromIndexedDB?.('clientData', 'current'),
+                    5000,
+                );
+                report(
+                    current ? 'info' : 'warn',
+                    'clientData',
+                    current ? 'Запись current доступна.' : 'Запись current отсутствует.',
+                );
+            } catch (err) {
+                report('warn', 'clientData', err.message);
+            }
+            // Тест 5.3: Notification (таймер, напоминания)
+            if ('Notification' in window) {
+                const perm = Notification.permission;
+                if (perm === 'denied') {
+                    report('warn', 'Уведомления', 'Разрешение denied. Напоминания таймера не будут работать.');
+                } else if (perm === 'granted') {
+                    report('info', 'Уведомления', 'Разрешение granted.');
+                } else {
+                    report('info', 'Уведомления', 'Разрешение не запрашивалось (default).');
+                }
+            }
+            // Тест 5.4: bookmarks, reglaments, extLinks
+            for (const storeName of ['bookmarks', 'reglaments', 'extLinks']) {
+                try {
+                    const count = await runWithTimeout(
+                        deps.performDBOperation?.(storeName, 'readonly', (s) => s.count()),
+                        5000,
+                    );
+                    const label =
+                        storeName === 'bookmarks'
+                            ? 'Закладки'
+                            : storeName === 'reglaments'
+                              ? 'Регламенты'
+                              : 'Внешние ссылки';
+                    report('info', label, `Записей: ${count}.`);
+                } catch (err) {
+                    report('warn', storeName, err.message);
+                }
             }
 
             // Тест 5.5: API/компонента проверки отзыва
@@ -854,14 +1120,52 @@ export function initBackgroundHealthTestsSystem() {
                 report('info', 'Версия схемы', `Текущая: ${CURRENT_SCHEMA_VERSION}.`);
             }
 
+            // Тест 6.1.1: File System Access (экспорт clientData)
+            if (typeof window.showSaveFilePicker === 'function') {
+                report('info', 'File System Access', 'showSaveFilePicker доступен (экспорт).');
+            } else {
+                report(
+                    'info',
+                    'File System Access',
+                    'showSaveFilePicker недоступен. Используется fallback сохранения.',
+                );
+            }
+            // Тест 6.1.2: ResizeObserver (табы, overflow)
+            if (typeof window.ResizeObserver === 'function') {
+                report('info', 'ResizeObserver', 'Доступен.');
+            } else {
+                report('warn', 'ResizeObserver', 'Недоступен. Табы и overflow могут работать некорректно.');
+            }
+
             // Тест 6.2: clipboard
             try {
                 if (
                     navigator.clipboard &&
                     typeof navigator.clipboard.writeText === 'function'
                 ) {
-                    await navigator.clipboard.writeText('');
-                    report('info', 'Буфер обмена', 'Clipboard API доступен.');
+                    try {
+                        await navigator.clipboard.writeText('');
+                        report('info', 'Буфер обмена', 'Clipboard API доступен.');
+                    } catch (writeErr) {
+                        const msg = String(writeErr?.message || writeErr).toLowerCase();
+                        if (
+                            msg.includes('permission') ||
+                            msg.includes('denied') ||
+                            msg.includes('user gesture')
+                        ) {
+                            report(
+                                'info',
+                                'Буфер обмена',
+                                'Clipboard API доступен. Запись требует действия пользователя (ожидаемо в фоне).',
+                            );
+                        } else {
+                            report(
+                                'warn',
+                                'Буфер обмена',
+                                `Clipboard недоступен: ${writeErr?.message || writeErr}.`,
+                            );
+                        }
+                    }
                 } else {
                     report('warn', 'Буфер обмена', 'Clipboard API недоступен.');
                 }
