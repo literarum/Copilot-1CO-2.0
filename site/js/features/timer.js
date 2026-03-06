@@ -18,6 +18,15 @@ let timeLeftVisual = timerDefaultDuration;
 let isTimerRunning = false;
 let originalDocumentTitle = '';
 
+// Aggressive notification: title/favicon flash when tab is in background
+const TIMER_END_FLASH_TITLE = '⏰ ВЕРНИСЬ К КЛИЕНТУ!';
+const TITLE_FLASH_INTERVAL_MS = 600;
+let titleFlashIntervalId = null;
+let faviconFlashIntervalId = null;
+let originalFaviconHref = null;
+const ALERT_FAVICON_SVG =
+    'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="4" fill="%23DC2626"/><text x="16" y="22" font-size="18" text-anchor="middle">⏰</text></svg>';
+
 // DOM element references
 let timerDisplayElement,
     timerToggleButton,
@@ -35,6 +44,71 @@ function showNotification(message, type = 'success', duration = 5000) {
     } else {
         console.log(`[Notification] ${type}: ${message}`);
     }
+}
+
+/**
+ * Start flashing tab title when timer ended and tab is in background.
+ */
+function startTitleFlash() {
+    stopTitleFlash();
+    titleFlashIntervalId = setInterval(() => {
+        document.title =
+            document.title === TIMER_END_FLASH_TITLE ? originalDocumentTitle : TIMER_END_FLASH_TITLE;
+    }, TITLE_FLASH_INTERVAL_MS);
+}
+
+/**
+ * Stop title flash and restore original title.
+ */
+function stopTitleFlash() {
+    if (titleFlashIntervalId) {
+        clearInterval(titleFlashIntervalId);
+        titleFlashIntervalId = null;
+    }
+    if (originalDocumentTitle) {
+        document.title = originalDocumentTitle;
+    }
+}
+
+/**
+ * Start flashing favicon when timer ended and tab is in background.
+ */
+function startFaviconFlash() {
+    stopFaviconFlash();
+    const link = document.querySelector('link[rel="icon"]');
+    if (!link) return;
+    if (originalFaviconHref === null) {
+        originalFaviconHref = link.href;
+    }
+    let showAlert = true;
+    faviconFlashIntervalId = setInterval(() => {
+        if (link.parentNode) {
+            link.href = showAlert ? ALERT_FAVICON_SVG : originalFaviconHref;
+            showAlert = !showAlert;
+        }
+    }, TITLE_FLASH_INTERVAL_MS);
+}
+
+/**
+ * Stop favicon flash and restore original favicon.
+ */
+function stopFaviconFlash() {
+    if (faviconFlashIntervalId) {
+        clearInterval(faviconFlashIntervalId);
+        faviconFlashIntervalId = null;
+    }
+    if (originalFaviconHref) {
+        const link = document.querySelector('link[rel="icon"]');
+        if (link) link.href = originalFaviconHref;
+    }
+}
+
+/**
+ * Stop all aggressive notification effects (title + favicon flash).
+ */
+function stopTimerEndEffects() {
+    stopTitleFlash();
+    stopFaviconFlash();
 }
 
 /**
@@ -135,6 +209,9 @@ export function showAppNotification(title, body) {
                 body: body || '',
                 silent: true,
                 requireInteraction: true,
+                tag: 'copilot-timer-end',
+                renotify: true,
+                vibrate: [200, 100, 200],
             };
 
             let iconUsedInThisAttempt = false;
@@ -343,6 +420,8 @@ export function loadTimerState() {
                 timeLeftVisual = Math.max(0, Math.round((targetEndTime - now) / 1000));
                 if (timeLeftVisual === 0) {
                     isTimerRunning = false;
+                    handleTimerEnd();
+                    return;
                 }
             } else {
                 isTimerRunning = false;
@@ -353,10 +432,7 @@ export function loadTimerState() {
                         ? savedState.timeLeftVisualOnPause
                         : timerCurrentSetDuration;
             }
-            if (timeLeftVisual <= 0 && isTimerRunning && savedState.targetEndTime > 0) {
-                console.log('Таймер истек во время отсутствия, вызываем handleTimerEnd.');
-                isTimerRunning = false;
-            } else if (timeLeftVisual <= 0 && !isTimerRunning) {
+            if (timeLeftVisual <= 0 && !isTimerRunning) {
                 timeLeftVisual = timerCurrentSetDuration;
             }
         } else {
@@ -389,12 +465,17 @@ export function handleTimerEnd() {
     timeLeftVisual = 0;
 
     showAppNotification('ВЕРНИСЬ К КЛИЕНТУ!');
-    if (originalDocumentTitle) {
-        document.title = '⏰ ВРЕМЯ! - ' + originalDocumentTitle;
+    if (document.hidden) {
+        startTitleFlash();
+        startFaviconFlash();
     } else {
-        const currentTitle = document.title;
-        if (!currentTitle.startsWith('⏰ ВРЕМЯ! - ')) {
-            document.title = '⏰ ВРЕМЯ! - ' + currentTitle;
+        if (originalDocumentTitle) {
+            document.title = '⏰ ВРЕМЯ! - ' + originalDocumentTitle;
+        } else {
+            const currentTitle = document.title;
+            if (!currentTitle.startsWith('⏰ ВРЕМЯ! - ')) {
+                document.title = '⏰ ВРЕМЯ! - ' + currentTitle;
+            }
         }
     }
     updateTimerDisplay();
@@ -473,6 +554,7 @@ export async function toggleTimer() {
         pauseTimer();
     } else {
         console.log('toggleTimer: Попытка запуска таймера.');
+        stopTimerEndEffects();
 
         if (timeLeftVisual <= 0 && timerCurrentSetDuration > 0) {
             timeLeftVisual = timerCurrentSetDuration;
@@ -529,6 +611,7 @@ export async function toggleTimer() {
         if (originalDocumentTitle && document.title.startsWith('⏰')) {
             document.title = originalDocumentTitle;
         }
+        stopTimerEndEffects();
         startTimerInternal();
         console.log('toggleTimer: Таймер запущен.');
     }
@@ -539,6 +622,7 @@ export async function toggleTimer() {
  */
 export function resetTimer(event) {
     pauseTimer();
+    stopTimerEndEffects();
 
     if (event && event.ctrlKey) {
         timerCurrentSetDuration = 0;
@@ -953,6 +1037,9 @@ export function initTimerSystem() {
     });
 
     document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            stopTimerEndEffects();
+        }
         if (document.visibilityState === 'visible' && isTimerRunning) {
             console.log('Вкладка стала видимой, таймер запущен. Проверка и синхронизация времени.');
             const now = Date.now();
@@ -978,6 +1065,8 @@ export function initTimerSystem() {
                 if (!timerInterval) {
                     startTimerInternal();
                 }
+            } else if (timeLeftVisual <= 0 && targetEndTime <= now) {
+                handleTimerEnd();
             }
         }
     });

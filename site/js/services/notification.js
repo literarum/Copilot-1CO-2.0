@@ -267,7 +267,8 @@ export const NotificationService = {
         notificationElement.style.width = this.NOTIFICATION_WIDTH;
         notificationElement.style.willChange = 'transform, opacity';
 
-        document.body.appendChild(notificationElement);
+        const container = document.getElementById('notification-container');
+        (container || document.body).appendChild(notificationElement);
         this.temporaryNotificationElement = notificationElement;
 
         if (!this.isTemporaryNotificationVisible) {
@@ -574,6 +575,7 @@ export function showNotification(message, type = 'success', duration = 5000) {
         iconContainer.className = 'flex items-center';
 
         iconElement = document.createElement('i');
+        iconElement.className = `notification-icon-i fas ${iconClass} mr-2`;
         try {
             iconElement.style.color = 'var(--color-primary)';
         } catch (_e) {
@@ -647,7 +649,8 @@ export function showNotification(message, type = 'success', duration = 5000) {
     closeButton.addEventListener('click', closeButton._clickHandler);
 
     if (isNewNotification) {
-        document.body.appendChild(notificationElement);
+        const container = document.getElementById('notification-container');
+        (container || document.body).appendChild(notificationElement);
         console.log(
             `[ShowNotification_V5.2_INLINE_STYLE] Новое уведомление (msg: "${message}") добавлено в DOM.`,
         );
