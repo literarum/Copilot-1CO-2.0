@@ -335,9 +335,14 @@ function setupClientNotesPopupMessageListener() {
             const el = getClientNotesEl();
             if (!el) return;
             if (data.type === 'clientNotesRequest') {
+                const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
                 event.source?.postMessage(
                     CLIENT_NOTES_MSG_PREFIX +
-                        JSON.stringify({ type: 'clientNotesInit', value: el.value || '' }),
+                        JSON.stringify({
+                            type: 'clientNotesInit',
+                            value: el.value || '',
+                            theme,
+                        }),
                     window.location.origin,
                 );
             } else if (data.type === 'clientNotesSync' && typeof data.value === 'string') {
@@ -358,11 +363,13 @@ export function openClientNotesPopupWindow() {
     if (notesPopupRef?.closed) notesPopupRef = null;
     if (notesPopupRef && !notesPopupRef.closed) {
         notesPopupRef.focus();
+        const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         notesPopupRef.postMessage(
             CLIENT_NOTES_MSG_PREFIX +
                 JSON.stringify({
                     type: 'clientNotesInit',
                     value: getClientNotesEl()?.value || '',
+                    theme,
                 }),
             window.location.origin,
         );
@@ -370,7 +377,7 @@ export function openClientNotesPopupWindow() {
     }
     const url = new URL('client-notes-standalone.html', window.location.href).href;
     const features =
-        'width=520,height=420,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes';
+        'width=400,height=1200,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes';
     notesPopupRef = window.open(url, 'clientNotesPopup', features);
     if (notesPopupRef) {
         notesPopupRef.addEventListener('beforeunload', () => {
@@ -378,11 +385,13 @@ export function openClientNotesPopupWindow() {
         });
         notesPopupRef.addEventListener('load', () => {
             if (notesPopupRef && !notesPopupRef.closed) {
+                const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
                 notesPopupRef.postMessage(
                     CLIENT_NOTES_MSG_PREFIX +
                         JSON.stringify({
                             type: 'clientNotesInit',
                             value: getClientNotesEl()?.value || '',
+                            theme,
                         }),
                     window.location.origin,
                 );

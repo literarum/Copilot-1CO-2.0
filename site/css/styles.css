@@ -40,6 +40,31 @@
     --scrollbar-thumb-hover-opacity: 0.85;
     /* Ховер карточек: закладки, алгоритмы, ресурсы, регламенты — переопределяется в .dark */
     --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    /* Hint-блоки (подсказки, информационные панели) — централизованные стили */
+    --hint-bg: #fffbeb;
+    --hint-border: #fde68a;
+    --hint-text: #92400e;
+    --hint-action: #b45309;
+}
+
+/* Hint-блок: единый стиль для подсказок во всех темах */
+.app-hint {
+    padding: 0.5rem 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--hint-border);
+    background-color: var(--hint-bg);
+    color: var(--hint-text);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.app-hint .app-hint-action {
+    color: var(--hint-action);
+}
+
+.app-hint .app-hint-action:hover {
+    text-decoration: underline;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -56,6 +81,12 @@
 html.dark {
     --scrollbar-thumb-bg: var(--override-scrollbar-thumb-dark, var(--color-border-interactive));
     --scrollbar-thumb-hover-bg: var(--color-hover-subtle, var(--color-border-interactive));
+
+    /* Hint-блоки: тёмная тема */
+    --hint-bg: rgba(120, 53, 15, 0.3);
+    --hint-border: rgba(180, 83, 9, 0.6);
+    --hint-text: #fde68a;
+    --hint-action: #fcd34d;
 }
 
 /* ----------------------------------- */

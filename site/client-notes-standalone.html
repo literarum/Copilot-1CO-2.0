@@ -32,10 +32,10 @@
         <div class="flex items-center justify-between gap-2 mb-2 flex-shrink-0">
             <h1 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Информация по обращению</h1>
         </div>
-        <div id="pinHint" class="mb-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-200 text-xs flex-shrink-0">
+        <div id="pinHint" class="app-hint mb-2">
             <strong>Закрепить поверх всех окон:</strong>
             <span id="pinHintText">Windows: PowerToys (Win+Ctrl+T) · macOS: Floaty или Rectangle · Linux: зависит от WM (KWin, Compiz)</span>
-            <button type="button" id="dismissPinHint" class="ml-2 text-amber-600 dark:text-amber-400 hover:underline" title="Скрыть подсказку">Скрыть</button>
+            <button type="button" id="dismissPinHint" class="app-hint-action ml-2" title="Скрыть подсказку">Скрыть</button>
         </div>
         <textarea
             id="clientNotesStandalone"
@@ -84,6 +84,9 @@
             var data = JSON.parse(raw.slice(MSG_PREFIX.length));
             if (data.type === 'clientNotesInit' || data.type === 'clientNotesSync') {
                 applyValue(data.value || '');
+            }
+            if (data.type === 'clientNotesInit' && (data.theme === 'dark' || data.theme === 'light')) {
+                document.documentElement.classList.toggle('dark', data.theme === 'dark');
             }
         } catch (e) {
             console.warn('[clientNotesStandalone] Invalid message:', e);
