@@ -81,23 +81,53 @@ function renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer) {
         row.dataset.groupId = g.id;
         row.innerHTML = `
             <input type="text" class="main-algo-group-title flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" value="${typeof g.title === 'string' ? g.title.replace(/"/g, '&quot;') : g.id}" placeholder="Название группы">
+            <button type="button" class="main-algo-group-save p-1.5 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-green-600 dark:text-green-400 shrink-0" title="Сохранить" aria-label="Сохранить"><i class="fas fa-check text-xs"></i></button>
             <button type="button" class="main-algo-group-delete px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded" title="Удалить группу" aria-label="Удалить группу"><i class="fas fa-trash"></i></button>
         `;
         const input = row.querySelector('.main-algo-group-title');
+        const saveBtn = row.querySelector('.main-algo-group-save');
         const deleteBtn = row.querySelector('.main-algo-group-delete');
-        input.addEventListener('input', () => {
+
+        const syncTitleToSelects = (newTitle) => {
+            if (algorithm.groups[idx]) {
+                algorithm.groups[idx].title = newTitle;
+                editStepsContainer?.querySelectorAll('.step-group-id').forEach((sel) => {
+                    const opt = Array.from(sel.options).find((o) => o.value === g.id);
+                    if (opt) opt.textContent = newTitle;
+                });
+            }
+        };
+
+        const confirmGroup = () => {
             if (algorithm.groups[idx]) {
                 const newTitle = input.value.trim() || algorithm.groups[idx].id;
-                algorithm.groups[idx].title = newTitle;
-                // Синхронизировать отображаемое название во всех селектах групп у шагов
-                if (editStepsContainer) {
-                    editStepsContainer.querySelectorAll('.step-group-id').forEach((sel) => {
-                        const opt = Array.from(sel.options).find((o) => o.value === g.id);
-                        if (opt) opt.textContent = newTitle;
-                    });
-                }
+                syncTitleToSelects(newTitle);
+                delete algorithm.groups[idx].isNew;
+            }
+        };
+
+        input.addEventListener('input', () => {
+            const newTitle = input.value.trim() || algorithm.groups[idx]?.id;
+            syncTitleToSelects(newTitle);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmGroup();
+                input.blur();
+            } else if (e.key === 'Escape' && g.isNew) {
+                e.preventDefault();
+                algorithm.groups.splice(idx, 1);
+                renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer);
             }
         });
+
+        saveBtn.addEventListener('click', () => {
+            confirmGroup();
+            input.blur();
+        });
+
         deleteBtn.addEventListener('click', () => {
             algorithm.groups.splice(idx, 1);
             renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer);
@@ -107,11 +137,18 @@ function renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer) {
 
     container.querySelector('.add-main-algo-group-btn').addEventListener('click', () => {
         const id = `gr-${Date.now()}`;
-        algorithm.groups.push({ id, title: 'Новая группа' });
+        algorithm.groups.push({ id, title: 'Новая группа', isNew: true });
         renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer);
+        const list = container.querySelector('#editMainAlgoGroupsList');
+        const inputs = list?.querySelectorAll('.main-algo-group-title');
+        const lastInput = inputs?.length ? inputs[inputs.length - 1] : null;
+        if (lastInput) {
+            lastInput.focus();
+            lastInput.select();
+        }
     });
 
-    editStepsContainer.querySelectorAll('.edit-step').forEach((stepDiv) => {
+    editStepsContainer?.querySelectorAll('.edit-step').forEach((stepDiv) => {
         const sel = stepDiv.querySelector('.step-group-id');
         if (!sel) return;
         const currentVal = sel.value;
