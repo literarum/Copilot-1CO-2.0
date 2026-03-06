@@ -189,12 +189,27 @@ export async function applyPreviewSettings(settings) {
     root.style.setProperty('--content-spacing', `${density * 0.25}rem`);
 
     const appContent = document.getElementById('appContent');
-    const header = appContent?.querySelector('header');
-    if (header) {
+    const header = appContent?.querySelector('header:first-of-type');
+    if (appContent && header) {
         if (settings?.staticHeader === true) {
             header.classList.add('header-sticky');
+            appContent.classList.add('has-static-header');
+            const updateHeight = () => {
+                const h = header.offsetHeight || 140;
+                appContent.style.setProperty('--static-header-height', `${h}px`);
+            };
+            updateHeight();
+            const ro = new ResizeObserver(updateHeight);
+            ro.observe(header);
+            header._staticHeaderResizeObserver = ro;
         } else {
             header.classList.remove('header-sticky');
+            appContent.classList.remove('has-static-header');
+            appContent.style.removeProperty('--static-header-height');
+            if (header._staticHeaderResizeObserver) {
+                header._staticHeaderResizeObserver.disconnect();
+                delete header._staticHeaderResizeObserver;
+            }
         }
     }
 }

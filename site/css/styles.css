@@ -110,15 +110,22 @@ header,
     flex-grow: 1;
 }
 
-/* Статичная панель: хэдер остаётся сверху при прокрутке */
+/* Статичная панель: хэдер остаётся сверху при прокрутке (position:fixed надёжнее sticky в flex-layout) */
+#appContent.has-static-header {
+    padding-top: var(--static-header-height, 140px);
+}
 #appContent header.header-sticky {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 30;
     background: var(--override-background-light, #ffffff);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 html.dark #appContent header.header-sticky {
     background: var(--override-background-dark, #111827);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* Специализированные состояния зоны проверки сертификата ФНС */
@@ -326,6 +333,10 @@ select:focus-visible {
 /* ----------------------------------- */
 /*        2.1. Модальные окна          */
 /* ----------------------------------- */
+/* Блокировка прокрутки фона при открытом модальном окне (html и body) */
+html:has(body.modal-open) {
+    overflow: hidden;
+}
 body.modal-open {
     overflow: hidden;
 }

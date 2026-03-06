@@ -453,8 +453,8 @@ export async function renderCibLinks(links) {
                 <div class="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                     ${buttonsHTML}
                 </div>
-                <div class="p-4 flex flex-col h-full">
-                    <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1 pr-20" title="${(link.title || '').replace(/"/g, '&quot;')}">${link.title || 'Без названия'}</h3>
+                <div class="p-4 flex flex-col h-full pr-28">
+                    <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1 truncate" title="${(link.title || '').replace(/"/g, '&quot;')}">${link.title || 'Без названия'}</h3>
                     <div class="mb-2">
                         <code class="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded break-all inline-block w-full">${(link.link || '').replace(/</g, '&lt;')}</code>
                     </div>
