@@ -141,6 +141,12 @@ export function registerOnloadHandler() {
                             deps.initUISettingsModalHandlers();
                         }
 
+                        if (typeof window.updateScrollNavVisibility === 'function') {
+                            window.updateScrollNavVisibility();
+                            setTimeout(window.updateScrollNavVisibility, 200);
+                            setTimeout(window.updateScrollNavVisibility, 600);
+                        }
+
                         if (Array.isArray(deps.afterInitCallbacks)) {
                             for (const fn of deps.afterInitCallbacks) {
                                 if (typeof fn === 'function') fn();

@@ -1179,8 +1179,28 @@ function initScrollNavButtons() {
     const getScrollContainer = () => {
         const appContent = document.getElementById('appContent');
         const main = appContent?.querySelector('main');
+        const MIN_OVERFLOW = 1;
+        let best = { el: null, isDocument: true };
+        let bestDelta = 0;
 
-        // Сначала проверяем вложенные скролл-контейнеры в видимой вкладке (doc-content-*, extLinksContainer и т.д.)
+        const docDelta = document.documentElement.scrollHeight - window.innerHeight;
+        if (docDelta > bestDelta && docDelta > MIN_OVERFLOW) {
+            bestDelta = docDelta;
+            best = { el: null, isDocument: true };
+        }
+
+        if (main) {
+            const style = window.getComputedStyle(main);
+            const overflowY = style.overflowY || style.overflow;
+            if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+                const delta = main.scrollHeight - main.clientHeight;
+                if (delta > bestDelta && delta > MIN_OVERFLOW) {
+                    bestDelta = delta;
+                    best = { el: main, isDocument: false };
+                }
+            }
+        }
+
         const visibleTab = appContent?.querySelector('.tab-content:not(.hidden)');
         if (visibleTab) {
             const scrollables = visibleTab.querySelectorAll(
@@ -1190,26 +1210,23 @@ function initScrollNavButtons() {
                 const style = window.getComputedStyle(el);
                 const overflowY = style.overflowY || style.overflow;
                 if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
-                    const overflowDelta = el.scrollHeight - el.clientHeight;
-                    if (overflowDelta > 24) {
-                        return { el, isDocument: false };
+                    const delta = el.scrollHeight - el.clientHeight;
+                    if (delta > bestDelta && delta > MIN_OVERFLOW) {
+                        bestDelta = delta;
+                        best = { el, isDocument: false };
                     }
                 }
             }
         }
 
-        if (main) {
-            const style = window.getComputedStyle(main);
-            const overflowY = style.overflowY || style.overflow;
-            if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
-                return { el: main, isDocument: false };
-            }
-        }
-        return { el: null, isDocument: true };
+        return best;
     };
 
     const updateVisibility = () => {
-        const hasOpenModal = !!document.querySelector('[id$="Modal"]:not(.hidden)');
+        const modalEls = document.querySelectorAll('[id$="Modal"]');
+        const hasOpenModal = [...modalEls].some(
+            (m) => !m.classList.contains('hidden') && !m.closest('.hidden'),
+        );
         const { el: scrollEl, isDocument } = getScrollContainer();
         let scrollHeight, clientHeight;
         if (isDocument) {
@@ -1220,7 +1237,7 @@ function initScrollNavButtons() {
             clientHeight = scrollEl.clientHeight;
         }
         const overflowDelta = scrollHeight - clientHeight;
-        const show = !hasOpenModal && overflowDelta > 24;
+        const show = !hasOpenModal && overflowDelta > 1;
         container.classList.toggle('opacity-0', !show);
         container.classList.toggle('pointer-events-none', !show);
         container.setAttribute('aria-hidden', show ? 'false' : 'true');
@@ -1292,7 +1309,41 @@ function initScrollNavButtons() {
         subtree: true,
         attributeFilter: ['class'],
     });
+
+    if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => requestAnimationFrame(updateVisibility));
+        const appContent = document.getElementById('appContent');
+        if (appContent) ro.observe(appContent);
+        if (document.body) ro.observe(document.body);
+    }
+
     updateVisibility();
+    [100, 300, 500, 1000].forEach((ms) => setTimeout(updateVisibility, ms));
+    window.updateScrollNavVisibility = updateVisibility;
+
+    // Отладка: в консоли вызовите window.debugScrollNav() для проверки состояния
+    window.debugScrollNav = () => {
+        const appContent = document.getElementById('appContent');
+        const main = appContent?.querySelector('main');
+        const visibleTab = appContent?.querySelector('.tab-content:not(.hidden)');
+        const modalEls = document.querySelectorAll('[id$="Modal"]');
+        const hasOpenModal = [...modalEls].some(
+            (m) => !m.classList.contains('hidden') && !m.closest('.hidden'),
+        );
+        const docDelta = document.documentElement.scrollHeight - window.innerHeight;
+        const mainDelta = main ? main.scrollHeight - main.clientHeight : null;
+        const { el, isDocument } = getScrollContainer();
+        const overflowDelta = isDocument ? docDelta : (el?.scrollHeight ?? 0) - (el?.clientHeight ?? 0);
+        return {
+            hasOpenModal,
+            docDelta,
+            mainDelta,
+            scrollContainer: isDocument ? 'document' : (el?.id || el?.className || 'element'),
+            overflowDelta,
+            show: !hasOpenModal && overflowDelta > 1,
+            visibleTab: visibleTab?.id,
+        };
+    };
 }
 
 // showNotification и showBookmarkDetailModal определены ниже как function declarations
