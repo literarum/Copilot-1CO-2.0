@@ -25,6 +25,24 @@ export function setTabsDependencies(dependencies) {
     deps = { ...deps, ...dependencies };
 }
 
+/**
+ * Прокручивает страницу вверх. Использует тот же контейнер, что и кнопки навигации (main или window).
+ * Вызывать только при включённой статичной панели (staticHeader).
+ */
+function scrollPageToTop() {
+    const appContent = document.getElementById('appContent');
+    const main = appContent?.querySelector('main');
+    if (main) {
+        const style = window.getComputedStyle(main);
+        const overflowY = style.overflowY || style.overflow;
+        if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+            main.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // ============================================================================
 // КОМПОНЕНТ РАБОТЫ С ВКЛАДКАМИ
 // ============================================================================
@@ -516,6 +534,9 @@ export async function setActiveTab(tabId, warningJustAccepted = false) {
     });
 
     if (State.currentSection === tabId && !warningJustAccepted) {
+        if (State.userPreferences.staticHeader) {
+            scrollPageToTop();
+        }
         console.log(`[setActiveTab v.Corrected] Вкладка ${tabId} уже активна. Выход.`);
         return;
     }
@@ -584,6 +605,10 @@ export async function setActiveTab(tabId, warningJustAccepted = false) {
         requestAnimationFrame(deps.updateVisibleTabs);
     } else if (typeof updateVisibleTabs === 'function') {
         requestAnimationFrame(updateVisibleTabs);
+    }
+
+    if (State.userPreferences.staticHeader) {
+        scrollPageToTop();
     }
 
     console.log(`[setActiveTab v.Corrected] Вкладка ${tabId} успешно активирована с анимацией.`);

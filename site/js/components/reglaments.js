@@ -342,8 +342,8 @@ export async function showReglamentsForCategory(categoryId) {
             );
 
             reglamentElement.innerHTML = `
-                <div class="flex flex-col justify-center h-full min-h-[3rem] sm:min-h-[3.5rem] pr-20" data-action="view"> 
-                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary truncate" title="${escapeHtml(
+                <div class="flex flex-col justify-center h-full min-h-[3rem] sm:min-h-[3.5rem] pt-10 w-full" data-action="view">
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary truncate w-full" title="${escapeHtml(
                         reglament.title,
                     )}">
                         ${escapeHtml(reglament.title)}

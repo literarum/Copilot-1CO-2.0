@@ -121,11 +121,13 @@ export async function renderAlgorithmCards(section) {
                 : '';
 
         card.innerHTML = `
-            <h3 class="font-bold text-gray-900 dark:text-gray-100 truncate mb-2 pr-12" title="${safeEscapeHtml(
+            <div class="pt-10">
+                <h3 class="font-bold text-gray-900 dark:text-gray-100 truncate mb-2 w-full" title="${safeEscapeHtml(
                     titleText,
                 )}">${safeEscapeHtml(titleText)}</h3>
+                ${descriptionHTML}
+            </div>
             <div class="algorithm-fav-actions absolute top-2 right-2 z-10 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">${favButtonHTML}</div>
-            ${descriptionHTML}
         `;
 
         card.addEventListener('click', (event) => {

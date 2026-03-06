@@ -1179,6 +1179,25 @@ function initScrollNavButtons() {
     const getScrollContainer = () => {
         const appContent = document.getElementById('appContent');
         const main = appContent?.querySelector('main');
+
+        // Сначала проверяем вложенные скролл-контейнеры в видимой вкладке (doc-content-*, extLinksContainer и т.д.)
+        const visibleTab = appContent?.querySelector('.tab-content:not(.hidden)');
+        if (visibleTab) {
+            const scrollables = visibleTab.querySelectorAll(
+                '[id^="doc-content-"], #extLinksContainer, .view-section.overflow-y-auto, [class*="overflow-y-auto"]',
+            );
+            for (const el of scrollables) {
+                const style = window.getComputedStyle(el);
+                const overflowY = style.overflowY || style.overflow;
+                if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+                    const overflowDelta = el.scrollHeight - el.clientHeight;
+                    if (overflowDelta > 24) {
+                        return { el, isDocument: false };
+                    }
+                }
+            }
+        }
+
         if (main) {
             const style = window.getComputedStyle(main);
             const overflowY = style.overflowY || style.overflow;
@@ -1244,7 +1263,18 @@ function initScrollNavButtons() {
             m.addEventListener('scroll', onScroll, { passive: true });
         }
     };
+    const attachNestedScrollListeners = () => {
+        const { el, isDocument } = getScrollContainer();
+        if (!isDocument && el) {
+            const main = document.getElementById('appContent')?.querySelector('main');
+            if (el !== main && !el.dataset.scrollNavListener) {
+                el.dataset.scrollNavListener = '1';
+                el.addEventListener('scroll', onScroll, { passive: true });
+            }
+        }
+    };
     attachMainScrollListener();
+    attachNestedScrollListeners();
     document.addEventListener('click', (e) => {
         if (e.target.closest('.tab-btn') || e.target.closest('[data-action]')) {
             requestAnimationFrame(updateVisibility);
@@ -1254,6 +1284,7 @@ function initScrollNavButtons() {
     const observer = new MutationObserver(() => {
         requestAnimationFrame(updateVisibility);
         attachMainScrollListener();
+        attachNestedScrollListeners();
     });
     observer.observe(document.body, {
         attributes: true,

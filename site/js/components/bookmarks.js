@@ -265,8 +265,8 @@ export function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'card
               : '<p class="bookmark-description text-sm mt-1 mb-2 italic text-gray-500">Текстовая заметка</p>';
 
         const mainContentHTML = `
-            <div class="flex-grow min-w-0 mb-3 pr-28">
-                <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 hover:text-primary dark:hover:text-primary transition-colors duration-200 truncate" title="${safeTitle}">
+            <div class="flex-grow min-w-0 mb-3 pt-10">
+                <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 hover:text-primary dark:hover:text-primary transition-colors duration-200 truncate w-full" title="${safeTitle}">
                     ${safeTitle}
                 </h3>
                 ${descriptionHTML}
