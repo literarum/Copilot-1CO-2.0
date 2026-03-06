@@ -189,26 +189,26 @@ export async function applyPreviewSettings(settings) {
     root.style.setProperty('--content-spacing', `${density * 0.25}rem`);
 
     const appContent = document.getElementById('appContent');
-    const header = appContent?.querySelector('header:first-of-type');
-    if (appContent && header) {
+    const staticWrapper = document.getElementById('staticHeaderWrapper');
+    if (appContent && staticWrapper) {
         if (settings?.staticHeader === true) {
-            header.classList.add('header-sticky');
+            staticWrapper.classList.add('header-sticky');
             appContent.classList.add('has-static-header');
             const updateHeight = () => {
-                const h = header.offsetHeight || 140;
+                const h = staticWrapper.offsetHeight || 180;
                 appContent.style.setProperty('--static-header-height', `${h}px`);
             };
             updateHeight();
             const ro = new ResizeObserver(updateHeight);
-            ro.observe(header);
-            header._staticHeaderResizeObserver = ro;
+            ro.observe(staticWrapper);
+            staticWrapper._staticHeaderResizeObserver = ro;
         } else {
-            header.classList.remove('header-sticky');
+            staticWrapper.classList.remove('header-sticky');
             appContent.classList.remove('has-static-header');
             appContent.style.removeProperty('--static-header-height');
-            if (header._staticHeaderResizeObserver) {
-                header._staticHeaderResizeObserver.disconnect();
-                delete header._staticHeaderResizeObserver;
+            if (staticWrapper._staticHeaderResizeObserver) {
+                staticWrapper._staticHeaderResizeObserver.disconnect();
+                delete staticWrapper._staticHeaderResizeObserver;
             }
         }
     }
