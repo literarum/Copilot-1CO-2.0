@@ -86,7 +86,17 @@ function renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer) {
         const input = row.querySelector('.main-algo-group-title');
         const deleteBtn = row.querySelector('.main-algo-group-delete');
         input.addEventListener('input', () => {
-            if (algorithm.groups[idx]) algorithm.groups[idx].title = input.value.trim() || algorithm.groups[idx].id;
+            if (algorithm.groups[idx]) {
+                const newTitle = input.value.trim() || algorithm.groups[idx].id;
+                algorithm.groups[idx].title = newTitle;
+                // Синхронизировать отображаемое название во всех селектах групп у шагов
+                if (editStepsContainer) {
+                    editStepsContainer.querySelectorAll('.step-group-id').forEach((sel) => {
+                        const opt = Array.from(sel.options).find((o) => o.value === g.id);
+                        if (opt) opt.textContent = newTitle;
+                    });
+                }
+            }
         });
         deleteBtn.addEventListener('click', () => {
             algorithm.groups.splice(idx, 1);

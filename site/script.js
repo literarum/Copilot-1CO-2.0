@@ -2231,6 +2231,30 @@ const triggerSelectors = [
     '#editReglamentForm button[type="submit"]',
 ].join(', ');
 
+// Обработчик клика по кнопкам «Сохранить» в модалках редактирования/добавления алгоритма
+document.addEventListener('click', (event) => {
+    const saveEditBtn = event.target.closest('#saveAlgorithmBtn');
+    const saveNewBtn = event.target.closest('#saveNewAlgorithmBtn');
+    if (saveEditBtn) {
+        const editModal = document.getElementById('editModal');
+        if (editModal && !editModal.classList.contains('hidden')) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof saveAlgorithm === 'function') saveAlgorithm();
+        }
+        return;
+    }
+    if (saveNewBtn) {
+        const addModal = document.getElementById('addModal');
+        if (addModal && !addModal.classList.contains('hidden')) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof saveNewAlgorithm === 'function') saveNewAlgorithm();
+        }
+        return;
+    }
+});
+
 document.addEventListener('click', (event) => {
     const visibleModals = getVisibleModals();
     if (!visibleModals.length) {

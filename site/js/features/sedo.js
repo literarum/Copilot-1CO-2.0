@@ -31,10 +31,6 @@ const SEDO_INFO_SECTIONS_HTML = `
   </ul>
 </div>
 <div class="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
-  <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Представителям центров компетенций</h3>
-  <p class="text-sm text-gray-700 dark:text-gray-300">Для консультации клиентов по отправкам СЭДО необходимо перевести звонок на первую линию (1СО ТП1 (ДТС)), озвучить специалисту реквизиты для поиска отправки и передать клиента.</p>
-</div>
-<div class="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
   <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Поиск отправок</h3>
   <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">Для начала поиска: в поле 1 выбираем КО, в поле 2 — параметр поиска, в поле 3 указываем значение, затем нажимаем «Показать».</p>
   <p class="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">Отличия между поисковыми запросами:</p>
@@ -101,7 +97,6 @@ export const DEFAULT_SEDO_DATA = {
     id: SEDO_CONFIG_KEY,
     articleLinks: [
         'https://track.astral.ru/support/pages/viewpage.action?pageId=11404156',
-        { text: 'Официальный портал СФР — полный список типов сообщений СЭДО и техническая документация' },
     ],
     tables: [
         {
@@ -728,13 +723,41 @@ function _renderSedoContentInner(container, data, isEditing, searchQuery) {
             </table>
         </div>
     `;
-    container.appendChild(descriptionSection);
 
     // Блоки важной информации (ограничения, поиск, мониторинг, подписка, СЭДО)
     const infoWrap = document.createElement('div');
     infoWrap.className = 'sedo-info-sections';
     infoWrap.innerHTML = SEDO_INFO_SECTIONS_HTML;
-    container.appendChild(infoWrap);
+
+    if (isEditing) {
+        container.appendChild(descriptionSection);
+        container.appendChild(infoWrap);
+    } else {
+        const detailsLabel = document.createElement('label');
+        detailsLabel.className =
+            'flex items-center gap-2 mb-3 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 select-none';
+        const detailsCheckbox = document.createElement('input');
+        detailsCheckbox.type = 'checkbox';
+        detailsCheckbox.className = 'rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary';
+        detailsCheckbox.setAttribute('aria-label', 'Показать дополнительную информацию по СЭДО');
+        detailsLabel.appendChild(detailsCheckbox);
+        detailsLabel.appendChild(
+            document.createTextNode('Показать дополнительную информацию'),
+        );
+
+        const detailsWrapper = document.createElement('div');
+        detailsWrapper.id = 'sedoDetailsExtra';
+        detailsWrapper.className = 'sedo-details-extra overflow-hidden transition-[max-height] duration-300 ease-in-out';
+        detailsWrapper.appendChild(descriptionSection);
+        detailsWrapper.appendChild(infoWrap);
+
+        detailsCheckbox.addEventListener('change', () => {
+            detailsWrapper.classList.toggle('sedo-details-extra-visible', detailsCheckbox.checked);
+        });
+
+        container.appendChild(detailsLabel);
+        container.appendChild(detailsWrapper);
+    }
 
     const highlight = (text) => {
         if (!searchQuery || isEditing || !text) return escapeHtml(String(text));
@@ -934,6 +957,12 @@ function injectSedoEditStyles() {
         }
         .dark .sedo-is-editing .editing-cell:focus {
             background-color: rgba(255, 200, 0, 0.15);
+        }
+        .sedo-details-extra {
+            max-height: 0;
+        }
+        .sedo-details-extra.sedo-details-extra-visible {
+            max-height: 5000px;
         }
     `;
     document.head.appendChild(style);

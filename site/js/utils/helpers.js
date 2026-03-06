@@ -50,6 +50,16 @@ export function base64ToBlob(base64, mimeType = '') {
     }
 }
 
+/** Удаляет HTML-теги (включая самозакрывающиеся) для безопасного текста в экспорте/textarea */
+function stripHtmlTags(s) {
+    if (typeof s !== 'string') return '';
+    return s
+        .replace(/<[^>]*\/?>/g, ' ')
+        .replace(/<[^>]*$/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 /**
  * Форматирует данные примера для textarea
  */
@@ -59,15 +69,10 @@ export function formatExampleForTextarea(exampleData) {
     }
 
     if (typeof exampleData === 'object' && exampleData !== null && exampleData.type === 'list') {
-        const intro = exampleData.intro ? String(exampleData.intro).trim() + '\n' : '';
+        const intro = exampleData.intro ? stripHtmlTags(String(exampleData.intro)) + '\n' : '';
         const items = Array.isArray(exampleData.items)
             ? exampleData.items
-                  .map(
-                      (item) =>
-                          `- ${String(item)
-                              .replace(/<[^>]*>/g, '')
-                              .trim()}`,
-                  )
+                  .map((item) => `- ${stripHtmlTags(String(item))}`)
                   .join('\n')
             : '';
         return (intro + items).trim();

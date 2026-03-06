@@ -58,6 +58,10 @@ export const ExportService = {
         .export-to-pdf-content p, .export-to-pdf-content li, .export-to-pdf-content span, .export-to-pdf-content div {
              color: #111827 !important;
         }
+        .export-to-pdf-content br {
+            display: block;
+            margin-top: 0.25em;
+        }
         .export-to-pdf-content a {
             color: #5858da !important;
             text-decoration: underline !important;

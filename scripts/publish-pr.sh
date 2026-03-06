@@ -176,6 +176,24 @@ extract_pr_number_from_url() {
   printf '%s' "$1" | grep -oE '/pull/[0-9]+' | grep -oE '[0-9]+' | head -1
 }
 
+# Создаёт короткую ссылку через clc.is (бесплатно, без регистрации).
+# Возвращает short URL или пусто при ошибке. Slug должен быть уникальным (409 = уже занят).
+create_short_link_clcis() {
+  local long_url="$1"
+  local slug="$2"
+  local resp status
+  resp="$(curl -sS -w '\n%{http_code}' -X POST 'https://clc.is/api/links' \
+    -H 'Content-Type: application/json' \
+    -d "{\"domain\":\"clc.is\",\"target_url\":\"${long_url}\",\"slug\":\"${slug}\"}" 2>/dev/null)" || true
+  status="$(printf '%s' "$resp" | tail -1)"
+  if [[ "$status" == "200" ]]; then
+    printf '%s' "$resp" | grep -oE 'https://clc\.is/[^"]+' | head -1
+  elif [[ "$status" == "409" ]]; then
+    # Slug уже занят (например, скрипт уже создал — workflow повторяет)
+    printf 'https://clc.is/%s\n' "$slug"
+  fi
+}
+
 # ===== Основная логика =====
 
 require_cmd git
@@ -257,10 +275,16 @@ if PR_CREATE_OUTPUT="$(create_pr_via_gh "$REPO_OWNER" "$REMOTE_PR_BRANCH")"; the
   PR_NUM="$(extract_pr_number_from_url "$NEW_PR_URL")"
   if [[ -n "$PR_NUM" ]]; then
     PREVIEW_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/pr-preview/pr-${PR_NUM}/"
-    info "Ссылка на приложение (preview): $PREVIEW_URL"
+    SHORT_SLUG="copilot-1co-2.0-pr-${PR_NUM}"
+    DISPLAY_URL="$PREVIEW_URL"
+    if command -v curl >/dev/null 2>&1; then
+      SHORT_URL="$(create_short_link_clcis "$PREVIEW_URL" "$SHORT_SLUG")"
+      [[ -n "$SHORT_URL" ]] && DISPLAY_URL="$SHORT_URL"
+    fi
+    info "Приложение (preview): copilot-1co-2.0 → $DISPLAY_URL"
     if gh pr comment "$PR_NUM" --body "## Ссылка на приложение (preview)
 
-**${PREVIEW_URL}**
+[copilot-1co-2.0](${DISPLAY_URL})
 
 *(Развёрнуто из этого PR; обновляется при новых коммитах.)*" 2>/dev/null; then
       info "В PR добавлен комментарий со ссылкой."

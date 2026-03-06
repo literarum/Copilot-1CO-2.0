@@ -13,9 +13,20 @@ export function setAlgorithmsPdfExportDependencies(deps) {
     showNotification = deps.showNotification;
 }
 
+/** Удаляет все HTML-теги (включая самозакрывающиеся вроде <br />), чтобы в PDF не попадал сырой HTML. Переносы строк сохраняются. */
+function stripHtmlForPdf(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/<[^>]*\/?>/g, ' ')
+        .replace(/<[^>]*$/g, ' ')
+        .replace(/[^\S\n]+/g, ' ')
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        .trim();
+}
+
 function formatMultiline(text) {
     if (!text) return '';
-    const plainText = String(text).replace(/<[^>]*>/g, ' ');
+    const plainText = stripHtmlForPdf(text);
     const escaped = escapeHtml(plainText);
     return escaped.replace(/\n/g, '<br>');
 }

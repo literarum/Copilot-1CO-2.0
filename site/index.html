@@ -797,34 +797,32 @@
                 <div class="p-content rounded-lg shadow-md">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-content">
                         <div id="mainAlgoCard" class="bg-gray-100 dark:bg-gray-800 p-content rounded-lg shadow-md">
-                            <div
-                                class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-content-sm"
-                            >
-                                <h2 class="text-xl font-bold flex-shrink min-w-0">
-                                    Главный алгоритм работы (значения можно редактировать под ваши
-                                    нужды)
-                                </h2>
+                            <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+                                <div id="mainAlgoToolbar" class="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                    <label class="flex items-center gap-1.5 cursor-pointer">
+                                        <input type="checkbox" id="mainAlgoHeadersOnly" class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 dark:border-gray-600">
+                                        <span>Только заголовки</span>
+                                    </label>
+                                    <span class="text-gray-400 dark:text-gray-500">|</span>
+                                    <span class="flex items-center gap-2">
+                                        <span>Вид:</span>
+                                        <button type="button" id="mainAlgoDensityNormal" class="main-algo-density-btn px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600" data-density="normal">Обычный</button>
+                                        <button type="button" id="mainAlgoDensityCompact" class="main-algo-density-btn px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600" data-density="compact">Компактный</button>
+                                    </span>
+                                </div>
                                 <button
                                     id="editMainBtn"
-                                    class="p-1.5 lg:px-3 lg:py-1.5 bg-primary hover:bg-secondary text-white rounded-md transition sm:self-start flex-shrink-0"
+                                    class="p-1.5 lg:px-3 lg:py-1.5 bg-primary hover:bg-secondary text-white rounded-md transition flex-shrink-0"
                                     title="Редактировать"
                                 >
                                     <i class="fas fa-edit fa-xs lg:mr-1"></i>
                                     <span class="hidden lg:inline">Редактировать</span>
                                 </button>
                             </div>
-                            <div id="mainAlgoToolbar" class="flex flex-wrap items-center gap-2 mb-2 text-sm text-gray-600 dark:text-gray-400">
-                                <label class="flex items-center gap-1.5 cursor-pointer">
-                                    <input type="checkbox" id="mainAlgoHeadersOnly" class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 dark:border-gray-600">
-                                    <span>Только заголовки</span>
-                                </label>
-                                <span class="text-gray-400 dark:text-gray-500">|</span>
-                                <span class="flex items-center gap-2">
-                                    <span>Вид:</span>
-                                    <button type="button" id="mainAlgoDensityNormal" class="main-algo-density-btn px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600" data-density="normal">Обычный</button>
-                                    <button type="button" id="mainAlgoDensityCompact" class="main-algo-density-btn px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600" data-density="compact">Компактный</button>
-                                </span>
-                            </div>
+                            <h2 class="text-xl font-bold flex-shrink min-w-0 mb-content-sm">
+                                Главный алгоритм работы (значения можно редактировать под ваши
+                                нужды)
+                            </h2>
                             <div id="mainAlgorithm" class="space-y-content-sm">
                                 <div
                                     class="algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm border-l-4 border-primary"
