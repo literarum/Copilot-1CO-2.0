@@ -599,6 +599,7 @@ import {
 import {
     setClientNotesWindowDependencies,
     openClientNotesWindow as openClientNotesWindowModule,
+    openClientNotesPopupWindow as openClientNotesPopupWindowModule,
     highlightClientNotesWindow as highlightClientNotesWindowModule,
     isClientNotesWindowOpen as isClientNotesWindowOpenModule,
 } from './js/features/client-notes-window.js';
@@ -1344,12 +1345,14 @@ function initScrollNavButtons() {
         const docDelta = document.documentElement.scrollHeight - window.innerHeight;
         const mainDelta = main ? main.scrollHeight - main.clientHeight : null;
         const { el, isDocument } = getScrollContainer();
-        const overflowDelta = isDocument ? docDelta : (el?.scrollHeight ?? 0) - (el?.clientHeight ?? 0);
+        const overflowDelta = isDocument
+            ? docDelta
+            : (el?.scrollHeight ?? 0) - (el?.clientHeight ?? 0);
         return {
             hasOpenModal,
             docDelta,
             mainDelta,
-            scrollContainer: isDocument ? 'document' : (el?.id || el?.className || 'element'),
+            scrollContainer: isDocument ? 'document' : el?.id || el?.className || 'element',
             overflowDelta,
             show: !hasOpenModal && overflowDelta > 1,
             visibleTab: visibleTab?.id,
@@ -3306,6 +3309,7 @@ setClientDataInitDependencies({
     getVisibleModals,
     showAppConfirm: showAppConfirmModule,
     openClientNotesWindow: openClientNotesWindowModule,
+    openClientNotesPopupWindow: openClientNotesPopupWindowModule,
 });
 console.log('[script.js] Зависимости client-data-init установлены.');
 
@@ -4013,8 +4017,10 @@ setUISettingsModalInitDependencies({
     applyPreviewSettings: typeof applyPreviewSettings !== 'undefined' ? applyPreviewSettings : null,
     initColorPicker: initColorPickerModule,
     showUnsavedConfirmModal: showUnsavedConfirmModalModule,
-    setupExtensionFieldListeners: typeof setupExtensionFieldListeners === 'function' ? setupExtensionFieldListeners : null,
-    loadEmployeeExtension: typeof loadEmployeeExtension === 'function' ? loadEmployeeExtension : null,
+    setupExtensionFieldListeners:
+        typeof setupExtensionFieldListeners === 'function' ? setupExtensionFieldListeners : null,
+    loadEmployeeExtension:
+        typeof loadEmployeeExtension === 'function' ? loadEmployeeExtension : null,
 });
 
 // UI Settings Modal Dependencies (applyPreviewSettings определена ниже, но доступна благодаря hoisting)

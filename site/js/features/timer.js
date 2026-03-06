@@ -53,7 +53,9 @@ function startTitleFlash() {
     stopTitleFlash();
     titleFlashIntervalId = setInterval(() => {
         document.title =
-            document.title === TIMER_END_FLASH_TITLE ? originalDocumentTitle : TIMER_END_FLASH_TITLE;
+            document.title === TIMER_END_FLASH_TITLE
+                ? originalDocumentTitle
+                : TIMER_END_FLASH_TITLE;
     }, TITLE_FLASH_INTERVAL_MS);
 }
 

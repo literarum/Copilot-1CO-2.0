@@ -263,8 +263,8 @@ export async function renderFavoritesPage() {
                         <div class="flex items-center min-w-0 mb-2">
                             <i class="fas ${iconClass} text-primary mr-2 text-lg flex-shrink-0"></i>
                             <h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate flex-1 min-w-0" title="${escapeHtml(
-                                    fav.title,
-                                )}">${escapeHtml(fav.title)}</h3>
+                                fav.title,
+                            )}">${escapeHtml(fav.title)}</h3>
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Тип: ${typeText}</p>
                         <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-3" title="${escapeHtml(

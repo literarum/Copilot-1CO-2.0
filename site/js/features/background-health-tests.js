@@ -371,11 +371,7 @@ export function initBackgroundHealthTestsSystem() {
 
                 // Тест 1.2: сетевое подключение
                 if (!navigator.onLine) {
-                    report(
-                        'info',
-                        'Сеть',
-                        'Офлайн. API проверки сертификатов недоступны.',
-                    );
+                    report('info', 'Сеть', 'Офлайн. API проверки сертификатов недоступны.');
                 } else {
                     report('info', 'Сеть', 'Подключение к сети есть.');
                 }
@@ -424,10 +420,7 @@ export function initBackgroundHealthTestsSystem() {
                 // Тест 1.5: persistence (риск очистки при нехватке места)
                 if (navigator.storage?.persisted) {
                     try {
-                        const persisted = await runWithTimeout(
-                            navigator.storage.persisted(),
-                            2000,
-                        );
+                        const persisted = await runWithTimeout(navigator.storage.persisted(), 2000);
                         if (!persisted) {
                             report(
                                 'info',
@@ -743,7 +736,11 @@ export function initBackgroundHealthTestsSystem() {
                 if (typeof window.ResizeObserver === 'function') {
                     report('info', 'ResizeObserver', 'Доступен.');
                 } else {
-                    report('warn', 'ResizeObserver', 'Недоступен. Табы и overflow могут работать некорректно.');
+                    report(
+                        'warn',
+                        'ResizeObserver',
+                        'Недоступен. Табы и overflow могут работать некорректно.',
+                    );
                 }
 
                 // Тест 6.2: clipboard
@@ -863,16 +860,27 @@ export function initBackgroundHealthTestsSystem() {
                 sessionStorage.setItem(sk, 'ok');
                 const sv = sessionStorage.getItem(sk);
                 sessionStorage.removeItem(sk);
-                report(sv === 'ok' ? 'info' : 'warn', 'sessionStorage', sv === 'ok' ? 'Доступен.' : 'Не удалось проверить.');
+                report(
+                    sv === 'ok' ? 'info' : 'warn',
+                    'sessionStorage',
+                    sv === 'ok' ? 'Доступен.' : 'Не удалось проверить.',
+                );
             } catch (err) {
                 report('warn', 'sessionStorage', err.message);
             }
             if (navigator.storage?.estimate) {
                 try {
-                    const { usage, quota } = await runWithTimeout(navigator.storage.estimate(), 3000);
+                    const { usage, quota } = await runWithTimeout(
+                        navigator.storage.estimate(),
+                        3000,
+                    );
                     const percent = quota ? (usage / quota) * 100 : 0;
                     if (percent > 90) {
-                        report('warn', 'Хранилище', `Занято ~${Math.round(percent)}%. Возможны сбои сохранения.`);
+                        report(
+                            'warn',
+                            'Хранилище',
+                            `Занято ~${Math.round(percent)}%. Возможны сбои сохранения.`,
+                        );
                     } else {
                         report('info', 'Хранилище', `Занято ~${Math.round(percent)}%.`);
                     }
@@ -886,7 +894,9 @@ export function initBackgroundHealthTestsSystem() {
                     report(
                         'info',
                         'Хранилище',
-                        persisted ? 'Persistent storage включён.' : 'Данные могут быть очищены при нехватке места.',
+                        persisted
+                            ? 'Persistent storage включён.'
+                            : 'Данные могут быть очищены при нехватке места.',
                     );
                 } catch {
                     report('info', 'Хранилище', 'Проверка persistence недоступна.');
@@ -896,11 +906,7 @@ export function initBackgroundHealthTestsSystem() {
             // Тест 2: IndexedDB запись/чтение
             const testId = `health-manual-${Date.now()}`;
             try {
-                if (
-                    !deps.saveToIndexedDB ||
-                    !deps.getFromIndexedDB ||
-                    !deps.deleteFromIndexedDB
-                ) {
+                if (!deps.saveToIndexedDB || !deps.getFromIndexedDB || !deps.deleteFromIndexedDB) {
                     throw new Error('Отсутствуют методы работы с IndexedDB.');
                 }
                 await runWithTimeout(
@@ -1005,7 +1011,11 @@ export function initBackgroundHealthTestsSystem() {
             if ('Notification' in window) {
                 const perm = Notification.permission;
                 if (perm === 'denied') {
-                    report('warn', 'Уведомления', 'Разрешение denied. Напоминания таймера не будут работать.');
+                    report(
+                        'warn',
+                        'Уведомления',
+                        'Разрешение denied. Напоминания таймера не будут работать.',
+                    );
                 } else if (perm === 'granted') {
                     report('info', 'Уведомления', 'Разрешение granted.');
                 } else {
@@ -1134,15 +1144,16 @@ export function initBackgroundHealthTestsSystem() {
             if (typeof window.ResizeObserver === 'function') {
                 report('info', 'ResizeObserver', 'Доступен.');
             } else {
-                report('warn', 'ResizeObserver', 'Недоступен. Табы и overflow могут работать некорректно.');
+                report(
+                    'warn',
+                    'ResizeObserver',
+                    'Недоступен. Табы и overflow могут работать некорректно.',
+                );
             }
 
             // Тест 6.2: clipboard
             try {
-                if (
-                    navigator.clipboard &&
-                    typeof navigator.clipboard.writeText === 'function'
-                ) {
+                if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
                     try {
                         await navigator.clipboard.writeText('');
                         report('info', 'Буфер обмена', 'Clipboard API доступен.');

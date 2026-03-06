@@ -316,3 +316,77 @@ export function highlightClientNotesWindow(term) {
 export function isClientNotesWindowOpen() {
     return !!panel && !panel.classList.contains('hidden');
 }
+
+/** Префикс сообщений postMessage для синхронизации с popup. */
+const CLIENT_NOTES_MSG_PREFIX = 'copilot1co:clientNotes:';
+
+/** Референс на открытое popup-окно заметок. */
+let notesPopupRef = null;
+
+function setupClientNotesPopupMessageListener() {
+    if (window.__clientNotesPopupListenerSetup) return;
+    window.__clientNotesPopupListenerSetup = true;
+    window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) return;
+        const raw = event.data;
+        if (typeof raw !== 'string' || !raw.startsWith(CLIENT_NOTES_MSG_PREFIX)) return;
+        try {
+            const data = JSON.parse(raw.slice(CLIENT_NOTES_MSG_PREFIX.length));
+            const el = getClientNotesEl();
+            if (!el) return;
+            if (data.type === 'clientNotesRequest') {
+                event.source?.postMessage(
+                    CLIENT_NOTES_MSG_PREFIX +
+                        JSON.stringify({ type: 'clientNotesInit', value: el.value || '' }),
+                    window.location.origin,
+                );
+            } else if (data.type === 'clientNotesSync' && typeof data.value === 'string') {
+                syncToParent(data.value);
+            }
+        } catch (e) {
+            console.warn('[clientNotesWindow] Invalid popup message:', e);
+        }
+    });
+}
+
+/**
+ * Открывает заметки в отдельном окне браузера.
+ * Окно можно закрепить поверх других приложений через PowerToys (Win+Ctrl+T) или Floaty/Rectangle на macOS.
+ */
+export function openClientNotesPopupWindow() {
+    setupClientNotesPopupMessageListener();
+    if (notesPopupRef?.closed) notesPopupRef = null;
+    if (notesPopupRef && !notesPopupRef.closed) {
+        notesPopupRef.focus();
+        notesPopupRef.postMessage(
+            CLIENT_NOTES_MSG_PREFIX +
+                JSON.stringify({
+                    type: 'clientNotesInit',
+                    value: getClientNotesEl()?.value || '',
+                }),
+            window.location.origin,
+        );
+        return;
+    }
+    const url = new URL('client-notes-standalone.html', window.location.href).href;
+    const features =
+        'width=520,height=420,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes';
+    notesPopupRef = window.open(url, 'clientNotesPopup', features);
+    if (notesPopupRef) {
+        notesPopupRef.addEventListener('beforeunload', () => {
+            notesPopupRef = null;
+        });
+        notesPopupRef.addEventListener('load', () => {
+            if (notesPopupRef && !notesPopupRef.closed) {
+                notesPopupRef.postMessage(
+                    CLIENT_NOTES_MSG_PREFIX +
+                        JSON.stringify({
+                            type: 'clientNotesInit',
+                            value: getClientNotesEl()?.value || '',
+                        }),
+                    window.location.origin,
+                );
+            }
+        });
+    }
+}

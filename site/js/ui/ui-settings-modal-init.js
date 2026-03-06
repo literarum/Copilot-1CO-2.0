@@ -31,7 +31,8 @@ export function initUISettingsModalHandlers() {
         customizeUIBtn.addEventListener('click', async () => {
             if (customizeUIModal.classList.contains('hidden')) {
                 if (typeof deps.loadUISettings === 'function') await deps.loadUISettings();
-                if (typeof deps.loadEmployeeExtension === 'function') await deps.loadEmployeeExtension();
+                if (typeof deps.loadEmployeeExtension === 'function')
+                    await deps.loadEmployeeExtension();
                 if (typeof deps.populateModalControls === 'function') {
                     deps.populateModalControls(
                         deps.State?.currentPreviewSettings || deps.State?.userPreferences,
@@ -233,11 +234,7 @@ export function initUISettingsModalHandlers() {
         }
 
         customizeUIModal.addEventListener('change', (e) => {
-            if (
-                e.target.matches(
-                    'input[name="themeMode"], input[name="staticHeader"]',
-                )
-            ) {
+            if (e.target.matches('input[name="themeMode"], input[name="staticHeader"]')) {
                 if (typeof deps.updatePreviewSettingsFromModal === 'function') {
                     deps.updatePreviewSettingsFromModal();
                     if (deps.State && typeof deps.applyPreviewSettings === 'function') {
@@ -249,7 +246,8 @@ export function initUISettingsModalHandlers() {
         });
 
         if (typeof deps.initColorPicker === 'function') deps.initColorPicker();
-        if (typeof deps.setupExtensionFieldListeners === 'function') deps.setupExtensionFieldListeners();
+        if (typeof deps.setupExtensionFieldListeners === 'function')
+            deps.setupExtensionFieldListeners();
 
         const toggleManualHealthRun = customizeUIModal.querySelector('#toggleManualHealthRun');
         const runManualHealthCheckBtn = document.getElementById('runManualHealthCheckBtn');

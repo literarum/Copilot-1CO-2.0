@@ -18,6 +18,7 @@ let exportClientDataToTxt = null;
 let getVisibleModals = null;
 let showAppConfirm = null;
 let openClientNotesWindow = null;
+let openClientNotesPopupWindow = null;
 
 export function setClientDataInitDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
@@ -38,6 +39,8 @@ export function setClientDataInitDependencies(deps) {
     if (deps.showAppConfirm !== undefined) showAppConfirm = deps.showAppConfirm;
     if (deps.openClientNotesWindow !== undefined)
         openClientNotesWindow = deps.openClientNotesWindow;
+    if (deps.openClientNotesPopupWindow !== undefined)
+        openClientNotesPopupWindow = deps.openClientNotesPopupWindow;
 }
 
 let __lastCopyLockTime = 0;
@@ -115,6 +118,10 @@ export async function initClientDataSystem() {
     const openClientNotesWindowBtn = document.getElementById('openClientNotesWindowBtn');
     if (openClientNotesWindowBtn && typeof openClientNotesWindow === 'function') {
         openClientNotesWindowBtn.addEventListener('click', () => openClientNotesWindow());
+    }
+    const openClientNotesPopupBtn = document.getElementById('openClientNotesPopupBtn');
+    if (openClientNotesPopupBtn && typeof openClientNotesPopupWindow === 'function') {
+        openClientNotesPopupBtn.addEventListener('click', () => openClientNotesPopupWindow());
     }
 
     const buttonContainer = clearClientDataBtn?.parentNode;

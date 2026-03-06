@@ -327,8 +327,7 @@ export async function showReglamentsForCategory(categoryId) {
         const fragment = document.createDocumentFragment();
         reglaments.forEach((reglament) => {
             const reglamentElement = document.createElement('div');
-            reglamentElement.className =
-                'reglament-item view-item group relative flex flex-col';
+            reglamentElement.className = 'reglament-item view-item group relative flex flex-col';
             reglamentElement.dataset.id = reglament.id;
 
             const isFav = isFavorite('reglament', String(reglament.id));
