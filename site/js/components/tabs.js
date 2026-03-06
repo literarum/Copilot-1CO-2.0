@@ -535,19 +535,22 @@ export async function setActiveTab(tabId, warningJustAccepted = false) {
     if (currentActiveContent && currentActiveContent !== targetContent) {
         currentActiveContent.classList.add('is-hiding');
 
-        setTimeout(() => {
-            currentActiveContent.classList.add('hidden');
-            currentActiveContent.classList.remove('is-hiding');
+        await new Promise((resolve) => {
+            setTimeout(() => {
+                currentActiveContent.classList.add('hidden');
+                currentActiveContent.classList.remove('is-hiding');
 
-            if (targetContent) {
-                targetContent.classList.add('is-hiding');
-                targetContent.classList.remove('hidden');
+                if (targetContent) {
+                    targetContent.classList.add('is-hiding');
+                    targetContent.classList.remove('hidden');
 
-                requestAnimationFrame(() => {
-                    targetContent.classList.remove('is-hiding');
-                });
-            }
-        }, FADE_DURATION);
+                    requestAnimationFrame(() => {
+                        targetContent.classList.remove('is-hiding');
+                    });
+                }
+                resolve();
+            }, FADE_DURATION);
+        });
     } else if (targetContent) {
         targetContent.classList.add('is-hiding');
         targetContent.classList.remove('hidden');

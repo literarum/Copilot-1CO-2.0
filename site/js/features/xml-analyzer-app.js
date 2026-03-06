@@ -5,8 +5,6 @@ const XML_ANALYZER_ID_MAP = {
     'analyze-btn': 'xmlAnalyzerAnalyzeBtn',
     'drop-zone': 'xmlAnalyzerDropZone',
     placeholder: 'xmlAnalyzerPlaceholder',
-    'file-input-mode': 'xmlAnalyzerFileMode',
-    'text-input-mode': 'xmlAnalyzerTextMode',
     'certificate-manager-wrapper': 'xmlAnalyzerCertManagerWrapper',
     'cert-search-input': 'xmlAnalyzerCertSearch',
     'cert-list': 'xmlAnalyzerCertList',
@@ -15,9 +13,10 @@ const XML_ANALYZER_ID_MAP = {
     'cert-details-modal-overlay': 'xmlAnalyzerCertModalOverlay',
     'modal-close-btn': 'xmlAnalyzerModalClose',
     'modal-content-target': 'xmlAnalyzerModalContent',
-    'mode-toggle-container': 'xmlAnalyzerModeToggle',
     'analyze-btn-content': 'xmlAnalyzerAnalyzeBtnContent',
     'reset-input-btn': 'xmlAnalyzerResetInputBtn',
+    'reset-btn': 'xmlAnalyzerResetBtn',
+    'load-file-btn': 'xmlAnalyzerLoadFileBtn',
     'notification-container': 'xmlAnalyzerNotificationContainer',
     'sedo-raw-json-viewer': 'xmlAnalyzerSedoRawJsonViewer',
     'accordion-section-template': 'xmlAnalyzerAccordionSectionTemplate',
@@ -105,10 +104,9 @@ class ReportAnalyzerApp {
         this.dropZone = getEl('drop-zone');
         this.placeholder = getEl('placeholder');
 
-        this.modeToggleButtons = this.root.querySelectorAll('.xml-analyzer-mode-btn');
-        this.fileInputModeContainer = getEl('file-input-mode');
-        this.textInputModeContainer = getEl('text-input-mode');
         this.dataInputTextarea = getEl('data-input');
+        this.loadFileBtn = getEl('load-file-btn');
+        this.resetBtn = getEl('reset-btn');
 
         this.themeToggle = getEl('theme-toggle');
         this.reloadBtn = getEl('reload-btn');
@@ -126,7 +124,6 @@ class ReportAnalyzerApp {
         this.modalCloseBtn = getEl('modal-close-btn');
         this.modalContentTarget = getEl('modal-content-target');
 
-        this.modeToggleContainer = getEl('mode-toggle-container');
         this.getEl = getEl;
 
         this.init();
@@ -151,6 +148,10 @@ class ReportAnalyzerApp {
             this.resetInputBtn.addEventListener('click', () => this.clearInput());
         }
 
+        if (this.resetBtn) {
+            this.resetBtn.addEventListener('click', () => this.clearAnalysis());
+        }
+
         if (this.reloadBtn) {
             this.reloadBtn.addEventListener('click', () => this.clearAnalysis());
         }
@@ -160,20 +161,26 @@ class ReportAnalyzerApp {
                 e.preventDefault();
                 this.dropZone.classList.add('drag-over');
             });
-            this.dropZone.addEventListener('dragleave', () =>
-                this.dropZone.classList.remove('drag-over'),
-            );
-            this.dropZone.addEventListener('drop', (e) => this.handleFileDrop(e));
-            this.dropZone.addEventListener('click', () => {
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = '.xml,.json,.zip,text/plain,application/zip';
-                fileInput.style.display = 'none';
-                fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-                document.body.appendChild(fileInput);
-                fileInput.click();
-                document.body.removeChild(fileInput);
+            this.dropZone.addEventListener('dragleave', (e) => {
+                if (!this.dropZone.contains(e.relatedTarget)) {
+                    this.dropZone.classList.remove('drag-over');
+                }
             });
+            this.dropZone.addEventListener('drop', (e) => this.handleFileDrop(e));
+        }
+
+        const openFilePicker = () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.xml,.zip,.txt,.json';
+            fileInput.style.display = 'none';
+            fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+            document.body.appendChild(fileInput);
+            fileInput.click();
+            document.body.removeChild(fileInput);
+        };
+        if (this.loadFileBtn) {
+            this.loadFileBtn.addEventListener('click', openFilePicker);
         }
 
         if (this.dataInputTextarea) {
@@ -186,16 +193,7 @@ class ReportAnalyzerApp {
             });
         }
 
-        if (this.modeToggleContainer) {
-            this.modeToggleContainer.addEventListener('click', (event) => {
-                const button = event.target.closest('.xml-analyzer-mode-btn');
-                if (button && button.dataset.mode) {
-                    this.switchInputMode(button.dataset.mode);
-                }
-            });
-            this.switchInputMode('text');
-            this.updateAnalyzeButtonState();
-        }
+        this.updateAnalyzeButtonState();
 
         if (this.certSearchInput) {
             this.certSearchInput.addEventListener(
@@ -245,9 +243,12 @@ class ReportAnalyzerApp {
         if (this.resetInputBtn) {
             this.resetInputBtn.disabled = !hasContent;
         }
+        if (this.resetBtn) {
+            this.resetBtn.disabled = !hasContent && !this.isAnalysisDone;
+        }
         if (!this.analyzeBtn) return;
         if (this.isAnalysisDone) {
-            this.analyzeBtn.disabled = false;
+            this.analyzeBtn.disabled = true;
             return;
         }
         this.analyzeBtn.disabled = !hasContent;
@@ -257,7 +258,6 @@ class ReportAnalyzerApp {
         if (this.dataInputTextarea) {
             this.dataInputTextarea.value = '';
         }
-        this.switchInputMode('text');
         this.updateAnalyzeButtonState();
     }
 
@@ -481,7 +481,7 @@ class ReportAnalyzerApp {
             }
 
             this.dataInputTextarea.value = content.data;
-            this.switchInputMode('text');
+            this.updateAnalyzeButtonState();
             this.analyzeData();
         } catch (error) {
             this.showNotification(`Ошибка чтения файла: ${error.message}`, 'error');
@@ -539,10 +539,6 @@ class ReportAnalyzerApp {
         const mainElement = this.root.querySelector('.xml-analyzer-shell');
         if (mainElement) {
             mainElement.classList.remove('analysis-done', 'show-cert-manager');
-        }
-
-        if (this.modeToggleContainer) {
-            this.modeToggleContainer.classList.remove('hidden');
         }
 
         this.certificates.clear();
@@ -1084,34 +1080,6 @@ class ReportAnalyzerApp {
         }
     }
 
-    switchInputMode(mode) {
-        this.modeToggleButtons.forEach((button) => {
-            button.classList.remove('active');
-            if (button.dataset.mode === mode) {
-                button.classList.add('active');
-            }
-        });
-
-        if (mode === 'file') {
-            if (this.fileInputModeContainer) {
-                this.fileInputModeContainer.style.display = 'block';
-            }
-            if (this.textInputModeContainer) {
-                this.textInputModeContainer.style.display = 'none';
-            }
-        } else {
-            if (this.fileInputModeContainer) {
-                this.fileInputModeContainer.style.display = 'none';
-            }
-            if (this.textInputModeContainer) {
-                this.textInputModeContainer.style.display = 'block';
-            }
-            if (this.dataInputTextarea) {
-                this.dataInputTextarea.focus();
-            }
-        }
-    }
-
     async analyzeData() {
         let rawData = this.dataInputTextarea.value.trim();
         if (!rawData) {
@@ -1609,10 +1577,6 @@ class ReportAnalyzerApp {
             throw new Error('Не удалось сформировать узел для отображения результата.');
         }
 
-        if (this.modeToggleContainer) {
-            this.modeToggleContainer.classList.add('hidden');
-        }
-
         if (mainElement) {
             mainElement.classList.add('analysis-done');
             if (this.certificates.size > 0) {
@@ -1625,13 +1589,10 @@ class ReportAnalyzerApp {
         this.inputArea.readOnly = true;
 
         const analyzeBtn = this.getEl('analyze-btn');
-        const analyzeBtnContent = this.getEl('analyze-btn-content');
-        analyzeBtn.classList.add('bg-amber-500', 'hover:bg-amber-600');
-        if (analyzeBtnContent) {
-            analyzeBtnContent.innerHTML = `<span>Очистить</span>`;
-        } else {
-            analyzeBtn.textContent = 'Очистить';
+        if (analyzeBtn) {
+            analyzeBtn.disabled = true;
         }
+        this.updateAnalyzeButtonState();
     }
 
     _createWarningsNode(warnings) {
@@ -3749,17 +3710,6 @@ class ReportAnalyzerApp {
             wrapper.appendChild(this._createAccordion('Подпись файла', signatureContent));
         }
 
-        if (data.confidential && data.confidential.encryptedData) {
-            const confidentialContent = document.createDocumentFragment();
-            const infoText = document.createElement('p');
-            infoText.className = 'text-sm text-slate-500 dark:text-slate-400';
-            infoText.textContent =
-                'В файле обнаружен блок с зашифрованной информацией, его содержимое не может быть отображено.';
-            confidentialContent.appendChild(infoText);
-            wrapper.appendChild(
-                this._createAccordion('Конфиденциальная информация', confidentialContent),
-            );
-        }
         return wrapper;
     }
 
@@ -3821,7 +3771,6 @@ class ReportAnalyzerApp {
             recipients: [],
             allCertificates: [],
             signature: {},
-            confidential: {},
         };
 
         // --- МЕТАДАННЫЕ ФАЙЛА ---
@@ -4012,10 +3961,6 @@ class ReportAnalyzerApp {
                 });
             }
         }
-
-        const confidentialNode = root.querySelector('КонфиденциальнаяИнформация');
-        if (confidentialNode)
-            data.confidential = { encryptedData: confidentialNode.textContent.trim() };
 
         // --- СЕРТИФИКАТЫ ---
         const certsContainer = root.querySelector('Сертификаты');

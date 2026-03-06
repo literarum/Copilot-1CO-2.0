@@ -219,7 +219,7 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
 
         const mainContentHTML = `
             <div class="flex-grow min-w-0 cursor-pointer" data-action="open-link">
-                <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1 truncate" title="${safeTitle}">${safeTitle}</h3>
+                <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1 truncate pr-20" title="${safeTitle}">${safeTitle}</h3>
                 <p class="ext-link-description text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2" title="${safeDescription}">${safeDescription}</p>
             </div>
             <div class="ext-link-meta mt-auto pt-2 border-t border-gray-200 dark:border-gray-600 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -241,7 +241,7 @@ export function createExtLinkElement(link, categoryMap = {}, viewMode = 'cards')
         linkElement.innerHTML = mainContentHTML + actionsHTML;
     } else {
         linkElement.className =
-            'ext-link-item view-item group flex items-center p-3 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer';
+            'ext-link-item view-item group flex items-center p-content-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer';
         linkElement.innerHTML = `
             <div class="flex-grow min-w-0 flex items-center cursor-pointer" data-action="open-link">
                 <i class="fas fa-link text-gray-400 dark:text-gray-500 mr-4 flex-shrink-0"></i>

@@ -285,7 +285,7 @@ export function createBookmarkElement(bookmark, folderMap = {}, viewMode = 'card
         bookmarkElement.innerHTML = mainContentHTML + actionsHTML;
     } else {
         bookmarkElement.className =
-            'bookmark-item view-item group relative cursor-pointer flex items-center p-3 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
+            'bookmark-item view-item group relative cursor-pointer flex items-center p-content-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
 
         const listIconHTML = bookmark.url
             ? '<i class="fas fa-link text-gray-400 dark:text-gray-500 mr-3 text-sm"></i>'

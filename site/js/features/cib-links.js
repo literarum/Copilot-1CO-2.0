@@ -433,7 +433,7 @@ export async function renderCibLinks(links) {
 
         if (currentView === 'list') {
             linkElement.className =
-                'cib-link-item view-item group flex items-center p-3 border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer';
+                'cib-link-item view-item group flex items-center p-content-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer';
             linkElement.innerHTML = `
                 <div class="flex-grow min-w-0 flex items-center cursor-pointer" data-action="open-cib-link">
                     <i class="fas fa-link text-gray-400 dark:text-gray-500 mr-4 flex-shrink-0"></i>

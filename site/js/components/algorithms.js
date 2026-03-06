@@ -88,7 +88,7 @@ export async function renderAlgorithmCards(section) {
 
         const card = document.createElement('div');
         card.className =
-            'algorithm-card js-algorithm-card-style-target view-item transition cursor-pointer h-full flex flex-col bg-white dark:bg-gray-700 shadow-sm rounded-lg p-4';
+            'algorithm-card js-algorithm-card-style-target view-item group relative transition cursor-pointer h-full flex flex-col bg-white dark:bg-gray-700 shadow-sm rounded-lg p-4';
         card.dataset.id = algorithm.id;
 
         const titleText = algorithm.title || 'Без заголовка';
@@ -121,12 +121,10 @@ export async function renderAlgorithmCards(section) {
                 : '';
 
         card.innerHTML = `
-            <div class="flex justify-between items-start mb-2">
-                <h3 class="font-bold text-gray-900 dark:text-gray-100 truncate flex-grow pr-2" title="${safeEscapeHtml(
+            <h3 class="font-bold text-gray-900 dark:text-gray-100 truncate mb-2 pr-12" title="${safeEscapeHtml(
                     titleText,
                 )}">${safeEscapeHtml(titleText)}</h3>
-                <div class="flex-shrink-0">${favButtonHTML}</div>
-            </div>
+            <div class="algorithm-fav-actions absolute top-2 right-2 z-10 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">${favButtonHTML}</div>
             ${descriptionHTML}
         `;
 
@@ -1296,6 +1294,7 @@ export function captureInitialEditState(algorithm, section) {
                     }
 
                     if (!isMainAlgorithm) {
+                        delete initialStep.example;
                         initialStep.existingScreenshotIds = Array.isArray(step.screenshotIds)
                             ? step.screenshotIds
                                   .filter((id) => id !== null && id !== undefined)

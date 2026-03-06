@@ -238,7 +238,7 @@ export const SAVE_BUTTON_SELECTORS =
 // КОНФИГУРАЦИЯ UI КЛАССОВ
 // ============================================================================
 export const CARD_CONTAINER_CLASSES = ['grid', 'gap-4'];
-export const LIST_CONTAINER_CLASSES = ['flex', 'flex-col'];
+export const LIST_CONTAINER_CLASSES = ['flex', 'flex-col', 'gap-content-sm'];
 export const CARD_ITEM_BASE_CLASSES = [
     'p-4',
     'rounded-lg',
@@ -247,8 +247,9 @@ export const CARD_ITEM_BASE_CLASSES = [
     'dark:bg-gray-700',
 ];
 export const LIST_ITEM_BASE_CLASSES = [
-    'p-3',
-    'border-b',
+    'p-content-sm',
+    'rounded-lg',
+    'border',
     'border-gray-200',
     'dark:border-gray-600',
     'hover:bg-gray-50',

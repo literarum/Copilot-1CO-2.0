@@ -38,7 +38,6 @@ export function initBackgroundStatusHUD() {
     };
 
     const DISMISS_AFTER_ACTIVITY_DELAY_MS = 2000;
-    const _MAX_HUD_DISPLAY_TIME = 30000;
 
     function ensureStyles() {
         if (document.getElementById('bg-status-hud-styles')) return;
@@ -293,7 +292,7 @@ export function initBackgroundStatusHUD() {
                     : 'is-running';
         STATE.watchdogInfoEl.innerHTML = `<span class="hud-watchdog-status"><span class="hud-watchdog-dot ${dotClass}"></span>${watchdogStatusLabel(
             severity,
-        )}</span> ${status} | Прогон: ${lastRun} | Автосохранение: ${lastAutosave}`;
+        )}</span> ${status} | Автосохранение: ${lastAutosave}`;
         if (STATE.watchdogRunBtnEl) {
             STATE.watchdogRunBtnEl.disabled = STATE.watchdog.running === true;
             STATE.watchdogRunBtnEl.textContent =
@@ -329,19 +328,8 @@ export function initBackgroundStatusHUD() {
         return (acc / totalWeight) * 100;
     }
 
-    function scheduleAutoHideTimeout() {
-        if (STATE.autoHideTimeoutId) clearTimeout(STATE.autoHideTimeoutId);
-        STATE.autoHideTimeoutId = setTimeout(() => {
-            if (STATE.tasks.size > 0) {
-                console.debug(
-                    '[BackgroundStatusHUD] Принудительное скрытие по таймауту. Незавершённые задачи:',
-                    [...STATE.tasks.keys()],
-                );
-            }
-            STATE.tasks.clear();
-            hide();
-        }, _MAX_HUD_DISPLAY_TIME);
-    }
+    // HUD скрывается ТОЛЬКО при взаимодействии пользователя (курсор, клавиша, прокрутка).
+    // Принудительный таймаут убран — HUD висит до последнего без активности.
 
     function tick() {
         const target = aggregatePercent();
@@ -382,7 +370,6 @@ export function initBackgroundStatusHUD() {
         computeTopOffset();
         STATE.container.style.display = '';
         if (!STATE.rafId) STATE.rafId = requestAnimationFrame(tick);
-        scheduleAutoHideTimeout();
     }
 
     function removeActivityListeners() {
@@ -395,6 +382,7 @@ export function initBackgroundStatusHUD() {
         document.removeEventListener('mousemove', STATE._onActivity);
         document.removeEventListener('keydown', STATE._onActivity);
         document.removeEventListener('touchstart', STATE._onActivity);
+        document.removeEventListener('scroll', STATE._onActivity, true);
         STATE._onActivity = null;
     }
 
@@ -546,11 +534,6 @@ export function initBackgroundStatusHUD() {
                     STATE.watchdog.severity || 'running',
                 )}</p>
                 <p class="text-xs opacity-80">Статус: ${STATE.watchdog.statusText || '—'}</p>
-                <p class="text-xs opacity-80">Последний прогон: ${
-                    STATE.watchdog.lastRunAt
-                        ? new Date(STATE.watchdog.lastRunAt).toLocaleString('ru-RU')
-                        : '—'
-                }</p>
                 <p class="text-xs opacity-80">Последнее автосохранение: ${
                     STATE.watchdog.lastAutosaveAt
                         ? new Date(STATE.watchdog.lastAutosaveAt).toLocaleString('ru-RU')
@@ -584,6 +567,7 @@ export function initBackgroundStatusHUD() {
         document.addEventListener('mousemove', STATE._onActivity, { once: false, passive: true });
         document.addEventListener('keydown', STATE._onActivity, { once: false });
         document.addEventListener('touchstart', STATE._onActivity, { once: false, passive: true });
+        document.addEventListener('scroll', STATE._onActivity, { once: false, passive: true });
     }
 
     function maybeFinishAll() {
@@ -616,7 +600,6 @@ export function initBackgroundStatusHUD() {
             }
             computeTopOffset();
             updateTitle();
-            scheduleAutoHideTimeout();
         },
         finishTask(id, success = true) {
             console.log(

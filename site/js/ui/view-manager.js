@@ -159,6 +159,7 @@ export function applyView(container, view) {
         'gap-3',
         'gap-4',
         'gap-content',
+        'gap-content-sm',
     );
 
     if (view === 'cards') {
@@ -183,11 +184,9 @@ export function applyView(container, view) {
             );
             container.classList.add('grid');
             container.classList.add('grid-cols-1');
+            container.classList.add('gap-content-sm');
         } else {
             container.classList.add(...LIST_CONTAINER_CLASSES);
-            if (sectionId === 'linksContainer') {
-                container.classList.add('gap-2');
-            }
         }
     }
 
@@ -210,6 +209,9 @@ export function applyView(container, view) {
             'pl-5',
             'pr-3',
             'mb-1',
+            'mb-2',
+            'p-3',
+            'border-b',
             'text-center',
             'md:items-start',
             'md:text-left',

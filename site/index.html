@@ -1559,29 +1559,28 @@
             <!-- XMLизатор -->
             <div id="xmlAnalyzerContent" class="tab-content hidden p-4" aria-labelledby="xmlAnalyzerTab">
                 <div class="xml-analyzer-shell h-full flex flex-col gap-4">
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">XMLизатор</h2>
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">XMLизатор</h2>
+                        <div class="flex gap-2">
+                            <button type="button" id="xmlAnalyzerResetBtn" class="px-4 py-2 rounded-lg font-semibold border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="fas fa-redo mr-1"></i>Сбросить
+                            </button>
+                            <button type="button" id="xmlAnalyzerAnalyzeBtn" class="font-bold py-2 px-4 rounded-lg bg-primary hover:bg-secondary text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <span id="xmlAnalyzerAnalyzeBtnContent">Анализировать</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
                         <div id="xmlAnalyzerInputContainer" class="flex flex-col flex-1 min-h-0 overflow-hidden">
                             <div id="xmlAnalyzerInitialView" class="flex flex-col flex-grow">
-                                <div id="xmlAnalyzerModeToggle" class="flex-shrink-0 mb-4 p-1 bg-gray-200 dark:bg-gray-700 rounded-lg grid grid-cols-2 gap-1 w-full">
-                                    <button type="button" data-mode="text" class="xml-analyzer-mode-btn min-w-0 py-2 rounded-md font-semibold transition-colors">Вставить текст</button>
-                                    <button type="button" data-mode="file" class="xml-analyzer-mode-btn min-w-0 py-2 rounded-md font-semibold transition-colors">Выбрать файл</button>
-                                </div>
-                                <div id="xmlAnalyzerFileMode" class="flex-grow hidden pb-4">
-                                    <div id="xmlAnalyzerDropZone" class="w-full h-full min-h-[120px] border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer p-6">
-                                        <i class="fas fa-file-alt text-2xl text-gray-400 dark:text-gray-500 mb-2"></i>
-                                        <p class="font-semibold text-gray-700 dark:text-gray-300">Перетащите файл сюда</p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">или нажмите, чтобы выбрать (.xml, .json, .zip, .txt)</p>
-                                    </div>
-                                </div>
-                                <div id="xmlAnalyzerTextMode" class="flex flex-col flex-grow min-h-0">
-                                    <textarea id="xmlAnalyzerDataInput" class="w-full flex-grow min-h-[200px] p-4 border border-gray-300 dark:border-gray-600 rounded-xl resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" placeholder="Вставьте XML рег.файла, JSON СЭДО, XML ЕФС из 1С... (Ctrl+Enter для анализа)"></textarea>
+                                <div id="xmlAnalyzerDropZone" class="flex flex-col flex-grow min-h-0 border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-xl overflow-hidden transition-colors">
+                                    <textarea id="xmlAnalyzerDataInput" class="w-full flex-grow min-h-[200px] p-4 border-0 border-transparent rounded-xl resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-0 focus:outline-none" placeholder="Вставьте XML рег.файла, JSON СЭДО, XML ЕФС из 1С или перетащите файл (.xml, .zip, .txt, .json)... (Ctrl+Enter для анализа)"></textarea>
                                 </div>
                                 <div class="flex gap-2 mt-4">
-                                    <button type="button" id="xmlAnalyzerResetInputBtn" class="px-4 py-2 rounded-lg font-semibold border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Сбросить ввод</button>
-                                    <button type="button" id="xmlAnalyzerAnalyzeBtn" class="flex-1 font-bold py-2 rounded-lg bg-primary hover:bg-secondary text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                                        <span id="xmlAnalyzerAnalyzeBtnContent">Анализировать</span>
+                                    <button type="button" id="xmlAnalyzerLoadFileBtn" class="px-4 py-2 rounded-lg font-semibold border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                        <i class="fas fa-upload mr-1"></i>Загрузить для анализа
                                     </button>
+                                    <button type="button" id="xmlAnalyzerResetInputBtn" class="px-4 py-2 rounded-lg font-semibold border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Сбросить ввод</button>
                                 </div>
                             </div>
                             <div id="xmlAnalyzerCertManagerWrapper" class="hidden flex-col h-full bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 p-4">
@@ -1885,14 +1884,14 @@
                                     <div class="relative">
                                         <span
                                             id="employeeExtensionDisplay"
-                                            class="inline-block px-4 py-2.5 text-base border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[220px] text-center align-middle"
+                                            class="employee-extension-field inline-block px-5 py-3 text-xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[280px] text-center align-middle"
                                             title="Клик для редактирования"
                                         >
                                         </span>
                                         <input
                                             type="text"
                                             id="employeeExtensionInput"
-                                            class="inline-block px-4 py-2.5 text-base border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-900 hidden min-w-[220px] align-middle"
+                                            class="employee-extension-field inline-block px-5 py-3 text-xl font-bold border-2 border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-900 hidden min-w-[280px] align-middle"
                                             maxlength="4"
                                             pattern="\d*"
                                             placeholder="Введите свой добавочный"
@@ -2341,6 +2340,42 @@
                                                 сверху при прокрутке страницы.
                                             </p>
                                         </div>
+
+                                        <div
+                                            class="pt-content-sm border-t border-gray-200 dark:border-gray-600"
+                                            id="manualHealthRunSection"
+                                        >
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <label
+                                                    for="toggleManualHealthRun"
+                                                    class="flex items-center cursor-pointer"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        id="toggleManualHealthRun"
+                                                        name="manualHealthRun"
+                                                        class="form-checkbox h-5 w-5 text-primary focus:ring-primary border-gray-300 dark:border-gray-600 rounded"
+                                                    />
+                                                    <span
+                                                        class="ml-3 text-sm text-gray-700 dark:text-gray-300"
+                                                        >Ручной прогон систем</span
+                                                    >
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    id="runManualHealthCheckBtn"
+                                                    class="px-4 py-2 bg-primary hover:bg-secondary text-white text-sm rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <i class="fas fa-stethoscope mr-2"></i>Запустить полную проверку
+                                                </button>
+                                            </div>
+                                            <p
+                                                class="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-8"
+                                            >
+                                                Запускает полную диагностику: localStorage, IndexedDB, поисковый индекс,
+                                                алгоритмы, хранилища, автосохранение. Отчёт отображается в модальном окне.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2378,6 +2413,31 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Модальное окно полного отчёта о состоянии здоровья приложения -->
+            <div
+                id="healthReportModal"
+                class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] p-4 overflow-y-auto flex items-center justify-center"
+            >
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col my-8">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h2 class="text-xl font-bold">
+                            <i class="fas fa-heartbeat mr-2 text-primary"></i>Состояние здоровья приложения
+                        </h2>
+                        <button
+                            type="button"
+                            id="healthReportModalClose"
+                            class="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                            aria-label="Закрыть"
+                        >
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div id="healthReportModalBody" class="p-4 overflow-y-auto flex-1 text-sm space-y-4">
+                        <!-- Контент заполняется динамически -->
                     </div>
                 </div>
             </div>

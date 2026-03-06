@@ -294,9 +294,6 @@ export async function handleImportButtonClick() {
     State.importDialogInteractionComplete = false;
     State.isExpectingFileDialog = false;
 
-    deps.loadingOverlayManager?.createAndShow();
-    deps.loadingOverlayManager?.updateProgress(1);
-
     let backupOutcome;
     const skipBackupSetting =
         State.userPreferences && State.userPreferences.disableForcedBackupOnImport === true;
@@ -368,6 +365,9 @@ export async function handleImportButtonClick() {
                 throw new Error('importFileInput missing');
             }
 
+            deps.loadingOverlayManager?.createAndShow();
+            deps.loadingOverlayManager?.updateProgress(1);
+
             deps.importFileInput.value = '';
 
             if (backupOutcome === 'skipped_by_user') {
@@ -386,6 +386,9 @@ export async function handleImportButtonClick() {
                     id: SELECT_IMPORT_FILE_PROMPT_ID,
                 },
             );
+
+            deps.loadingOverlayManager?.createAndShow();
+            deps.loadingOverlayManager?.updateProgress(1, 'Выберите файл...');
 
             const watchdogTimerId = setTimeout(async () => {
                 if (

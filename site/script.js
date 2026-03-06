@@ -3919,6 +3919,8 @@ setUISettingsModalInitDependencies({
     applyPreviewSettings: typeof applyPreviewSettings !== 'undefined' ? applyPreviewSettings : null,
     initColorPicker: initColorPickerModule,
     showUnsavedConfirmModal: showUnsavedConfirmModalModule,
+    setupExtensionFieldListeners: typeof setupExtensionFieldListeners === 'function' ? setupExtensionFieldListeners : null,
+    loadEmployeeExtension: typeof loadEmployeeExtension === 'function' ? loadEmployeeExtension : null,
 });
 
 // UI Settings Modal Dependencies (applyPreviewSettings определена ниже, но доступна благодаря hoisting)

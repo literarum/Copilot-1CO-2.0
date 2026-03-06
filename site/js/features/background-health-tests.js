@@ -642,6 +642,272 @@ export function initBackgroundHealthTestsSystem() {
         })();
     };
 
+    /**
+     * Ручной полный прогон диагностики. Запускает все проверки (localStorage, IndexedDB,
+     * поисковый индекс, алгоритмы, хранилища, watchdog) и возвращает полный отчёт.
+     * Используется из настроек приложения для модального окна «Состояние здоровья».
+     */
+    const runManualFullDiagnostic = async () => {
+        const savedErrors = [...results.errors];
+        const savedWarnings = [...results.warnings];
+        const savedChecks = [...results.checks];
+        results.errors = [];
+        results.warnings = [];
+        results.checks = [];
+
+        const startedAt = nowLabel();
+        try {
+            // Тест 1: localStorage
+            try {
+                const key = 'health-check-manual';
+                localStorage.setItem(key, 'ok');
+                const value = localStorage.getItem(key);
+                if (value !== 'ok') {
+                    report('warn', 'localStorage', 'Не удалось проверить запись/чтение.');
+                } else {
+                    report('info', 'localStorage', 'Запись и чтение доступны.');
+                }
+                localStorage.removeItem(key);
+            } catch (err) {
+                report('error', 'localStorage', err.message);
+            }
+
+            // Тест 2: IndexedDB запись/чтение
+            const testId = `health-manual-${Date.now()}`;
+            try {
+                if (
+                    !deps.saveToIndexedDB ||
+                    !deps.getFromIndexedDB ||
+                    !deps.deleteFromIndexedDB
+                ) {
+                    throw new Error('Отсутствуют методы работы с IndexedDB.');
+                }
+                await runWithTimeout(
+                    deps.saveToIndexedDB('clientData', { id: testId, notes: 'health-check' }),
+                    5000,
+                );
+                const record = await runWithTimeout(
+                    deps.getFromIndexedDB('clientData', testId),
+                    5000,
+                );
+                if (!record) {
+                    report('error', 'IndexedDB', 'Запись не найдена после сохранения.');
+                } else {
+                    report('info', 'IndexedDB', 'Запись и чтение работают.');
+                }
+            } catch (err) {
+                report('error', 'IndexedDB', err.message);
+            } finally {
+                try {
+                    await deps.deleteFromIndexedDB?.('clientData', testId);
+                } catch {
+                    /* cleanup */
+                }
+            }
+
+            // Тест 3: поисковый индекс
+            try {
+                if (!deps.performDBOperation) throw new Error('performDBOperation недоступен.');
+                const count = await runWithTimeout(
+                    deps.performDBOperation('searchIndex', 'readonly', (s) => s.count()),
+                    5000,
+                );
+                report(
+                    count ? 'info' : 'warn',
+                    'Поисковый индекс',
+                    count ? `Записей в индексе: ${count}.` : 'Индекс пуст или не заполнен.',
+                );
+            } catch (err) {
+                report('error', 'Поисковый индекс', err.message);
+            }
+
+            // Тест 4: алгоритмы
+            try {
+                const mainAlgo = await runWithTimeout(
+                    deps.getFromIndexedDB?.('algorithms', 'main'),
+                    5000,
+                );
+                if (!mainAlgo) {
+                    report('warn', 'Алгоритмы', 'Основной алгоритм не найден.');
+                } else {
+                    const stepsValid = Array.isArray(mainAlgo.steps);
+                    const hasSection =
+                        mainAlgo.section === 'main' || mainAlgo.id === 'main' || mainAlgo.section;
+                    if (!stepsValid) {
+                        report('warn', 'Алгоритмы', 'Структура некорректна: steps не массив.');
+                    } else if (!hasSection) {
+                        report('warn', 'Алгоритмы', 'Отсутствует идентификатор секции.');
+                    } else {
+                        report('info', 'Алгоритмы', 'База доступна, структура корректна.');
+                    }
+                }
+            } catch (err) {
+                report('error', 'Алгоритмы', err.message);
+            }
+
+            // Тест 5: черный список, избранное
+            try {
+                const blacklistCount = await runWithTimeout(
+                    deps.performDBOperation?.('blacklistedClients', 'readonly', (s) => s.count()),
+                    5000,
+                );
+                report('info', 'Черный список', `Записей: ${blacklistCount}.`);
+            } catch (err) {
+                report('warn', 'Черный список', err.message);
+            }
+            try {
+                const favCount = await runWithTimeout(
+                    deps.performDBOperation?.('favorites', 'readonly', (s) => s.count()),
+                    5000,
+                );
+                report('info', 'Избранное', `Записей: ${favCount}.`);
+            } catch (err) {
+                report('warn', 'Избранное', err.message);
+            }
+
+            // Тест 5.5: API/компонента проверки отзыва
+            if (!REVOCATION_USE_LOCAL_HELPER_FROM_BROWSER) {
+                try {
+                    const apiBase =
+                        typeof REVOCATION_API_BASE_URL === 'string'
+                            ? REVOCATION_API_BASE_URL.trim().replace(/\/$/, '')
+                            : '';
+                    if (apiBase) {
+                        const ok = await runWithTimeout(
+                            probeHelperAvailability(apiBase, { path: '/api/health' }),
+                            5000,
+                        );
+                        report(
+                            ok ? 'info' : 'warn',
+                            'API проверки отзыва',
+                            ok ? 'Облачный API доступен.' : 'Облачный API недоступен.',
+                        );
+                    } else {
+                        report('info', 'API проверки отзыва', 'URL API не настроен.');
+                    }
+                } catch (err) {
+                    report('warn', 'API проверки отзыва', err.message);
+                }
+            } else {
+                try {
+                    const avail = window.__revocationHelperAvailable;
+                    report(
+                        'info',
+                        'Компонента проверки отзыва',
+                        avail === true
+                            ? 'Локальная компонента доступна.'
+                            : avail === false
+                              ? 'Компонента не запущена.'
+                              : 'Проверка в процессе.',
+                    );
+                } catch (err) {
+                    report('warn', 'Компонента проверки отзыва', err.message);
+                }
+            }
+
+            // Тест 6: UI настройки
+            try {
+                const uiSettings = await runWithTimeout(
+                    deps.getFromIndexedDB?.('preferences', 'uiSettings'),
+                    5000,
+                );
+                if (!uiSettings) {
+                    report('warn', 'UI настройки', 'Сохранённые uiSettings отсутствуют.');
+                } else {
+                    const hasOrder =
+                        Array.isArray(uiSettings.panelOrder) && uiSettings.panelOrder.length > 0;
+                    const hasVisibility =
+                        Array.isArray(uiSettings.panelVisibility) &&
+                        uiSettings.panelVisibility.length === (uiSettings.panelOrder?.length ?? 0);
+                    report(
+                        hasOrder && hasVisibility ? 'info' : 'warn',
+                        'UI настройки',
+                        hasOrder && hasVisibility
+                            ? 'Структура корректна.'
+                            : 'Неконсистентный формат panelOrder/panelVisibility.',
+                    );
+                }
+            } catch (err) {
+                report('warn', 'UI настройки', err.message);
+            }
+
+            // Тест 6.1: версия схемы
+            try {
+                const storedSchema = await runWithTimeout(
+                    deps.getFromIndexedDB?.('preferences', 'schemaVersion'),
+                    3000,
+                );
+                const storedVer =
+                    storedSchema && typeof storedSchema === 'object'
+                        ? storedSchema.value
+                        : storedSchema;
+                if (storedVer && String(storedVer) !== String(CURRENT_SCHEMA_VERSION)) {
+                    report(
+                        'warn',
+                        'Версия схемы',
+                        `Сохранённая (${storedVer}) ≠ текущая (${CURRENT_SCHEMA_VERSION}).`,
+                    );
+                } else {
+                    report('info', 'Версия схемы', `Текущая: ${CURRENT_SCHEMA_VERSION}.`);
+                }
+            } catch {
+                report('info', 'Версия схемы', `Текущая: ${CURRENT_SCHEMA_VERSION}.`);
+            }
+
+            // Тест 6.2: clipboard
+            try {
+                if (
+                    navigator.clipboard &&
+                    typeof navigator.clipboard.writeText === 'function'
+                ) {
+                    await navigator.clipboard.writeText('');
+                    report('info', 'Буфер обмена', 'Clipboard API доступен.');
+                } else {
+                    report('warn', 'Буфер обмена', 'Clipboard API недоступен.');
+                }
+            } catch (err) {
+                report('warn', 'Буфер обмена', `Clipboard: ${err.message}.`);
+            }
+
+            // Watchdog: IndexedDB структура + автосохранение
+            await runWatchdogCycle('manual');
+
+            const finishedAt = nowLabel();
+            hud?.setDiagnostics?.({
+                errors: results.errors,
+                warnings: results.warnings,
+                checks: results.checks,
+                updatedAt: finishedAt,
+            });
+
+            return {
+                errors: [...results.errors],
+                warnings: [...results.warnings],
+                checks: [...results.checks],
+                startedAt,
+                finishedAt,
+                success: results.errors.length === 0,
+            };
+        } catch (err) {
+            report('error', 'Ручной прогон', err.message);
+            return {
+                errors: [...results.errors],
+                warnings: [...results.warnings],
+                checks: [...results.checks],
+                startedAt,
+                finishedAt: nowLabel(),
+                success: false,
+                error: err.message,
+            };
+        } finally {
+            results.errors = savedErrors;
+            results.warnings = savedWarnings;
+            results.checks = savedChecks;
+        }
+    };
+
+    window.runManualFullDiagnostic = runManualFullDiagnostic;
+
     setTimeout(() => {
         start();
     }, 1500);

@@ -335,40 +335,35 @@ export const NotificationService = {
         if (isImportant) baseClasses.push('important-notification');
         else baseClasses.push('temporary-notification');
 
-        let bgColorClassesArr, iconClass, textColorClassesArr, borderColorClass;
+        let bgColorClassesArr, textColorClassesArr, borderColorClass;
 
         switch (type) {
             case 'hyper-alert':
                 bgColorClassesArr = ['bg-red-100', 'dark:bg-red-900/95'];
                 textColorClassesArr = ['text-red-900', 'dark:text-yellow-200'];
                 borderColorClass = 'border-yellow-400 dark:border-yellow-300';
-                iconClass = 'fa-biohazard text-yellow-400 dark:text-yellow-300';
                 baseClasses.push('notification-hyper-alert', 'border-4');
                 break;
             case 'error':
                 bgColorClassesArr = ['bg-red-100', 'dark:bg-red-700/90'];
                 textColorClassesArr = ['text-red-700', 'dark:text-red-100'];
                 borderColorClass = 'border-red-500';
-                iconClass = 'fa-times-circle text-red-500 dark:text-red-400';
                 break;
             case 'warning':
                 bgColorClassesArr = ['bg-yellow-100', 'dark:bg-yellow-600/90'];
                 textColorClassesArr = ['text-yellow-700', 'dark:text-yellow-50'];
                 borderColorClass = 'border-yellow-500';
-                iconClass = 'fa-exclamation-triangle text-yellow-500 dark:text-yellow-300';
                 break;
             case 'info':
                 bgColorClassesArr = ['bg-blue-100', 'dark:bg-blue-700/90'];
                 textColorClassesArr = ['text-blue-700', 'dark:text-blue-100'];
                 borderColorClass = 'border-blue-500';
-                iconClass = 'fa-info-circle text-blue-500 dark:text-blue-400';
                 break;
             case 'success':
             default:
                 bgColorClassesArr = ['bg-green-100', 'dark:bg-green-700/90'];
                 textColorClassesArr = ['text-green-700', 'dark:text-green-100'];
                 borderColorClass = 'border-green-500';
-                iconClass = 'fa-check-circle text-green-500 dark:text-green-400';
                 break;
         }
 
@@ -415,18 +410,6 @@ export const NotificationService = {
 
         const contentWrapper = document.createElement('div');
         contentWrapper.className = 'flex items-center flex-grow min-w-0';
-
-        const iconElement = document.createElement('i');
-        const [mainIconClass, ...colorIconClasses] = iconClass.split(' ');
-        iconElement.className = `fas ${mainIconClass} mr-3 text-xl flex-shrink-0`;
-        colorIconClasses.forEach((cls) => iconElement.classList.add(cls));
-        try {
-            iconElement.style.color = 'var(--color-primary)';
-        } catch {
-            // non-fatal if CSS variable is unavailable
-        }
-
-        contentWrapper.appendChild(iconElement);
 
         const messageSpan = document.createElement('span');
         messageSpan.className = 'notification-message-span flex-1 text-sm break-words';
@@ -526,20 +509,16 @@ export function showNotification(message, type = 'success', duration = 5000) {
     }
 
     let bgColorClass = 'bg-green-500 dark:bg-green-600';
-    let iconClass = 'fa-check-circle';
 
     switch (type) {
         case 'error':
             bgColorClass = 'bg-red-600 dark:bg-red-700';
-            iconClass = 'fa-times-circle';
             break;
         case 'warning':
             bgColorClass = 'bg-yellow-500 dark:bg-yellow-600';
-            iconClass = 'fa-exclamation-triangle';
             break;
         case 'info':
             bgColorClass = 'bg-blue-500 dark:bg-blue-600';
-            iconClass = 'fa-info-circle';
             break;
     }
 
@@ -566,27 +545,17 @@ export function showNotification(message, type = 'success', duration = 5000) {
 
     let closeButton = notificationElement.querySelector('.notification-close-btn');
     let messageSpan = notificationElement.querySelector('.notification-message-span');
-    let iconElement = notificationElement.querySelector('.notification-icon-i');
 
-    if (!closeButton || !messageSpan || !iconElement) {
+    if (!closeButton || !messageSpan) {
         notificationElement.innerHTML = '';
 
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'flex items-center';
-
-        iconElement = document.createElement('i');
-        iconElement.className = `notification-icon-i fas ${iconClass} mr-2`;
-        try {
-            iconElement.style.color = 'var(--color-primary)';
-        } catch (_e) {
-            // ignore style errors in edge cases
-        }
+        const textContainer = document.createElement('div');
+        textContainer.className = 'flex items-center flex-grow min-w-0';
 
         messageSpan = document.createElement('span');
         messageSpan.className = 'flex-1 notification-message-span';
 
-        iconContainer.appendChild(iconElement);
-        iconContainer.appendChild(messageSpan);
+        textContainer.appendChild(messageSpan);
 
         closeButton = document.createElement('button');
         closeButton.setAttribute('type', 'button');
@@ -597,7 +566,7 @@ export function showNotification(message, type = 'success', duration = 5000) {
 
         const contentWrapper = document.createElement('div');
         contentWrapper.className = 'flex items-center justify-between w-full';
-        contentWrapper.appendChild(iconContainer);
+        contentWrapper.appendChild(textContainer);
         contentWrapper.appendChild(closeButton);
 
         notificationElement.appendChild(contentWrapper);

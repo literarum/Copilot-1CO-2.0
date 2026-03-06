@@ -259,21 +259,19 @@ export async function renderFavoritesPage() {
                 );
 
                 itemElement.innerHTML = `
-                    <div class="flex-grow min-w-0 cursor-pointer">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="flex items-center min-w-0 flex-1">
-                                <i class="fas ${iconClass} text-primary mr-2 text-lg"></i>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate flex-1" title="${escapeHtml(
+                    <div class="flex-grow min-w-0 cursor-pointer pr-24">
+                        <div class="flex items-center min-w-0 mb-2">
+                            <i class="fas ${iconClass} text-primary mr-2 text-lg flex-shrink-0"></i>
+                            <h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate flex-1 min-w-0" title="${escapeHtml(
                                     fav.title,
                                 )}">${escapeHtml(fav.title)}</h3>
-                            </div>
-                            <div class="actions-container flex-shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">${favButtonHTML}</div>
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Тип: ${typeText}</p>
                         <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-3" title="${escapeHtml(
                             fav.description || '',
                         )}">${escapeHtml(fav.description || 'Нет описания')}</p>
                     </div>
+                    <div class="actions-container absolute top-2 right-2 z-10 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">${favButtonHTML}</div>
                     <div class="mt-auto pt-3 border-t border-gray-200 dark:border-gray-600 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
                         <span>Добавлено: ${new Date(fav.dateAdded).toLocaleDateString()}</span>
                         <button class="go-to-original-btn inline-flex items-center p-1.5 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Перейти к оригиналу">
@@ -286,8 +284,9 @@ export async function renderFavoritesPage() {
                     'flex',
                     'items-center',
                     'justify-between',
-                    'p-3',
-                    'border-b',
+                    'p-content-sm',
+                    'rounded-lg',
+                    'border',
                     'border-gray-200',
                     'dark:border-gray-600',
                     'hover:bg-gray-50',

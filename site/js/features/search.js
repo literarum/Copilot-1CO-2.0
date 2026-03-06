@@ -3065,8 +3065,8 @@ export async function handleSearchResultClick(result) {
     async function tryScrollAndHighlight(tabId, itemSelector, highlightTerm) {
         const tabSwitched = typeof setActiveTab === 'function' && State.currentSection !== tabId;
         if (tabSwitched && setActiveTab) {
-            setActiveTab(tabId);
-            await new Promise((resolve) => setTimeout(resolve, 350));
+            await setActiveTab(tabId);
+            await new Promise((resolve) => setTimeout(resolve, 100));
         }
         const findAndHighlight = () => {
             const element = document.querySelector(itemSelector);

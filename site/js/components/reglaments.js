@@ -328,7 +328,7 @@ export async function showReglamentsForCategory(categoryId) {
         reglaments.forEach((reglament) => {
             const reglamentElement = document.createElement('div');
             reglamentElement.className =
-                'reglament-item view-item group relative flex flex-col mb-2';
+                'reglament-item view-item group relative flex flex-col';
             reglamentElement.dataset.id = reglament.id;
 
             const isFav = isFavorite('reglament', String(reglament.id));
@@ -342,7 +342,7 @@ export async function showReglamentsForCategory(categoryId) {
             );
 
             reglamentElement.innerHTML = `
-                <div class="flex flex-col justify-center h-full min-h-[3rem] sm:min-h-[3.5rem]" data-action="view"> 
+                <div class="flex flex-col justify-center h-full min-h-[3rem] sm:min-h-[3.5rem] pr-20" data-action="view"> 
                     <h4 class="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary truncate" title="${escapeHtml(
                         reglament.title,
                     )}">

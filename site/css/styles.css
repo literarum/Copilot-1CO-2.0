@@ -910,14 +910,12 @@ div:has(> #clearClientDataBtn) {
 .xml-analyzer-shell.analysis-done.show-cert-manager #xmlAnalyzerCertManagerWrapper {
     display: flex !important;
 }
-.xml-analyzer-shell .xml-analyzer-mode-btn.active {
-    background-color: var(--color-surface, #fff);
-    color: #0f172a;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+.xml-analyzer-shell.analysis-done #xmlAnalyzerInitialView {
+    display: none !important;
 }
-html.dark .xml-analyzer-shell .xml-analyzer-mode-btn.active {
-    background-color: #475569;
-    color: #f1f5f9;
+#xmlAnalyzerDropZone.drag-over {
+    border-color: var(--color-primary, #3b82f6);
+    background-color: rgba(59, 130, 246, 0.05);
 }
 
 :is(
