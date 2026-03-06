@@ -251,7 +251,7 @@ export async function renderMainAlgorithm() {
     function buildStepElementHeadersOnly(step, index) {
         const stepDiv = document.createElement('div');
         stepDiv.className =
-            'algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm mb-3 headers-only-step';
+            'algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm border-l-4 border-primary mb-3 headers-only-step';
         if (headersExpandedSet.has(index)) stepDiv.classList.add('is-expanded');
 
         if (step.additionalInfoText && step.additionalInfoShowTop) {
@@ -350,7 +350,7 @@ export async function renderMainAlgorithm() {
         const stepDiv = document.createElement('div');
         const isCollapsible = !!step.isCollapsible;
         stepDiv.className =
-            'algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm mb-3';
+            'algorithm-step bg-white dark:bg-gray-700 p-content-sm rounded-lg shadow-sm border-l-4 border-primary mb-3';
         if (isCollapsible) {
             stepDiv.classList.add('collapsible');
             if (collapsedSet.has(index)) stepDiv.classList.add('is-collapsed');
@@ -487,7 +487,7 @@ export async function renderMainAlgorithm() {
             if (stepIndices.length === 0) return;
             const groupDiv = document.createElement('div');
             groupDiv.className =
-                'main-algo-group' + (openGroupIdsSet.has(group.id) ? '' : ' is-closed');
+                'main-algo-group view-item rounded-lg' + (openGroupIdsSet.has(group.id) ? '' : ' is-closed');
             groupDiv.dataset.groupId = group.id;
             const header = document.createElement('div');
             header.className = 'main-algo-group-header';

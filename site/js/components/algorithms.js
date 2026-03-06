@@ -508,8 +508,9 @@ export function normalizeAlgorithmSteps(stepsArray) {
 /**
  * Инициализирует сортировку шагов через Sortable.js
  * @param {HTMLElement} containerElement - контейнер с шагами
+ * @param {boolean} [isMainAlgoWithGroups] - главный алгоритм с визуальными группами (перетаскивание групп и шагов)
  */
-export function initStepSorting(containerElement) {
+export function initStepSorting(containerElement, isMainAlgoWithGroups = false) {
     if (!containerElement) {
         console.error('initStepSorting: Контейнер для сортировки не предоставлен.');
         return;
@@ -531,9 +532,13 @@ export function initStepSorting(containerElement) {
         }
     }
 
+    const handle = isMainAlgoWithGroups
+        ? '.step-drag-handle, .main-algo-group-drag-handle'
+        : '.step-drag-handle';
+
     containerElement.sortableInstance = new SortableLib(containerElement, {
         animation: 150,
-        handle: '.step-drag-handle',
+        handle,
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         dragClass: 'sortable-drag',
@@ -552,6 +557,33 @@ export function initStepSorting(containerElement) {
             }
         },
     });
+
+    if (isMainAlgoWithGroups) {
+        containerElement.querySelectorAll('.edit-main-algo-group-steps').forEach((groupBody) => {
+            if (groupBody.sortableInstance) {
+                try {
+                    groupBody.sortableInstance.destroy();
+                } catch (e) {
+                    console.warn('Ошибка при уничтожении Sortable группы:', e);
+                }
+            }
+            groupBody.sortableInstance = new SortableLib(groupBody, {
+                animation: 150,
+                handle: '.step-drag-handle',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                group: 'steps',
+                onEnd: function () {
+                    if (updateStepNumbers) {
+                        updateStepNumbers(containerElement);
+                    } else if (typeof window.updateStepNumbers === 'function') {
+                        window.updateStepNumbers(containerElement);
+                    }
+                },
+            });
+        });
+    }
 
     console.log(`SortableJS инициализирован для контейнера #${containerElement.id}`);
 }
@@ -1027,6 +1059,8 @@ export function getCurrentEditState() {
             } else {
                 currentStepData.showNoInnHelp = false;
             }
+            const groupIdSelect = stepDiv.querySelector('.step-group-id');
+            currentStepData.groupId = groupIdSelect?.value?.trim() || '';
         }
 
         if (stepDiv.dataset.stepType) {
@@ -1258,6 +1292,7 @@ export function captureInitialEditState(algorithm, section) {
                         initialStep.isCopyable = step.isCopyable || false;
                         initialStep.isCollapsible = step.isCollapsible || false;
                         initialStep.showNoInnHelp = step.showNoInnHelp || false;
+                        if (step.groupId) initialStep.groupId = step.groupId;
                     }
 
                     if (!isMainAlgorithm) {

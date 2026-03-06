@@ -83,9 +83,10 @@ export function attachStepDeleteHandler(
 
     const newHandler = () => {
         const isMainSection = section === 'main';
+        const totalSteps = containerElement.querySelectorAll('.edit-step').length;
         const canDelete =
-            (mode === 'add' && containerElement.children.length > 0) ||
-            (mode === 'edit' && (containerElement.children.length > 1 || !isMainSection));
+            (mode === 'add' && totalSteps > 0) ||
+            (mode === 'edit' && (totalSteps > 1 || !isMainSection));
 
         if (canDelete) {
             console.log(
@@ -120,7 +121,7 @@ export function attachStepDeleteHandler(
                 console.log(
                     'Установлен флаг изменений после удаления шага в режиме редактирования.',
                 );
-            } else if (mode === 'add' && containerElement.children.length === 0) {
+            } else if (mode === 'add' && containerElement.querySelectorAll('.edit-step').length === 0) {
                 containerElement.innerHTML =
                     '<p class="text-gray-500 dark:text-gray-400 text-center">Добавьте шаги для нового алгоритма.</p>';
             }

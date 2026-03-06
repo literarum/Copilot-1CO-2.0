@@ -1169,41 +1169,95 @@ function initAutoExpandTextareas() {
 }
 
 // Кнопки прокрутки вверх/вниз — показываются только если контент не помещается на экране; клик — в начало/конец страницы
+// Учитывает скролл как в document, так и во вложенном main (создаётся initGoogleDocSections)
 function initScrollNavButtons() {
     const container = document.getElementById('scrollNavButtons');
     const scrollUpBtn = document.getElementById('scrollUpBtn');
     const scrollDownBtn = document.getElementById('scrollDownBtn');
     if (!container || !scrollUpBtn || !scrollDownBtn) return;
+
+    const getScrollContainer = () => {
+        const appContent = document.getElementById('appContent');
+        const main = appContent?.querySelector('main');
+        if (main) {
+            const style = window.getComputedStyle(main);
+            const overflowY = style.overflowY || style.overflow;
+            if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+                return { el: main, isDocument: false };
+            }
+        }
+        return { el: null, isDocument: true };
+    };
+
     const updateVisibility = () => {
         const hasOpenModal = !!document.querySelector('[id$="Modal"]:not(.hidden)');
-        const scrollHeight = document.documentElement.scrollHeight;
-        const innerHeight = window.innerHeight;
-        const overflowDelta = scrollHeight - innerHeight;
+        const { el: scrollEl, isDocument } = getScrollContainer();
+        let scrollHeight, clientHeight;
+        if (isDocument) {
+            scrollHeight = document.documentElement.scrollHeight;
+            clientHeight = window.innerHeight;
+        } else {
+            scrollHeight = scrollEl.scrollHeight;
+            clientHeight = scrollEl.clientHeight;
+        }
+        const overflowDelta = scrollHeight - clientHeight;
         const show = !hasOpenModal && overflowDelta > 24;
         container.classList.toggle('opacity-0', !show);
         container.classList.toggle('pointer-events-none', !show);
         container.setAttribute('aria-hidden', show ? 'false' : 'true');
     };
-    scrollUpBtn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    scrollDownBtn.addEventListener('click', () => {
-        window.scrollTo({
-            top: document.documentElement.scrollHeight - window.innerHeight,
-            behavior: 'smooth',
-        });
-    });
-    window.addEventListener('scroll', updateVisibility, { passive: true });
+
+    const scrollToTop = () => {
+        const { el: scrollEl, isDocument } = getScrollContainer();
+        if (isDocument) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    const scrollToBottom = () => {
+        const { el: scrollEl, isDocument } = getScrollContainer();
+        if (isDocument) {
+            window.scrollTo({
+                top: document.documentElement.scrollHeight - window.innerHeight,
+                behavior: 'smooth',
+            });
+        } else {
+            scrollEl.scrollTo({
+                top: scrollEl.scrollHeight - scrollEl.clientHeight,
+                behavior: 'smooth',
+            });
+        }
+    };
+
+    scrollUpBtn.addEventListener('click', scrollToTop);
+    scrollDownBtn.addEventListener('click', scrollToBottom);
+
+    const onScroll = () => requestAnimationFrame(updateVisibility);
+    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', updateVisibility);
+    const attachMainScrollListener = () => {
+        const m = document.getElementById('appContent')?.querySelector('main');
+        if (m && !m.dataset.scrollNavListener) {
+            m.dataset.scrollNavListener = '1';
+            m.addEventListener('scroll', onScroll, { passive: true });
+        }
+    };
+    attachMainScrollListener();
     document.addEventListener('click', (e) => {
         if (e.target.closest('.tab-btn') || e.target.closest('[data-action]')) {
             requestAnimationFrame(updateVisibility);
             setTimeout(updateVisibility, 220);
         }
     });
-    const observer = new MutationObserver(() => requestAnimationFrame(updateVisibility));
+    const observer = new MutationObserver(() => {
+        requestAnimationFrame(updateVisibility);
+        attachMainScrollListener();
+    });
     observer.observe(document.body, {
         attributes: true,
+        childList: true,
         subtree: true,
         attributeFilter: ['class'],
     });

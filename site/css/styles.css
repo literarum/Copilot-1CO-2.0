@@ -1148,6 +1148,17 @@ mark {
     border-radius: 0.5rem;
     overflow: hidden;
     background: var(--color-surface-2, #f9fafb);
+    transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.main-algo-group:hover {
+    background-color: var(--color-hover-subtle, rgba(0,0,0,0.02));
+    box-shadow: var(--card-hover-shadow, 0 4px 12px rgba(0,0,0,0.08));
+}
+html.dark .main-algo-group {
+    background: var(--color-surface-2, #374151);
+}
+html.dark .main-algo-group:hover {
+    background-color: var(--color-hover-subtle, rgba(255,255,255,0.05));
 }
 .main-algo-group-header {
     padding: 0.5rem 0.75rem;
@@ -1158,9 +1169,17 @@ mark {
     justify-content: space-between;
     background: var(--color-surface-2, #f3f4f6);
     color: var(--color-text-primary, #111827);
+    border-left: 4px solid var(--color-primary, #9933ff);
 }
 .main-algo-group-header:hover {
     background: var(--color-surface-3, #e5e7eb);
+}
+html.dark .main-algo-group-header {
+    background: var(--color-surface-2, #4b5563);
+    color: var(--color-text-primary, #f9fafb);
+}
+html.dark .main-algo-group-header:hover {
+    background: var(--color-surface-3, #6b7280);
 }
 .main-algo-group-header .fa-chevron-down {
     transition: transform 0.2s ease;

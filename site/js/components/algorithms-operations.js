@@ -1,5 +1,7 @@
 'use strict';
 
+import { escapeHtml } from '../utils/html.js';
+
 /**
  * Модуль операций с алгоритмами (редактирование, добавление)
  * Вынесено из script.js
@@ -79,9 +81,10 @@ function renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer) {
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2';
         row.dataset.groupId = g.id;
+        const isNewOrDirty = !!g.isNew;
         row.innerHTML = `
             <input type="text" class="main-algo-group-title flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" value="${typeof g.title === 'string' ? g.title.replace(/"/g, '&quot;') : g.id}" placeholder="Название группы">
-            <button type="button" class="main-algo-group-save p-1.5 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-green-600 dark:text-green-400 shrink-0" title="Сохранить" aria-label="Сохранить"><i class="fas fa-check text-xs"></i></button>
+            <button type="button" class="main-algo-group-save p-1.5 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-green-600 dark:text-green-400 shrink-0" title="Сохранить" aria-label="Сохранить" ${isNewOrDirty ? '' : 'style="display:none"'}>${isNewOrDirty ? '<i class="fas fa-check text-xs"></i>' : ''}</button>
             <button type="button" class="main-algo-group-delete px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded" title="Удалить группу" aria-label="Удалить группу"><i class="fas fa-trash"></i></button>
         `;
         const input = row.querySelector('.main-algo-group-title');
@@ -98,17 +101,38 @@ function renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer) {
             }
         };
 
+        const showSaveBtn = () => {
+            saveBtn.style.display = '';
+            saveBtn.innerHTML = '<i class="fas fa-check text-xs"></i>';
+        };
+        const hideSaveBtn = () => {
+            saveBtn.style.display = 'none';
+            saveBtn.innerHTML = '';
+        };
+
+        let savedTitle = (input.value || '').trim() || g.id;
+
         const confirmGroup = () => {
             if (algorithm.groups[idx]) {
                 const newTitle = input.value.trim() || algorithm.groups[idx].id;
+                algorithm.groups[idx].title = newTitle;
                 syncTitleToSelects(newTitle);
                 delete algorithm.groups[idx].isNew;
+                savedTitle = newTitle;
+                hideSaveBtn();
             }
         };
 
         input.addEventListener('input', () => {
             const newTitle = input.value.trim() || algorithm.groups[idx]?.id;
             syncTitleToSelects(newTitle);
+            if (newTitle !== savedTitle) showSaveBtn();
+            else hideSaveBtn();
+        });
+
+        input.addEventListener('focus', () => {
+            const currentTitle = (input.value || '').trim() || g.id;
+            if (currentTitle !== savedTitle) showSaveBtn();
         });
 
         input.addEventListener('keydown', (e) => {
@@ -161,6 +185,100 @@ function renderMainAlgoGroupsPanel(container, algorithm, editStepsContainer) {
         });
         if (currentVal && groups.some((g) => g.id === currentVal)) sel.value = currentVal;
     });
+}
+
+/**
+ * Реорганизует шаги главного алгоритма в визуальные группы и инициализирует перетаскивание
+ * @param {HTMLElement} editStepsContainer - контейнер #editSteps
+ * @param {Array<HTMLElement>} stepDivs - массив элементов .edit-step
+ * @param {Object} algorithm - копия алгоритма с groups
+ * @param {Function} initStepSortingFn - функция инициализации Sortable
+ * @param {Function} updateStepNumbersFn - функция обновления нумерации
+ */
+function reorganizeMainAlgoStepsIntoGroups(
+    editStepsContainer,
+    stepDivs,
+    algorithm,
+    initStepSortingFn,
+    updateStepNumbersFn,
+) {
+    const groups = Array.isArray(algorithm.groups) ? algorithm.groups : [];
+    const steps = algorithm.steps || [];
+
+    const ungrouped = [];
+    const byGroup = {};
+    stepDivs.forEach((div, idx) => {
+        const step = steps[idx];
+        const gid = step?.groupId;
+        if (!gid || !groups.some((g) => g.id === gid)) {
+            ungrouped.push(div);
+        } else {
+            if (!byGroup[gid]) byGroup[gid] = [];
+            byGroup[gid].push(div);
+        }
+    });
+
+    editStepsContainer.innerHTML = '';
+
+    ungrouped.forEach((div) => editStepsContainer.appendChild(div));
+
+    groups.forEach((group) => {
+        const groupSteps = byGroup[group.id] || [];
+        if (groupSteps.length === 0) return;
+
+        const block = document.createElement('div');
+        block.className =
+            'edit-main-algo-group-block mb-4 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800/50';
+        block.dataset.groupId = group.id;
+
+        const header = document.createElement('div');
+        header.className =
+            'edit-main-algo-group-header flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 cursor-grab border-b border-gray-200 dark:border-gray-600';
+        header.innerHTML = `
+            <i class="fas fa-grip-vertical main-algo-group-drag-handle text-gray-400 dark:text-gray-500 shrink-0" title="Перетащить группу"></i>
+            <span class="font-medium text-gray-800 dark:text-gray-200">${escapeHtml(group.title || group.id)}</span>
+        `;
+
+        const body = document.createElement('div');
+        body.className = 'edit-main-algo-group-steps p-2 space-y-2';
+
+        groupSteps.forEach((div) => body.appendChild(div));
+        block.appendChild(header);
+        block.appendChild(body);
+        editStepsContainer.appendChild(block);
+    });
+
+    const moveStepToGroup = (stepDiv, groupId) => {
+        const sel = stepDiv.querySelector('.step-group-id');
+        if (sel) sel.value = groupId || '';
+
+        if (!groupId) {
+            const firstBlock = editStepsContainer.querySelector('.edit-main-algo-group-block');
+            if (firstBlock) {
+                editStepsContainer.insertBefore(stepDiv, firstBlock);
+            } else {
+                editStepsContainer.appendChild(stepDiv);
+            }
+        } else {
+            const targetBody = editStepsContainer.querySelector(
+                `.edit-main-algo-group-block[data-group-id="${groupId}"] .edit-main-algo-group-steps`,
+            );
+            if (targetBody) targetBody.appendChild(stepDiv);
+        }
+        if (typeof updateStepNumbersFn === 'function') updateStepNumbersFn(editStepsContainer);
+    };
+
+    editStepsContainer.querySelectorAll('.edit-step').forEach((stepDiv) => {
+        const sel = stepDiv.querySelector('.step-group-id');
+        if (!sel) return;
+        sel.addEventListener('change', () => {
+            moveStepToGroup(stepDiv, sel.value.trim() || null);
+        });
+    });
+
+    if (typeof initStepSortingFn === 'function') {
+        initStepSortingFn(editStepsContainer, true);
+    }
 }
 
 // ============================================================================
@@ -432,11 +550,24 @@ export async function editAlgorithm(algorithmId, section = 'main') {
                 return stepDiv;
             });
             const stepDivs = (await Promise.all(stepPromises)).filter(Boolean);
-            stepDivs.forEach((div) => fragment.appendChild(div));
 
-            editStepsContainerElement.appendChild(fragment);
-            if (typeof updateStepNumbers === 'function') {
-                updateStepNumbers(editStepsContainerElement);
+            if (isMainAlgorithm && Array.isArray(algorithm.groups) && algorithm.groups.length > 0) {
+                reorganizeMainAlgoStepsIntoGroups(
+                    editStepsContainerElement,
+                    stepDivs,
+                    algorithm,
+                    initStepSorting,
+                    updateStepNumbers,
+                );
+            } else {
+                stepDivs.forEach((div) => fragment.appendChild(div));
+                editStepsContainerElement.appendChild(fragment);
+                if (typeof updateStepNumbers === 'function') {
+                    updateStepNumbers(editStepsContainerElement);
+                }
+                if (typeof initStepSorting === 'function') {
+                    initStepSorting(editStepsContainerElement);
+                }
             }
             if (isMainAlgorithm) {
                 const groupsContainerAfter = document.getElementById('editMainAlgoGroups');
@@ -459,8 +590,10 @@ export async function editAlgorithm(algorithmId, section = 'main') {
             });
         });
 
-        if (typeof initStepSorting === 'function') {
-            initStepSorting(editStepsContainerElement);
+        if (!isMainAlgorithm || !Array.isArray(algorithm.groups) || algorithm.groups.length === 0) {
+            if (typeof initStepSorting === 'function') {
+                initStepSorting(editStepsContainerElement);
+            }
         }
 
         editModal.dataset.algorithmId = String(algorithm.id);

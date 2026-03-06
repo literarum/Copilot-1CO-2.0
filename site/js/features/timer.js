@@ -490,7 +490,7 @@ export async function toggleTimer() {
         }
 
         let permissionObtainedForNotifications = notificationPermissionState === 'granted';
-        if (!permissionObtainedForNotifications) {
+        if (!permissionObtainedForNotifications && 'Notification' in window) {
             const currentGlobalPermission = Notification.permission;
             if (currentGlobalPermission === 'granted') {
                 notificationPermissionState = 'granted';
@@ -500,7 +500,7 @@ export async function toggleTimer() {
                 notificationPermissionState = 'denied';
                 permissionObtainedForNotifications = false;
                 showNotification(
-                    'Уведомления заблокированы. Проверьте настройки браузера и системные настройки Windows.',
+                    'Уведомления заблокированы. Проверьте настройки браузера и ОС (Windows: «Фокусировка внимания», macOS: «Не беспокоить»).',
                     'info',
                     10000,
                 );
@@ -511,7 +511,7 @@ export async function toggleTimer() {
                 } else {
                     if (notificationPermissionState === 'denied') {
                         showNotification(
-                            'Вы отклонили показ уведомлений. Если передумаете, измените настройки браузера и проверьте системные настройки Windows.',
+                            'Вы отклонили показ уведомлений. Если передумаете, измените настройки браузера и ОС (Windows/macOS).',
                             'info',
                             10000,
                         );
@@ -851,18 +851,22 @@ export function initTimerSystem() {
         return;
     }
 
-    const currentPermission = Notification.permission;
-    if (currentPermission === 'granted') {
-        notificationPermissionState = 'granted';
-    } else if (currentPermission === 'denied') {
-        notificationPermissionState = 'denied';
-        NotificationService.add(
-            'Системные уведомления таймера заблокированы. Вы можете не увидеть оповещение о завершении. Проверьте настройки браузера и Windows.',
-            'warning',
-            { duration: 10000 },
-        );
+    if ('Notification' in window) {
+        const currentPermission = Notification.permission;
+        if (currentPermission === 'granted') {
+            notificationPermissionState = 'granted';
+        } else if (currentPermission === 'denied') {
+            notificationPermissionState = 'denied';
+            NotificationService.add(
+                'Системные уведомления таймера заблокированы. Вы можете не увидеть оповещение о завершении. Проверьте настройки браузера и ОС (Windows: «Фокусировка внимания», macOS: «Не беспокоить»).',
+                'warning',
+                { duration: 10000 },
+            );
+        } else {
+            notificationPermissionState = 'default';
+        }
     } else {
-        notificationPermissionState = 'default';
+        notificationPermissionState = 'denied';
     }
 
     loadTimerState();

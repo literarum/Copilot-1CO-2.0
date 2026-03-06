@@ -61,6 +61,22 @@ function getMainAlgoGroupsFromForm() {
     });
 }
 
+/**
+ * Возвращает группы в порядке отображения (учитывает перетаскивание блоков в модальном окне)
+ * @returns {Array<{id: string, title: string}>}
+ */
+function getMainAlgoGroupsInDisplayOrder() {
+    const groupsFromForm = getMainAlgoGroupsFromForm();
+    const editSteps = document.getElementById('editSteps');
+    const blocks = editSteps?.querySelectorAll('.edit-main-algo-group-block') || [];
+    if (blocks.length === 0) return groupsFromForm;
+    const blockOrderIds = Array.from(blocks).map((b) => b.dataset.groupId).filter(Boolean);
+    const byId = new Map(groupsFromForm.map((g) => [g.id, g]));
+    const ordered = blockOrderIds.map((id) => byId.get(id)).filter(Boolean);
+    const remaining = groupsFromForm.filter((g) => !blockOrderIds.includes(g.id));
+    return [...ordered, ...remaining];
+}
+
 // ============================================================================
 // ОСНОВНЫЕ ФУНКЦИИ СОХРАНЕНИЯ
 // ============================================================================
@@ -672,11 +688,11 @@ export async function saveAlgorithm() {
         let targetAlgorithmObject;
         const timestamp = new Date().toISOString();
         if (isMainAlgo) {
-            const groupsFromForm = getMainAlgoGroupsFromForm();
+            const groupsOrdered = getMainAlgoGroupsInDisplayOrder();
             if (!algorithms.main) algorithms.main = { id: 'main' };
             algorithms.main.title = finalTitle;
             algorithms.main.steps = finalSteps;
-            algorithms.main.groups = Array.isArray(groupsFromForm) ? groupsFromForm : [];
+            algorithms.main.groups = Array.isArray(groupsOrdered) ? groupsOrdered : [];
             algorithms.main.dateUpdated = timestamp;
             if (!algorithms.main.dateAdded) algorithms.main.dateAdded = timestamp;
             targetAlgorithmObject = algorithms.main;
