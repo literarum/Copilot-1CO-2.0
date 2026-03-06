@@ -10,6 +10,7 @@ let deps = {
     closeAnimatedModal: null,
     saveUISettings: null,
     resetUISettingsInModal: null,
+    revertUISettingsOnDiscard: null,
     updatePreviewSettingsFromModal: null,
     applyPreviewSettings: null,
     initColorPicker: null,
@@ -72,6 +73,9 @@ export function initUISettingsModalHandlers() {
             ) {
                 const leave = await deps.showUnsavedConfirmModal();
                 if (!leave) return;
+                if (typeof deps.revertUISettingsOnDiscard === 'function') {
+                    await deps.revertUISettingsOnDiscard();
+                }
             }
             closeModal();
         };
@@ -231,7 +235,7 @@ export function initUISettingsModalHandlers() {
         customizeUIModal.addEventListener('change', (e) => {
             if (
                 e.target.matches(
-                    'input[name="mainLayout"], input[name="themeMode"], input[name="staticHeader"]',
+                    'input[name="themeMode"], input[name="staticHeader"]',
                 )
             ) {
                 if (typeof deps.updatePreviewSettingsFromModal === 'function') {

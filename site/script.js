@@ -690,6 +690,7 @@ import {
     getSettingsFromModal as getSettingsFromModalModule,
     updatePreviewSettingsFromModal as updatePreviewSettingsFromModalModule,
     resetUISettingsInModal as resetUISettingsInModalModule,
+    revertUISettingsOnDiscard as revertUISettingsOnDiscardModule,
     createPanelItemElement as createPanelItemElementModule,
 } from './js/ui/ui-settings-modal.js';
 
@@ -1222,25 +1223,35 @@ function initScrollNavButtons() {
         return best;
     };
 
+    const SCROLL_THRESHOLD = 2;
+
     const updateVisibility = () => {
         const modalEls = document.querySelectorAll('[id$="Modal"]');
         const hasOpenModal = [...modalEls].some(
             (m) => !m.classList.contains('hidden') && !m.closest('.hidden'),
         );
         const { el: scrollEl, isDocument } = getScrollContainer();
-        let scrollHeight, clientHeight;
+        let scrollHeight, clientHeight, scrollTop;
         if (isDocument) {
             scrollHeight = document.documentElement.scrollHeight;
             clientHeight = window.innerHeight;
+            scrollTop = window.scrollY ?? document.documentElement.scrollTop ?? 0;
         } else {
             scrollHeight = scrollEl.scrollHeight;
             clientHeight = scrollEl.clientHeight;
+            scrollTop = scrollEl.scrollTop ?? 0;
         }
         const overflowDelta = scrollHeight - clientHeight;
         const show = !hasOpenModal && overflowDelta > 1;
+        const canScrollUp = scrollTop > SCROLL_THRESHOLD;
+        const canScrollDown = scrollTop + clientHeight < scrollHeight - SCROLL_THRESHOLD;
+
         container.classList.toggle('opacity-0', !show);
         container.classList.toggle('pointer-events-none', !show);
         container.setAttribute('aria-hidden', show ? 'false' : 'true');
+
+        scrollUpBtn.disabled = !show || !canScrollUp;
+        scrollDownBtn.disabled = !show || !canScrollDown;
     };
 
     const scrollToTop = () => {
@@ -3997,6 +4008,7 @@ setUISettingsModalInitDependencies({
     closeAnimatedModal: closeAnimatedModalModule,
     saveUISettings: typeof saveUISettings !== 'undefined' ? saveUISettings : null,
     resetUISettingsInModal: resetUISettingsInModalModule,
+    revertUISettingsOnDiscard: revertUISettingsOnDiscardModule,
     updatePreviewSettingsFromModal: updatePreviewSettingsFromModalModule,
     applyPreviewSettings: typeof applyPreviewSettings !== 'undefined' ? applyPreviewSettings : null,
     initColorPicker: initColorPickerModule,

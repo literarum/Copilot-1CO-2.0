@@ -67,11 +67,6 @@ export function populateModalControls(settings) {
         settings = { ...DEFAULT_UI_SETTINGS, themeMode: State.userPreferences.theme };
     }
 
-    const layoutRadio = modal.querySelector(
-        `input[name="mainLayout"][value="${settings.mainLayout || 'horizontal'}"]`,
-    );
-    if (layoutRadio) layoutRadio.checked = true;
-
     const themeRadio = modal.querySelector(
         `input[name="themeMode"][value="${settings.theme || settings.themeMode || 'auto'}"]`,
     );
@@ -174,7 +169,7 @@ export function getSettingsFromModal() {
     );
 
     return {
-        mainLayout: modal.querySelector('input[name="mainLayout"]:checked')?.value || 'horizontal',
+        mainLayout: 'horizontal',
         theme: modal.querySelector('input[name="themeMode"]:checked')?.value || 'auto',
         primaryColor: primaryColor,
         backgroundColor: backgroundColor,
@@ -207,6 +202,19 @@ export function updatePreviewSettingsFromModal() {
             'Updated State.currentPreviewSettings from modal:',
             State.currentPreviewSettings,
         );
+    }
+}
+
+/**
+ * Откатывает предпросмотр к сохранённым настройкам (при выборе «Выйти без сохранения»).
+ * Восстанавливает originalUISettings в UI и сбрасывает флаг dirty.
+ */
+export async function revertUISettingsOnDiscard() {
+    if (!State || !State.originalUISettings) return;
+    State.currentPreviewSettings = JSON.parse(JSON.stringify(State.originalUISettings));
+    State.isUISettingsDirty = false;
+    if (typeof applyPreviewSettings === 'function') {
+        await applyPreviewSettings(State.originalUISettings);
     }
 }
 

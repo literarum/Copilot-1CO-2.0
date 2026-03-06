@@ -1917,37 +1917,6 @@
                                     <div class="mb-content">
                                         <label
                                             class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
-                                            >Ориентация главного экрана</label
-                                        >
-                                        <div class="flex space-x-3 mt-2">
-                                            <label class="flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    name="mainLayout"
-                                                    value="horizontal"
-                                                    class="form-radio text-primary focus:ring-primary mr-2"
-                                                    checked
-                                                />
-                                                <span class="text-gray-700 dark:text-gray-300"
-                                                    >Горизонтальная</span
-                                                >
-                                            </label>
-                                            <label class="flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    name="mainLayout"
-                                                    value="vertical"
-                                                    class="form-radio text-primary focus:ring-primary mr-2"
-                                                />
-                                                <span class="text-gray-700 dark:text-gray-300"
-                                                    >Вертикальная</span
-                                                >
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="mb-content">
-                                        <label
-                                            class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
                                             >Управление разделами (вкладками)</label
                                         >
                                         <div class="space-y-2 mt-2">
@@ -3016,10 +2985,10 @@
 
         <!-- Кнопки прокрутки вверх/вниз для длинных страниц -->
         <div id="scrollNavButtons" class="fixed right-6 bottom-24 z-40 flex flex-col gap-2 opacity-0 pointer-events-none transition-opacity duration-200" aria-hidden="true">
-            <button type="button" id="scrollUpBtn" class="p-2.5 rounded-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors" title="Прокрутить вверх">
+            <button type="button" id="scrollUpBtn" class="p-2.5 rounded-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Прокрутить вверх">
                 <i class="fas fa-chevron-up"></i>
             </button>
-            <button type="button" id="scrollDownBtn" class="p-2.5 rounded-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors" title="Прокрутить вниз">
+            <button type="button" id="scrollDownBtn" class="p-2.5 rounded-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Прокрутить вниз">
                 <i class="fas fa-chevron-down"></i>
             </button>
         </div>

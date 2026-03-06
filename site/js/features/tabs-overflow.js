@@ -31,6 +31,8 @@ export function setTabsOverflowDependencies(dependencies) {
 const MAX_UPDATE_VISIBLE_TABS_RETRIES = 5;
 const LAYOUT_ERROR_MARGIN = 5;
 const MIN_TAB_WIDTH_PX = 96;
+/** Допуск (px): оставляем вкладку видимой, если она «почти влезает» — убираем лишний перенос в «три точки» */
+const ALLOW_EXTRA_VISIBLE_PX = 28;
 
 // ============================================================================
 // ОСНОВНЫЕ ФУНКЦИИ
@@ -134,7 +136,7 @@ export function updateVisibleTabs() {
         const rawWidth = tab.offsetWidth || MIN_TAB_WIDTH_PX;
         const tabWidth = rawWidth + PER_TAB_EXTRA_GAP;
 
-        if (usedWidth + tabWidth > availableWidth) {
+        if (usedWidth + tabWidth > availableWidth + ALLOW_EXTRA_VISIBLE_PX) {
             firstOverflowIndex = i;
             break;
         }
