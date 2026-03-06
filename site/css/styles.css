@@ -124,11 +124,7 @@ header,
     padding: 1.5rem 1rem 0 1rem; /* сверху — без прилипания к viewport; py-6 = 1.5rem */
     box-sizing: border-box;
     z-index: 30;
-    background: var(--override-background-light, #ffffff);
-    box-shadow: none;
-}
-html.dark #staticHeaderWrapper.header-sticky {
-    background: var(--override-background-dark, #111827);
+    background-color: var(--color-background);
     box-shadow: none;
 }
 
@@ -933,18 +929,8 @@ div:has(> #clearClientDataBtn) {
     background-color: rgba(59, 130, 246, 0.05);
 }
 
-:is(
-    #mainTab,
-    #programTab,
-    #linksTab,
-    #extLinksTab,
-    #skziTab,
-    #lk1cTab,
-    #webRegTab,
-    #reglamentsTab,
-    #bookmarksTab,
-    #sedoTypesTab
-) {
+/* Централизованный padding для всех вкладок контента (кроме кнопки «Ещё») */
+.tab-btn:not(#moreTabsBtn) {
     padding-left: 0.4rem;
     padding-right: 0.4rem;
 }

@@ -39,13 +39,13 @@ export function createTabButtonElement(tabConfig) {
     button.id = `${tabConfig.id}Tab`;
 
     button.className =
-        'tab-btn relative px-1 py-2 sm:px-3 sm:py-2 border-b-2 font-medium text-sm focus:outline-none transition-colors whitespace-nowrap border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300';
+        'tab-btn inline-block p-2.5 sm:p-3 rounded-t-lg border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap text-sm sm:text-base focus:outline-none transition-colors';
     button.setAttribute('role', 'tab');
     button.setAttribute('aria-controls', `${tabConfig.id}Content`);
 
     let buttonContent = '';
     if (tabConfig.icon) {
-        buttonContent += `<i class="fas ${tabConfig.icon} sm:mr-2"></i>`;
+        buttonContent += `<i class="fas ${tabConfig.icon} mr-1"></i>`;
     }
 
     if (tabConfig.icon) {

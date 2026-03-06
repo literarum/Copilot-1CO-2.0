@@ -642,9 +642,9 @@ export function initGoogleDocSections() {
         );
         mainContentArea = document.createElement('main');
         mainContentArea.className = 'flex-grow p-4 overflow-y-auto custom-scrollbar';
-        const tabNavContainer = appContent.querySelector('.border-b.border-gray-200');
-        if (tabNavContainer && tabNavContainer.nextSibling) {
-            tabNavContainer.parentNode.insertBefore(mainContentArea, tabNavContainer.nextSibling);
+        const staticHeaderWrapper = appContent.querySelector('#staticHeaderWrapper');
+        if (staticHeaderWrapper) {
+            appContent.insertBefore(mainContentArea, staticHeaderWrapper.nextSibling);
         } else {
             appContent.appendChild(mainContentArea);
         }
