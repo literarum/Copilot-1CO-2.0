@@ -506,6 +506,7 @@ PY
   curl -fsS "http://127.0.0.1:${port}/1cohelp/script.js?v=${DEPLOY_VERSION}" >/dev/null
   curl -fsS "http://127.0.0.1:${port}/1cohelp/js/entry.js?v=${DEPLOY_VERSION}" >/dev/null
   curl -fsS "http://127.0.0.1:${port}/1cohelp/css/styles.css?v=${DEPLOY_VERSION}" >/dev/null
+  curl -fsS "http://127.0.0.1:${port}/1cohelp/fonts/PT_Serif-Web-Regular.ttf" -o /dev/null
 
   if [[ -f "${STAGE_SITE}/client-notes-standalone.html" ]]; then
     curl -fsS "http://127.0.0.1:${port}/1cohelp/client-notes-standalone.html?t=${DEPLOY_VERSION}" >/dev/null

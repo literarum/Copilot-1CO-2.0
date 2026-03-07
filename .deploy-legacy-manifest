@@ -11,6 +11,7 @@ install-windows.ps1
 css/
 downloads/
 files/
+fonts/
 js/
 script.js
 templates/
