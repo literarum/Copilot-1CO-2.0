@@ -567,6 +567,14 @@ export function getTextForItem(storeName, itemData) {
             if (itemData.color) textsByField.color = cleanHtml(String(itemData.color));
             break;
 
+        case 'blacklistedClients':
+            if (itemData.organizationName)
+                textsByField.organizationName = cleanHtml(itemData.organizationName);
+            if (itemData.inn) textsByField.inn = cleanHtml(String(itemData.inn));
+            if (itemData.phone) textsByField.phone = cleanHtml(String(itemData.phone));
+            if (itemData.notes) textsByField.notes = cleanHtml(itemData.notes);
+            break;
+
         case 'preferences': {
             const sedoKey = SEDO_CONFIG_KEY;
             if (itemData.id === sedoKey) {
@@ -996,13 +1004,6 @@ export async function updateSearchIndex(
             }
         }
         console.log(`${LOG_PREFIX_USI} Индексация для ${storeName} (ID: ${docId}) завершена.`);
-        return;
-    }
-
-    if (storeName === 'blacklistedClients') {
-        console.log(
-            `${LOG_PREFIX_USI} Indexing of 'blacklistedClients' is disabled. Skipping operation for ${storeName}:${itemId}.`,
-        );
         return;
     }
 
@@ -1616,6 +1617,7 @@ export async function buildInitialSearchIndex(progressCallback) {
             { name: 'bookmarks', type: 'bookmarks' },
             { name: 'bookmarkFolders', type: 'bookmarkFolders' },
             { name: 'clientData', type: 'clientData' },
+            { name: 'blacklistedClients', type: 'blacklistedClients' },
             {
                 name: 'preferences',
                 type: 'preferences',
@@ -1986,14 +1988,6 @@ export async function performSearch(query) {
 
         let candidateDocs = await searchCandidates(queryTokens, searchContext);
 
-        const filteredCandidateDocs = new Map();
-        for (const [key, value] of candidateDocs.entries()) {
-            if (value.ref.store !== 'blacklistedClients') {
-                filteredCandidateDocs.set(key, value);
-            }
-        }
-        candidateDocs = filteredCandidateDocs;
-
         const finalResults = await processSearchResults(candidateDocs, query, query);
 
         const combinedResults = [...sectionMatches, ...finalResults];
@@ -2006,14 +2000,23 @@ export async function performSearch(query) {
         if (limitedResults.length === 0 && query.trim().length >= 2) {
             try {
                 const fallbackRegex = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const fallbackResults = await searchWithRegex(fallbackRegex);
+                const fallbackResults = await searchWithRegex(`/${fallbackRegex}/`);
                 if (Array.isArray(fallbackResults) && fallbackResults.length > 0) {
                     limitedResults = fallbackResults
-                        .map((item) => ({
-                            ...item,
-                            highlightTerm: query,
-                            query,
-                        }))
+                        .map((item) => {
+                            const ref = {
+                                store: item.originalType || 'links',
+                                id: item.id != null ? String(item.id) : '',
+                            };
+                            const normalized = convertItemToSearchResult(ref, item, 0);
+                            if (!normalized) return null;
+                            return {
+                                ...normalized,
+                                highlightTerm: query,
+                                query,
+                            };
+                        })
+                        .filter(Boolean)
                         .slice(0, MAX_SEARCH_RESULTS_DISPLAY);
                 }
             } catch (fallbackError) {
@@ -2834,6 +2837,9 @@ function convertItemToSearchResult(ref, itemData, score) {
     if (!result.title) {
         result.title = `(${result.type} ${result.id})`;
     }
+    if (!result.type) {
+        result.type = storeName || 'record';
+    }
     return result;
 }
 
@@ -3105,9 +3111,11 @@ export async function handleSearchResultClick(result) {
         });
     }
 
+    const effectiveType = result.type ?? result.originalType ?? (result.section ? 'section_fallback' : 'unknown');
+
     try {
         let tabId, itemSelector;
-        switch (result.type) {
+        switch (effectiveType) {
             case 'shablony_block':
                 tabId = 'shablony';
                 itemSelector = `#doc-content-shablony div[data-block-index="${result.blockIndex}"]`;
@@ -3142,7 +3150,8 @@ export async function handleSearchResultClick(result) {
                     `.bookmark-item[data-id="${result.id}"]`,
                     result.highlightTerm || result.title,
                 );
-                if (showBookmarkDetailModal) showBookmarkDetailModal(parseInt(result.id, 10));
+                if (typeof showBookmarkDetailModal === 'function')
+                    showBookmarkDetailModal(parseInt(result.id, 10));
                 break;
             case 'reglament': {
                 const reglamentData = await getFromIndexedDB('reglaments', parseInt(result.id, 10));
@@ -3157,7 +3166,8 @@ export async function handleSearchResultClick(result) {
                     `.reglament-item[data-id="${result.id}"]`,
                     result.highlightTerm || result.title,
                 );
-                if (showReglamentDetail) showReglamentDetail(parseInt(result.id, 10));
+                if (typeof showReglamentDetail === 'function')
+                    showReglamentDetail(parseInt(result.id, 10));
                 break;
             }
             case 'extLink':
@@ -3225,6 +3235,38 @@ export async function handleSearchResultClick(result) {
                     setActiveTab(result.section);
                 }
                 break;
+            case 'bookmarkFolder':
+                if (setActiveTab) await setActiveTab('bookmarks');
+                await tryScrollAndHighlight(
+                    'bookmarks',
+                    `.folder-item[data-folder-id="${result.id}"]`,
+                    result.highlightTerm || result.title,
+                );
+                break;
+            case 'blacklistedClient':
+                if (setActiveTab) await setActiveTab('blacklistedClients');
+                await tryScrollAndHighlight(
+                    'blacklistedClients',
+                    `tr[data-entry-id="${result.id}"]`,
+                    result.highlightTerm || result.title,
+                );
+                break;
+            case 'preference':
+                if (result.section && setActiveTab) await setActiveTab(result.section);
+                break;
+            case 'uiSetting':
+                if (setActiveTab) await setActiveTab('uiSettingsControl');
+                break;
+            case 'section_fallback':
+                if (result.section && setActiveTab) await setActiveTab(result.section);
+                if (result.section && result.id) {
+                    await tryScrollAndHighlight(
+                        result.section,
+                        `[data-id="${result.id}"]`,
+                        result.highlightTerm || result.title,
+                    );
+                }
+                break;
             default:
                 if (result.section) {
                     await tryScrollAndHighlight(
@@ -3232,11 +3274,13 @@ export async function handleSearchResultClick(result) {
                         `[data-id="${result.id}"]`,
                         result.highlightTerm || result.title,
                     );
-                } else if (showNotification) {
+                } else if (showNotification && effectiveType !== 'unknown') {
                     showNotification(
-                        `Действие для типа "${result.type}" не определено.`,
+                        `Действие для типа "${effectiveType}" не определено.`,
                         'warning',
                     );
+                } else if (showNotification) {
+                    showNotification('Переход для этого результата не поддерживается.', 'warning');
                 }
         }
     } catch (error) {
@@ -3438,14 +3482,54 @@ export function expandQueryWithSynonyms(query) {
 }
 
 /**
- * Поиск с регулярным выражением
+ * Поиск с регулярным выражением.
+ * regexStr может быть в формате "/pattern/" (тогда используется slice(1,-1)) или сырая строка (экранируется для RegExp).
  */
 export async function searchWithRegex(regexStr) {
-    const regex = new RegExp(regexStr.slice(1, -1), 'i');
+    const isWrapped = typeof regexStr === 'string' && regexStr.startsWith('/') && regexStr.endsWith('/') && regexStr.length >= 2;
+    const pattern = isWrapped ? regexStr.slice(1, -1) : String(regexStr).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(pattern, 'i');
     const results = [];
     const stores = ['algorithms', 'links', 'bookmarks', 'reglaments', 'extLinks'];
 
     for (const storeName of stores) {
+        if (storeName === 'algorithms') {
+            const algoContainer = await getFromIndexedDB('algorithms', 'all');
+            if (algoContainer?.data) {
+                if (algoContainer.data.main) {
+                    const texts = getTextForItem('algorithms', algoContainer.data.main);
+                    for (const text of Object.values(texts)) {
+                        if (regex.test(text)) {
+                            results.push({
+                                ...algoContainer.data.main,
+                                originalType: 'algorithms',
+                                matchType: 'regex',
+                            });
+                            break;
+                        }
+                    }
+                }
+                Object.keys(algoContainer.data).forEach((sectionKey) => {
+                    if (sectionKey === 'main' || !Array.isArray(algoContainer.data[sectionKey])) return;
+                    algoContainer.data[sectionKey].forEach((algo) => {
+                        if (!algo || algo.id == null) return;
+                        const texts = getTextForItem('algorithms', algo);
+                        for (const text of Object.values(texts)) {
+                            if (regex.test(text)) {
+                                results.push({
+                                    ...algo,
+                                    originalType: 'algorithms',
+                                    matchType: 'regex',
+                                });
+                                return;
+                            }
+                        }
+                    });
+                });
+            }
+            continue;
+        }
+
         const items = await getAllFromIndexedDB(storeName);
         items.forEach((item) => {
             const texts = getTextForItem(storeName, item);
