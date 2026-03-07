@@ -563,7 +563,7 @@ wait_for_public_site() {
   deadline=$((SECONDS + PUBLIC_WAIT_SECONDS))
   while (( SECONDS < deadline )); do
     if content="$(curl -fsS "${PUBLIC_URL}?t=${DEPLOY_VERSION}" 2>/dev/null || true)"; then
-      if printf '%s' "${content}" | grep -Fq "${DEPLOY_VERSION}"; then
+      if [[ "${content}" == *"${DEPLOY_VERSION}"* ]]; then
         info "Публичный сайт обновился: ${PUBLIC_URL}"
         return 0
       fi

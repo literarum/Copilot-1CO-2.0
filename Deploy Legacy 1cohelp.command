@@ -3,7 +3,7 @@
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$REPO_DIR" || exit 1
 
-./scripts/deploy-legacy-1cohelp.sh
+./scripts/deploy-legacy-1cohelp.sh --quick
 status=$?
 
 echo
