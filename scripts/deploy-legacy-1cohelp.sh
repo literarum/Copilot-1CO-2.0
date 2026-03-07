@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 MANIFEST_FILE="${MANIFEST_FILE:-${SOURCE_REPO_DIR}/.deploy-legacy-manifest}"
+SOURCE_PAYLOAD_DIR="${SOURCE_PAYLOAD_DIR:-${SOURCE_REPO_DIR}/site}"
 
 LEGACY_REPO_URL="${LEGACY_REPO_URL:-https://github.com/literarum/1cohelp.git}"
 LEGACY_REPO_DIR="${LEGACY_REPO_DIR:-${HOME}/.copilot-1co/1cohelp}"
@@ -131,6 +132,11 @@ ensure_source_repo() {
 
   [[ -f "${MANIFEST_FILE}" ]] || {
     err "не найден deploy-манифест: ${MANIFEST_FILE}"
+    exit 1
+  }
+
+  [[ -d "${SOURCE_PAYLOAD_DIR}" ]] || {
+    err "не найдена папка с production-файлами: ${SOURCE_PAYLOAD_DIR}"
     exit 1
   }
 }
@@ -286,7 +292,7 @@ copy_item_to_stage() {
   local item raw src dest
   raw="$1"
   item="${raw%/}"
-  src="${SOURCE_REPO_DIR}/${item}"
+  src="${SOURCE_PAYLOAD_DIR}/${item}"
   dest="${STAGE_SITE}/${item}"
 
   if [[ "${item}" == ".nojekyll" && ! -e "${src}" ]]; then
@@ -581,17 +587,12 @@ print_summary() {
   info ""
   info "========== DEPLOY SUMMARY =========="
   info "Source repo   : ${SOURCE_REPO_DIR}"
+  info "Payload dir   : ${SOURCE_PAYLOAD_DIR}"
   info "Source branch : $(source_branch)"
   info "Source commit : $(source_sha)"
   info "Legacy repo   : ${LEGACY_REPO_DIR}"
   info "Legacy branch : ${LEGACY_BRANCH}"
   info "Deploy ver    : ${DEPLOY_VERSION}"
-  if [[ -n "${LEGACY_TAG}" ]]; then
-    info "Backup tag    : ${LEGACY_TAG}"
-  fi
-  info "Public URL    : ${PUBLIC_URL}"
-  info "===================================="
-  info ""
 }
 
 main() {
