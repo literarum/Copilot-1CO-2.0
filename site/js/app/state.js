@@ -29,6 +29,7 @@ export const State = {
     clientNotesCtrlKeyDownHandler: null,
     clientNotesCtrlKeyUpHandler: null,
     clientNotesBlurHandler: null,
+    clientNotesContextMenuHandler: null,
 
     // Состояние вкладок
     isTabsOverflowCheckRunning: false,

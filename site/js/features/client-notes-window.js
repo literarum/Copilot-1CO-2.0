@@ -323,6 +323,30 @@ const CLIENT_NOTES_MSG_PREFIX = 'copilot1co:clientNotes:';
 /** Референс на открытое popup-окно заметок. */
 let notesPopupRef = null;
 
+/** Последняя известная тема для синхронизации с popup (чтобы не слать лишние postMessage). */
+let _lastThemeForPopup = null;
+
+function sendThemeToPopupIfOpen() {
+    if (!notesPopupRef || notesPopupRef.closed) return;
+    const isDark = document.documentElement.classList.contains('dark');
+    const theme = isDark ? 'dark' : 'light';
+    if (_lastThemeForPopup === theme) return;
+    _lastThemeForPopup = theme;
+    try {
+        notesPopupRef.postMessage(
+            CLIENT_NOTES_MSG_PREFIX +
+                JSON.stringify({
+                    type: 'clientNotesInit',
+                    value: getClientNotesEl()?.value || '',
+                    theme,
+                }),
+            window.location.origin,
+        );
+    } catch (e) {
+        console.warn('[clientNotesWindow] Failed to send theme to popup:', e);
+    }
+}
+
 function setupClientNotesPopupMessageListener() {
     if (window.__clientNotesPopupListenerSetup) return;
     window.__clientNotesPopupListenerSetup = true;
@@ -336,6 +360,7 @@ function setupClientNotesPopupMessageListener() {
             if (!el) return;
             if (data.type === 'clientNotesRequest') {
                 const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                _lastThemeForPopup = theme;
                 event.source?.postMessage(
                     CLIENT_NOTES_MSG_PREFIX +
                         JSON.stringify({
@@ -352,6 +377,13 @@ function setupClientNotesPopupMessageListener() {
             console.warn('[clientNotesWindow] Invalid popup message:', e);
         }
     });
+    const themeObserver = new MutationObserver(() => {
+        sendThemeToPopupIfOpen();
+    });
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+    });
 }
 
 /**
@@ -364,6 +396,7 @@ export function openClientNotesPopupWindow() {
     if (notesPopupRef && !notesPopupRef.closed) {
         notesPopupRef.focus();
         const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        _lastThemeForPopup = theme;
         notesPopupRef.postMessage(
             CLIENT_NOTES_MSG_PREFIX +
                 JSON.stringify({
@@ -386,6 +419,7 @@ export function openClientNotesPopupWindow() {
         notesPopupRef.addEventListener('load', () => {
             if (notesPopupRef && !notesPopupRef.closed) {
                 const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                _lastThemeForPopup = theme;
                 notesPopupRef.postMessage(
                     CLIENT_NOTES_MSG_PREFIX +
                         JSON.stringify({

@@ -147,6 +147,10 @@ export async function initClientDataSystem() {
         clientNotes.removeEventListener('blur', State.clientNotesBlurHandler);
         console.log(`${LOG_PREFIX} Старый обработчик 'blur' (сброс курсора) удален.`);
     }
+    if (State.clientNotesContextMenuHandler) {
+        clientNotes.removeEventListener('contextmenu', State.clientNotesContextMenuHandler);
+        console.log(`${LOG_PREFIX} Старый обработчик 'contextmenu' (сброс Ctrl при ПКМ) удален.`);
+    }
     if (State.clientNotesCtrlKeyDownHandler) {
         document.removeEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
         console.log(`${LOG_PREFIX} Старый обработчик 'keydown' (Ctrl cursor) удален.`);
@@ -285,8 +289,15 @@ export async function initClientDataSystem() {
             await copyToClipboard(hit.inn, `ИНН ${hit.inn} скопирован!`);
         } catch (e) {
             console.error('[ClientDataSystem] Ошибка копирования ИНН по Ctrl+MouseDown:', e);
+        } finally {
+            releaseClientNotesCtrlState();
         }
     };
+
+    function releaseClientNotesCtrlState() {
+        clientNotes.style.cursor = '';
+        if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
+    }
 
     clientNotes.addEventListener('mousedown', clientNotesCtrlMouseDownHandler);
     State.clientNotesCtrlClickHandler = clientNotesCtrlMouseDownHandler;
@@ -313,17 +324,19 @@ export async function initClientDataSystem() {
     };
     State.clientNotesCtrlKeyUpHandler = (e) => {
         if (!e.ctrlKey && !e.metaKey) {
-            clientNotes.style.cursor = '';
-            if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
+            releaseClientNotesCtrlState();
         }
     };
     State.clientNotesBlurHandler = () => {
-        clientNotes.style.cursor = '';
-        if (window.__clientNotesInnPreview) window.__clientNotesInnPreview.hide();
+        releaseClientNotesCtrlState();
+    };
+    State.clientNotesContextMenuHandler = () => {
+        releaseClientNotesCtrlState();
     };
     document.addEventListener('keydown', State.clientNotesCtrlKeyDownHandler);
     document.addEventListener('keyup', State.clientNotesCtrlKeyUpHandler);
     clientNotes.addEventListener('blur', State.clientNotesBlurHandler);
+    clientNotes.addEventListener('contextmenu', State.clientNotesContextMenuHandler);
     console.log(`${LOG_PREFIX} Индикация курсора при Ctrl/Meta активирована.`);
 
     if (clearClientDataBtn) {
