@@ -593,6 +593,12 @@ print_summary() {
   info "Legacy repo   : ${LEGACY_REPO_DIR}"
   info "Legacy branch : ${LEGACY_BRANCH}"
   info "Deploy ver    : ${DEPLOY_VERSION}"
+  if [[ -n "${LEGACY_TAG}" ]]; then
+    info "Backup tag    : ${LEGACY_TAG}"
+  fi
+  info "Public URL    : ${PUBLIC_URL}"
+  info "===================================="
+  info ""
 }
 
 main() {
