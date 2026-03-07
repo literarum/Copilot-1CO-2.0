@@ -1295,14 +1295,14 @@ html.dark .main-algo-group-header:hover {
     cursor: pointer !important;
 }
 
-/* Верхняя зона для кнопок в карточках: заголовок и описание сдвинуты вниз */
+/* Верхняя зона для кнопок в карточках: заголовок и описание сдвинуты вниз (1.5rem — контент ближе к иконкам) */
 .bookmark-item .flex-grow.pt-10,
 .ext-link-item .flex-grow.pt-10,
 .cib-link-item .p-4.pt-10,
 .favorite-item .flex-grow.pt-10,
 .algorithm-card .pt-10,
 .reglament-item .pt-10 {
-    padding-top: 2.5rem !important;
+    padding-top: 1.5rem !important;
 }
 
 /* Единый ховер для всех карточек: закладки, ссылки, алгоритмы, регламенты, избранное, скриншоты — через переменные темы */
