@@ -1,0 +1,16 @@
+# Что именно уезжает в legacy-repo 1cohelp.
+# Один путь на строку, относительно корня основного репозитория.
+# Комментарии и пустые строки допустимы.
+
+.nojekyll
+client-notes-standalone.html
+index.html
+install-linux.sh
+install-mac.sh
+install-windows.ps1
+css/
+downloads/
+files/
+js/
+script.js
+templates/
