@@ -178,74 +178,6 @@ export async function ensureBookmarkModal() {
         if (contentArea && normalContentClasses.length > 0)
             contentArea.classList.add(...normalContentClasses);
 
-        const handleCloseActions = async (targetModal) => {
-            const form = targetModal.querySelector('#bookmarkForm');
-            let doClose = true;
-            if (
-                form &&
-                typeof getCurrentBookmarkFormState === 'function' &&
-                typeof deepEqual === 'function'
-            ) {
-                if (State.initialBookmarkFormState) {
-                    const currentState = getCurrentBookmarkFormState(form);
-                    if (!deepEqual(State.initialBookmarkFormState, currentState)) {
-                        const confirmLeave =
-                            typeof showUnsavedConfirmModal === 'function'
-                                ? await showUnsavedConfirmModal()
-                                : confirm('Изменения не сохранены. Закрыть без сохранения?');
-                        if (!confirmLeave) doClose = false;
-                    }
-                }
-            }
-
-            if (doClose) {
-                targetModal.classList.add('hidden');
-                deactivateModalFocus(targetModal);
-                if (form) {
-                    form.reset();
-                    const idInput = form.querySelector('#bookmarkId');
-                    if (idInput) idInput.value = '';
-                    const modalTitleEl = targetModal.querySelector('#bookmarkModalTitle');
-                    if (modalTitleEl) modalTitleEl.textContent = 'Добавить закладку';
-                    const saveButton = targetModal.querySelector('#saveBookmarkBtn');
-                    if (saveButton)
-                        saveButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Добавить';
-                    const thumbsContainer = form.querySelector(
-                        '#bookmarkScreenshotThumbnailsContainer',
-                    );
-                    if (
-                        thumbsContainer &&
-                        typeof clearTemporaryThumbnailsFromContainer === 'function'
-                    )
-                        clearTemporaryThumbnailsFromContainer(thumbsContainer);
-                    delete form._tempScreenshotBlobs;
-                    delete form.dataset.screenshotsToDelete;
-                    State.initialBookmarkFormState = null;
-                }
-                if (typeof removeEscapeHandler === 'function') removeEscapeHandler(targetModal);
-
-                requestAnimationFrame(() => {
-                    if (getVisibleModals().length === 0) {
-                        document.body.classList.remove('overflow-hidden');
-                        document.body.classList.remove('modal-open');
-                        console.log(
-                            'Body overflow и modal-open сняты после закрытия окна закладки.',
-                        );
-                    }
-                });
-            }
-        };
-
-        modal.querySelectorAll('.close-modal-btn-hook, .cancel-modal-btn-hook').forEach((btn) => {
-            if (btn._specificClickHandler)
-                btn.removeEventListener('click', btn._specificClickHandler);
-            btn._specificClickHandler = (e) => {
-                e.stopPropagation();
-                handleCloseActions(modal);
-            };
-            btn.addEventListener('click', btn._specificClickHandler);
-        });
-
         const fullscreenBtn = modal.querySelector('#' + bookmarkModalConfigGlobal.buttonId);
         if (fullscreenBtn) {
             if (fullscreenBtn._fullscreenToggleHandler)
@@ -299,6 +231,74 @@ export async function ensureBookmarkModal() {
                 `${LOG_PREFIX} КРИТИЧЕСКАЯ ОШИБКА: Не удалось найти форму #bookmarkForm ПОСЛЕ создания модального окна!`,
             );
     }
+
+    const handleCloseActions = async (targetModal) => {
+        const form = targetModal.querySelector('#bookmarkForm');
+        let doClose = true;
+        if (
+            form &&
+            typeof getCurrentBookmarkFormState === 'function' &&
+            typeof deepEqual === 'function'
+        ) {
+            if (State.initialBookmarkFormState) {
+                const currentState = getCurrentBookmarkFormState(form);
+                if (!deepEqual(State.initialBookmarkFormState, currentState)) {
+                    const confirmLeave =
+                        typeof showUnsavedConfirmModal === 'function'
+                            ? await showUnsavedConfirmModal()
+                            : confirm('Изменения не сохранены. Закрыть без сохранения?');
+                    if (!confirmLeave) doClose = false;
+                }
+            }
+        }
+
+        if (doClose) {
+            targetModal.classList.add('hidden');
+            deactivateModalFocus(targetModal);
+            if (form) {
+                form.reset();
+                const idInput = form.querySelector('#bookmarkId');
+                if (idInput) idInput.value = '';
+                const modalTitleEl = targetModal.querySelector('#bookmarkModalTitle');
+                if (modalTitleEl) modalTitleEl.textContent = 'Добавить закладку';
+                const saveButton = targetModal.querySelector('#saveBookmarkBtn');
+                if (saveButton)
+                    saveButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Добавить';
+                const thumbsContainer = form.querySelector(
+                    '#bookmarkScreenshotThumbnailsContainer',
+                );
+                if (
+                    thumbsContainer &&
+                    typeof clearTemporaryThumbnailsFromContainer === 'function'
+                )
+                    clearTemporaryThumbnailsFromContainer(thumbsContainer);
+                delete form._tempScreenshotBlobs;
+                delete form.dataset.screenshotsToDelete;
+                State.initialBookmarkFormState = null;
+            }
+            if (typeof removeEscapeHandler === 'function') removeEscapeHandler(targetModal);
+
+            requestAnimationFrame(() => {
+                if (getVisibleModals().length === 0) {
+                    document.body.classList.remove('overflow-hidden');
+                    document.body.classList.remove('modal-open');
+                    console.log(
+                        'Body overflow и modal-open сняты после закрытия окна закладки.',
+                    );
+                }
+            });
+        }
+    };
+
+    modal.querySelectorAll('.close-modal-btn-hook, .cancel-modal-btn-hook').forEach((btn) => {
+        if (btn._specificClickHandler)
+            btn.removeEventListener('click', btn._specificClickHandler);
+        btn._specificClickHandler = (e) => {
+            e.stopPropagation();
+            handleCloseActions(modal);
+        };
+        btn.addEventListener('click', btn._specificClickHandler);
+    });
 
     if (typeof addEscapeHandler === 'function') addEscapeHandler(modal);
     else console.warn(`${LOG_PREFIX} addEscapeHandler function not found.`);
