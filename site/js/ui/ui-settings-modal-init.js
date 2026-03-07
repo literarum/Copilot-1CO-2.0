@@ -174,45 +174,85 @@ export function initUISettingsModalHandlers() {
             });
         }
 
+        function escapeHtml(str) {
+            if (str == null || typeof str !== 'string') return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
         function showHealthReportModalFallback(report) {
             const modal = document.getElementById('healthReportModal');
             if (!modal) return;
             const body = modal.querySelector('#healthReportModalBody');
             if (!body) return;
-            const buildList = (items, emptyText) => {
-                if (!items?.length) return `<p class="text-xs opacity-70">${emptyText}</p>`;
-                return `<ul class="space-y-2">${items
+            const esc = escapeHtml;
+            const buildSectionList = (items, itemIcon) => {
+                if (!items?.length) return '';
+                return items
                     .map(
                         (i) =>
-                            `<li><strong>${i.title}</strong><div class="text-xs opacity-80">${i.message}</div></li>`,
+                            `<li class="health-report-item">
+                                <span class="health-report-item-icon">${itemIcon}</span>
+                                <div>
+                                    <div class="health-report-item-title">${esc(i.title)}</div>
+                                    <div class="health-report-item-message">${esc(i.message)}</div>
+                                </div>
+                            </li>`,
                     )
-                    .join('')}</ul>`;
+                    .join('');
             };
-            const statusClass = report.success
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400';
+            const summaryClass = report.success ? 'health-report-summary-ok' : 'health-report-summary-fail';
+            const summaryIcon = report.success
+                ? '<i class="fas fa-check-circle" aria-hidden="true"></i>'
+                : '<i class="fas fa-exclamation-circle" aria-hidden="true"></i>';
             const statusText = report.success ? 'Система в норме' : 'Обнаружены проблемы';
+            const metaParts = [];
+            if (report.startedAt) metaParts.push(`Начало: ${esc(report.startedAt)}`);
+            if (report.finishedAt) metaParts.push(`Окончание: ${esc(report.finishedAt)}`);
+            const summaryMeta = metaParts.length ? metaParts.join(' · ') : '';
+
+            const errorsList = buildSectionList(report.errors, '<i class="fas fa-times-circle text-red-500 dark:text-red-400" aria-hidden="true"></i>');
+            const warningsList = buildSectionList(report.warnings, '<i class="fas fa-exclamation-triangle text-amber-500 dark:text-amber-400" aria-hidden="true"></i>');
+            const checksList = buildSectionList(report.checks, '<i class="fas fa-check text-primary" aria-hidden="true"></i>');
+
             body.innerHTML = `
-                <div class="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                    <strong>Полный отчёт о состоянии здоровья приложения</strong>
-                    <div class="text-sm mt-1">
-                        <span class="${statusClass}">${statusText}</span>
-                        ${report.startedAt ? ` · Начало: ${report.startedAt}` : ''}
-                        ${report.finishedAt ? ` · Окончание: ${report.finishedAt}` : ''}
+                    <div class="health-report-summary ${summaryClass}">
+                        <div class="health-report-summary-icon">${summaryIcon}</div>
+                        <div class="health-report-summary-text">
+                            <h3>${esc(statusText)}</h3>
+                            ${summaryMeta ? `<div class="health-report-summary-meta">${summaryMeta}</div>` : ''}
+                        </div>
                     </div>
-                </div>
-                <div class="hud-modal-section">
-                    <h4>Ошибки</h4>
-                    ${buildList(report.errors, 'Ошибок не обнаружено.')}
-                </div>
-                <div class="hud-modal-section">
-                    <h4>Предупреждения</h4>
-                    ${buildList(report.warnings, 'Предупреждений нет.')}
-                </div>
-                <div class="hud-modal-section">
-                    <h4>Проверки (все слои, хранилища, надёжность данных)</h4>
-                    ${buildList(report.checks, 'Список проверок пуст.')}
-                </div>
+                    <div class="health-report-section health-report-section-errors">
+                        <div class="health-report-section-header health-report-section-errors">
+                            <span class="health-report-section-icon"><i class="fas fa-exclamation-circle" aria-hidden="true"></i></span>
+                            <span>Ошибки</span>
+                        </div>
+                        ${report.errors?.length
+                            ? `<ul class="health-report-section-list">${errorsList}</ul>`
+                            : `<div class="health-report-empty">Ошибок не обнаружено.</div>`}
+                    </div>
+                    <div class="health-report-section health-report-section-warnings">
+                        <div class="health-report-section-header health-report-section-warnings">
+                            <span class="health-report-section-icon"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i></span>
+                            <span>Предупреждения</span>
+                        </div>
+                        ${report.warnings?.length
+                            ? `<ul class="health-report-section-list">${warningsList}</ul>`
+                            : `<div class="health-report-empty">Предупреждений нет.</div>`}
+                    </div>
+                    <div class="health-report-section health-report-section-checks">
+                        <div class="health-report-section-header health-report-section-checks">
+                            <span class="health-report-section-icon"><i class="fas fa-clipboard-check" aria-hidden="true"></i></span>
+                            <span>Проверки (слои, хранилища, надёжность данных)</span>
+                        </div>
+                        ${report.checks?.length
+                            ? `<ul class="health-report-section-list">${checksList}</ul>`
+                            : `<div class="health-report-empty">Список проверок пуст.</div>`}
+                    </div>
             `;
             modal.classList.remove('hidden');
             modal.style.display = 'flex';

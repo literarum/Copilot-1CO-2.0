@@ -448,6 +448,24 @@ div:has(> #clearClientDataBtn) {
     transform: scale(1);
 }
 
+/* Модалка "Вернись к клиенту" (таймер): пульсирующий неоново-красный */
+@keyframes timer-return-to-client-neon-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 40px rgba(239, 68, 68, 0.4),
+            inset 0 0 20px rgba(239, 68, 68, 0.15);
+        border-color: #ef4444;
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(239, 68, 68, 1), 0 0 80px rgba(239, 68, 68, 0.6),
+            inset 0 0 30px rgba(239, 68, 68, 0.25);
+        border-color: #f87171;
+    }
+}
+.timer-return-to-client-modal-box {
+    animation: timer-return-to-client-neon-pulse 1.5s ease-in-out infinite;
+}
+
 :is(
     #algorithmModal,
     #editModal,
@@ -466,7 +484,8 @@ div:has(> #clearClientDataBtn) {
     #bookmarkModal,
     #bookmarkDetailModal,
     #extLinkModal,
-    #sedoFullscreenOverlay
+    #sedoFullscreenOverlay,
+    #timerReturnToClientModal
 ) {
     pointer-events: none;
 }
@@ -491,6 +510,7 @@ div:has(> #clearClientDataBtn) {
     #extLinkModal,
     #sedoFullscreenOverlay,
     #extLinkCategoriesModal,
+    #timerReturnToClientModal
 
 ):not(.hidden) {
     pointer-events: auto;
@@ -516,6 +536,7 @@ div:has(> #clearClientDataBtn) {
     #extLinkModal,
     #sedoFullscreenOverlay,
     #extLinkCategoriesModal,
+    #timerReturnToClientModal
 
 ):not(.hidden) {
     -webkit-backdrop-filter: blur(var(--modal-backdrop-blur)) !important;
@@ -2823,4 +2844,167 @@ div.mt-2.p-2.rounded.border-l-4 {
 div.mt-2.p-2:has(> strong) {
     background-color: transparent !important;
     border-left: none !important;
+}
+
+/* =================================================================== */
+/*    Модальное окно «Состояние здоровья приложения»                  */
+/* =================================================================== */
+#healthReportModal .health-report-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+#healthReportModal .health-report-summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+    background: linear-gradient(135deg, rgba(153, 51, 255, 0.06) 0%, rgba(153, 51, 255, 0.02) 100%);
+}
+
+html.dark #healthReportModal .health-report-summary {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(153, 51, 255, 0.12) 0%, rgba(153, 51, 255, 0.04) 100%);
+}
+
+#healthReportModal .health-report-summary-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+#healthReportModal .health-report-summary.health-report-summary-ok .health-report-summary-icon {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+html.dark #healthReportModal .health-report-summary.health-report-summary-ok .health-report-summary-icon {
+    background: rgba(34, 197, 94, 0.25);
+    color: #4ade80;
+}
+
+#healthReportModal .health-report-summary.health-report-summary-fail .health-report-summary-icon {
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+}
+
+html.dark #healthReportModal .health-report-summary.health-report-summary-fail .health-report-summary-icon {
+    background: rgba(220, 38, 38, 0.25);
+    color: #f87171;
+}
+
+#healthReportModal .health-report-summary-text h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+}
+
+#healthReportModal .health-report-summary-meta {
+    font-size: 0.8125rem;
+    opacity: 0.85;
+}
+
+#healthReportModal .health-report-section {
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: #f9fafb;
+    overflow: hidden;
+}
+
+html.dark #healthReportModal .health-report-section {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(31, 41, 55, 0.5);
+}
+
+#healthReportModal .health-report-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+html.dark #healthReportModal .health-report-section-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+#healthReportModal .health-report-section-header .health-report-section-icon {
+    width: 1.25rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+#healthReportModal .health-report-section-errors .health-report-section-icon {
+    color: #dc2626;
+}
+
+html.dark #healthReportModal .health-report-section-errors .health-report-section-icon {
+    color: #f87171;
+}
+
+#healthReportModal .health-report-section-warnings .health-report-section-icon {
+    color: #ca8a04;
+}
+
+html.dark #healthReportModal .health-report-section-warnings .health-report-section-icon {
+    color: #facc15;
+}
+
+#healthReportModal .health-report-section-checks .health-report-section-icon {
+    color: var(--color-primary);
+}
+
+#healthReportModal .health-report-section-list {
+    padding: 0.5rem 0;
+    list-style: none;
+    margin: 0;
+}
+
+#healthReportModal .health-report-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+#healthReportModal .health-report-item:last-child {
+    border-bottom: none;
+}
+
+html.dark #healthReportModal .health-report-item {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+#healthReportModal .health-report-item-icon {
+    margin-top: 0.125rem;
+    width: 1rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+#healthReportModal .health-report-item-title {
+    font-weight: 600;
+}
+
+#healthReportModal .health-report-item-message {
+    margin-top: 0.125rem;
+    opacity: 0.9;
+}
+
+#healthReportModal .health-report-empty {
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    opacity: 0.8;
 }

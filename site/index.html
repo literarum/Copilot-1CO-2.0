@@ -2413,7 +2413,7 @@
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
-                    <div id="healthReportModalBody" class="p-4 overflow-y-auto flex-1 text-sm space-y-4">
+                    <div id="healthReportModalBody" class="health-report-body p-4 overflow-y-auto flex-1 text-sm">
                         <!-- Контент заполняется динамически -->
                     </div>
                 </div>
@@ -2545,6 +2545,33 @@
                         </div>
                         <div id="appConfirmModalButtons" class="p-content border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Модальное окно "Вернись к клиенту" (таймер): большое, пульсирующий неоново-красный стиль -->
+            <div
+                id="timerReturnToClientModal"
+                class="fixed inset-0 bg-black bg-opacity-60 hidden z-[75] p-4 overflow-y-auto timer-return-to-client-modal"
+                aria-modal="true"
+                role="dialog"
+                aria-labelledby="timerReturnToClientModalTitle"
+            >
+                <div class="flex items-center justify-center min-h-full">
+                    <div id="timerReturnToClientModalBox" class="timer-return-to-client-modal-box bg-gray-900 rounded-xl shadow-2xl max-w-2xl w-full border-4 border-red-500 p-8 text-center">
+                        <h2 id="timerReturnToClientModalTitle" class="text-2xl sm:text-3xl font-bold text-white uppercase tracking-wide mb-4">
+                            Вернись к клиенту, потом всё остальное!
+                        </h2>
+                        <p class="text-xl text-red-200 mb-6">
+                            Не получай снижение в прослушке!
+                        </p>
+                        <button
+                            type="button"
+                            id="timerReturnToClientModalCloseBtn"
+                            class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition"
+                        >
+                            Понятно
+                        </button>
                     </div>
                 </div>
             </div>

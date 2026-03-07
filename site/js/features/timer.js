@@ -47,6 +47,37 @@ function showNotification(message, type = 'success', duration = 5000) {
 }
 
 /**
+ * Воспроизвести короткий звуковой сигнал при окончании таймера (Web Audio API).
+ * Запасной канал внимания, когда системное уведомление без звука или недоступно.
+ * Не прерывает выполнение при ошибке (autoplay policy, отсутствие поддержки).
+ */
+function playTimerEndSound() {
+    try {
+        const Ctx = typeof AudioContext !== 'undefined' ? AudioContext : typeof window !== 'undefined' && window.webkitAudioContext ? window.webkitAudioContext : null;
+        if (!Ctx) return;
+        const ctx = new Ctx();
+        const playBeep = (startTime) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.15, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
+            osc.start(startTime);
+            osc.stop(startTime + 0.15);
+        };
+        playBeep(0);
+        playBeep(0.4);
+        playBeep(0.8);
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    } catch {
+        // Игнорируем: автоплей заблокирован или API недоступен
+    }
+}
+
+/**
  * Start flashing tab title when timer ended and tab is in background.
  */
 function startTitleFlash() {
@@ -112,6 +143,69 @@ function stopTimerEndEffects() {
     stopTitleFlash();
     stopFaviconFlash();
 }
+
+/** Текст модалки "Вернись к клиенту" (таймер) */
+const TIMER_RETURN_TO_CLIENT_TITLE =
+    'ВЕРНИСЬ К КЛИЕНТУ, ПОТОМ ВСЁ ОСТАЛЬНОЕ!';
+const TIMER_RETURN_TO_CLIENT_SUBTITLE =
+    'НЕ ПОЛУЧАЙ СНИЖЕНИЕ В ПРОСЛУШКЕ!';
+
+/**
+ * Показать большое модальное окно "Вернись к клиенту" (вместо браузерного уведомления).
+ * Стиль: пульсирующий неоново-красный, в духе приложения.
+ */
+function showReturnToClientModal() {
+    const modal = document.getElementById('timerReturnToClientModal');
+    if (!modal) return;
+
+    const titleEl = modal.querySelector('#timerReturnToClientModalTitle');
+    const subtitleEl = modal.querySelector('#timerReturnToClientModalBox p');
+    if (titleEl) titleEl.textContent = TIMER_RETURN_TO_CLIENT_TITLE;
+    if (subtitleEl) subtitleEl.textContent = TIMER_RETURN_TO_CLIENT_SUBTITLE;
+
+    const closeBtn = document.getElementById('timerReturnToClientModalCloseBtn');
+
+    const close = () => {
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden', 'modal-open');
+        document.removeEventListener('keydown', onEscape);
+        modal.removeEventListener('click', onOverlayClick);
+        if (closeBtn) closeBtn.removeEventListener('click', onCloseClick);
+    };
+
+    const onCloseClick = () => close();
+    const onOverlayClick = (e) => {
+        if (e.target === modal) close();
+    };
+    const onEscape = (e) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            close();
+        }
+    };
+
+    if (closeBtn) closeBtn.addEventListener('click', onCloseClick);
+    modal.addEventListener('click', onOverlayClick);
+    document.addEventListener('keydown', onEscape);
+
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden', 'modal-open');
+    try {
+        window.focus();
+    } catch {
+        // Игнорируем: в некоторых браузерах focus() ограничен политикой
+    }
+    if (closeBtn) closeBtn.focus();
+}
+
+/**
+ * Уведомления окончания таймера по платформам (максимум внимания):
+ * — Десктоп (Chrome, Firefox, Edge, Safari): системное уведомление со звуком (silent: false), requireInteraction, renotify;
+ *   при вкладке в фоне дополнительно мигают title и favicon.
+ * — Мобильные: системное уведомление при разрешении; при отказе — alert. (vibrate не используется: несовместим с тихим режимом ОС/браузера.)
+ * — Звук: Web Audio playTimerEndSound() даёт три коротких сигнала как запас, если системный звук недоступен или отключён.
+ * — Видимая вкладка: модалка «Вернись к клиенту» + попытка window.focus() + фокус на кнопке закрытия.
+ */
 
 /**
  * Запрос разрешения на системные уведомления.
@@ -209,11 +303,10 @@ export function showAppNotification(title, body) {
             const iconLink = document.querySelector('link[rel="icon"]');
             const notificationOptions = {
                 body: body || '',
-                silent: true,
+                silent: false,
                 requireInteraction: true,
                 tag: 'copilot-timer-end',
                 renotify: true,
-                vibrate: [200, 100, 200],
             };
 
             let iconUsedInThisAttempt = false;
@@ -466,7 +559,9 @@ export function handleTimerEnd() {
 
     timeLeftVisual = 0;
 
-    showAppNotification('ВЕРНИСЬ К КЛИЕНТУ!');
+    showReturnToClientModal();
+    showAppNotification(TIMER_RETURN_TO_CLIENT_TITLE, TIMER_RETURN_TO_CLIENT_SUBTITLE);
+    playTimerEndSound();
     if (document.hidden) {
         startTitleFlash();
         startFaviconFlash();
