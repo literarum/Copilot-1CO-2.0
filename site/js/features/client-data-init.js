@@ -54,6 +54,13 @@ function __acquireCopyLock(minIntervalMs = 250) {
     return true;
 }
 
+/** На macOS для копирования ИНН и превью используется Cmd (metaKey), на Win/Linux — Ctrl (ctrlKey). */
+function isMac() {
+    const plat = typeof navigator !== 'undefined' && navigator.platform ? navigator.platform : '';
+    const ua = typeof navigator !== 'undefined' && navigator.userAgent ? navigator.userAgent : '';
+    return /Mac/i.test(plat) || /Mac|iPhone|iPad/i.test(ua);
+}
+
 export function ensureInnPreviewStyles() {
     if (document.getElementById('innPreviewStyles')) return;
     const style = document.createElement('style');
@@ -260,12 +267,13 @@ export async function initClientDataSystem() {
     }
 
     const clientNotesCtrlMouseDownHandler = async (event) => {
+        const modifier = isMac() ? event.metaKey : event.ctrlKey;
         console.log(
             `[ClientNotes Handler] Event triggered: ${event.type}. Ctrl/Meta: ${
                 event.ctrlKey || event.metaKey
             }`,
         );
-        if (!(event.ctrlKey || event.metaKey)) return;
+        if (!modifier) return;
         if (typeof event.button === 'number' && event.button !== 0) return;
         if (!__acquireCopyLock(250)) return;
 
@@ -305,8 +313,8 @@ export async function initClientDataSystem() {
 
     State.clientNotesCtrlKeyDownHandler = (e) => {
         const isClientNotesFocused = document.activeElement === clientNotes;
-        const ctrlOrMeta = e.ctrlKey || e.metaKey;
-        if (ctrlOrMeta && isClientNotesFocused) {
+        const modifier = isMac() ? e.metaKey : e.ctrlKey;
+        if (modifier && isClientNotesFocused) {
             ensureInnPreviewStyles();
             if (!window.__clientNotesInnPreview) {
                 window.__clientNotesInnPreview = createClientNotesInnPreview(clientNotes);
@@ -323,7 +331,8 @@ export async function initClientDataSystem() {
         }
     };
     State.clientNotesCtrlKeyUpHandler = (e) => {
-        if (!e.ctrlKey && !e.metaKey) {
+        const modifier = isMac() ? e.metaKey : e.ctrlKey;
+        if (!modifier) {
             releaseClientNotesCtrlState();
         }
     };
