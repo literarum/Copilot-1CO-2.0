@@ -14,7 +14,6 @@ const XML_ANALYZER_ID_MAP = {
     'modal-close-btn': 'xmlAnalyzerModalClose',
     'modal-content-target': 'xmlAnalyzerModalContent',
     'analyze-btn-content': 'xmlAnalyzerAnalyzeBtnContent',
-    'reset-input-btn': 'xmlAnalyzerResetInputBtn',
     'reset-btn': 'xmlAnalyzerResetBtn',
     'load-file-btn': 'xmlAnalyzerLoadFileBtn',
     'notification-container': 'xmlAnalyzerNotificationContainer',
@@ -100,7 +99,6 @@ class ReportAnalyzerApp {
         this.inputArea = getEl('data-input');
         this.outputArea = getEl('output');
         this.analyzeBtn = getEl('analyze-btn');
-        this.resetInputBtn = getEl('reset-input-btn');
         this.dropZone = getEl('drop-zone');
         this.placeholder = getEl('placeholder');
 
@@ -142,10 +140,6 @@ class ReportAnalyzerApp {
             console.error(
                 'КРИТИЧЕСКАЯ ОШИБКА: Кнопка анализатора #analyze-btn не найдена в DOM! Основная функция не будет работать.',
             );
-        }
-
-        if (this.resetInputBtn) {
-            this.resetInputBtn.addEventListener('click', () => this.clearInput());
         }
 
         if (this.resetBtn) {
@@ -240,9 +234,6 @@ class ReportAnalyzerApp {
     updateAnalyzeButtonState() {
         if (!this.dataInputTextarea) return;
         const hasContent = this.dataInputTextarea.value.trim().length > 0;
-        if (this.resetInputBtn) {
-            this.resetInputBtn.disabled = !hasContent;
-        }
         if (this.resetBtn) {
             this.resetBtn.disabled = !hasContent && !this.isAnalysisDone;
         }
