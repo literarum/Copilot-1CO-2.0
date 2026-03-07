@@ -19,6 +19,7 @@ let getVisibleModals = null;
 let showAppConfirm = null;
 let openClientNotesWindow = null;
 let openClientNotesPopupWindow = null;
+let initTextareaHeightsPersistence = null;
 
 export function setClientDataInitDependencies(deps) {
     if (deps.State !== undefined) State = deps.State;
@@ -41,6 +42,8 @@ export function setClientDataInitDependencies(deps) {
         openClientNotesWindow = deps.openClientNotesWindow;
     if (deps.openClientNotesPopupWindow !== undefined)
         openClientNotesPopupWindow = deps.openClientNotesPopupWindow;
+    if (deps.initTextareaHeightsPersistence !== undefined)
+        initTextareaHeightsPersistence = deps.initTextareaHeightsPersistence;
 }
 
 let __lastCopyLockTime = 0;
@@ -406,6 +409,10 @@ export async function initClientDataSystem() {
         applyClientNotesFontSize();
     } catch (error) {
         console.error(`${LOG_PREFIX} Ошибка при загрузке данных клиента:`, error);
+    }
+
+    if (typeof initTextareaHeightsPersistence === 'function') {
+        initTextareaHeightsPersistence();
     }
 
     console.log(`${LOG_PREFIX} Инициализация системы данных клиента полностью завершена.`);

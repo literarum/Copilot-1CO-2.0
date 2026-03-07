@@ -93,6 +93,7 @@ export async function loadUserPreferences() {
         welcomeTextShownInitially: false,
         clientNotesFontSize: 100,
         employeeExtension: '',
+        textareaHeights: {},
     };
 
     if (!State || !State.db) {
@@ -247,14 +248,19 @@ export async function saveUserPreferences() {
             'welcomeTextShownInitially',
             'clientNotesFontSize',
             'employeeExtension',
+            'textareaHeights',
         ];
         fields.forEach((field) => {
             if (typeof State.userPreferences[field] === 'undefined') {
                 console.warn(
                     `${LOG_PREFIX} Поле '${field}' отсутствует в State.userPreferences. Устанавливается пустая строка или false.`,
                 );
-                State.userPreferences[field] =
-                    typeof State.userPreferences[field] === 'boolean' ? false : '';
+                if (field === 'textareaHeights') {
+                    State.userPreferences[field] = {};
+                } else {
+                    State.userPreferences[field] =
+                        typeof State.userPreferences[field] === 'boolean' ? false : '';
+                }
             }
         });
 

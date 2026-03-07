@@ -597,6 +597,11 @@ import {
 } from './js/features/client-data-init.js';
 
 import {
+    setTextareaHeightsDependencies,
+    initTextareaHeightsPersistence as initTextareaHeightsPersistenceModule,
+} from './js/features/textarea-heights-persistence.js';
+
+import {
     setClientNotesWindowDependencies,
     openClientNotesWindow as openClientNotesWindowModule,
     openClientNotesPopupWindow as openClientNotesPopupWindowModule,
@@ -3295,6 +3300,11 @@ function createClientNotesInnPreview(textarea) {
 }
 
 // initClientDataSystem и ensureInnPreviewStyles импортируются из js/features/client-data-init.js
+setTextareaHeightsDependencies({
+    State,
+    saveUserPreferences: saveUserPreferencesModule,
+    debounce,
+});
 setClientDataInitDependencies({
     State,
     debounce,
@@ -3310,6 +3320,7 @@ setClientDataInitDependencies({
     showAppConfirm: showAppConfirmModule,
     openClientNotesWindow: openClientNotesWindowModule,
     openClientNotesPopupWindow: openClientNotesPopupWindowModule,
+    initTextareaHeightsPersistence: initTextareaHeightsPersistenceModule,
 });
 console.log('[script.js] Зависимости client-data-init установлены.');
 
